@@ -11,6 +11,30 @@ export default {
   },
   feed: {
     header: 'Events & Recommendations',
+    greeting: 'Hello, %s! 👋',
+    findGifts: 'Find the perfect gift for your loved ones',
+    searchPlaceholder: 'Search for gifts...',
+    specialOffers: 'Special Offers',
+    viewAll: 'All',
+    viewButton: 'View',
+    categories: 'Categories',
+    popular: 'Popular',
+    giftIdeas: 'Don\'t know what to gift?',
+    giftIdeasDesc: 'Our AI assistant will help you find the perfect gift for any occasion',
+    startButton: 'Start',
+    category: {
+      all: 'All',
+      flowers: 'Flowers',
+      chocolates: 'Chocolates',
+      jewellery: 'Jewellery',
+      cosmetics: 'Cosmetics'
+    },
+    specialOffer: {
+      discount30: '30% Discount',
+      discountDesc: 'On all gift sets for her',
+      gift: 'Free Gift',
+      giftDesc: 'With orders over $80'
+    }
   },
   events: {
     date: {
@@ -46,10 +70,16 @@ export default {
     search: 'Search gifts...',
     filter: 'Filter',
     sort: 'Sort',
+    title: 'Gift Catalog',
+    subtitle: 'Find the perfect gift for any occasion'
   },
   chat: {
     header: 'AI Gift Assistant',
     placeholder: 'Ask for gift recommendations...',
     send: 'Send',
   },
+  favorites: {
+    title: 'My Favorites',
+    subtitle: 'Your collection of favorite items'
+  }
 }; 

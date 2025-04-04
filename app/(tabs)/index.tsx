@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -25,14 +25,14 @@ import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 60) / 2;
 
-// Категории для фильтрации
-const categories = [
-  { id: 'all', name: 'Все', icon: '🎁', isActive: true },
-  { id: 'flowers', name: 'Цветы', icon: '💐', isActive: false },
-  { id: 'chocolates', name: 'Шоколад', icon: '🍫', isActive: false },
-  { id: 'jewellery', name: 'Украшения', icon: '💍', isActive: false },
-  { id: 'cosmetics', name: 'Косметика', icon: '💄', isActive: false },
-];
+// Иконки категорий остаются неизменными для всех языков
+const categoryIcons = {
+  all: '🎁',
+  flowers: '💐',
+  chocolates: '🍫',
+  jewellery: '💍',
+  cosmetics: '💄',
+};
 
 // Популярные продукты
 const popularProducts = [
@@ -62,24 +62,6 @@ const popularProducts = [
   },
 ];
 
-// Скидки и акции
-const discountItems = [
-  {
-    id: '1',
-    title: 'Скидка 30%',
-    description: 'На все подарочные наборы для нее',
-    image: 'https://images.unsplash.com/photo-1550617931-e17a7b70dce2?w=400',
-    color: ['#FF5E87', '#FF0844'] as readonly [string, string],
-  },
-  {
-    id: '2',
-    title: 'Подарок',
-    description: 'При заказе от 5000 ₽',
-    image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=400',
-    color: ['#845EC2', '#5F43B2'] as readonly [string, string],
-  },
-];
-
 export default function FeedScreen() {
   const { t, localizedData } = useAppLocalization();
   const { events } = localizedData;
@@ -89,12 +71,51 @@ export default function FeedScreen() {
   });
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef<TextInput>(null);
+  const [showGreeting, setShowGreeting] = useState(true);
+
+  // Скидки и акции с локализацией
+  const discountItems = useMemo(() => [
+    {
+      id: '1',
+      title: t('feed.specialOffer.discount30'),
+      description: t('feed.specialOffer.discountDesc'),
+      image: 'https://images.unsplash.com/photo-1550617931-e17a7b70dce2?w=400',
+      color: ['#FF5E87', '#FF0844'] as readonly [string, string],
+    },
+    {
+      id: '2',
+      title: t('feed.specialOffer.gift'),
+      description: t('feed.specialOffer.giftDesc'),
+      image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=400',
+      color: ['#845EC2', '#5F43B2'] as readonly [string, string],
+    },
+  ], [t]);
+
+  // Создаем локализованные категории
+  const categories = useMemo(() => {
+    return [
+      { id: 'all', name: t('feed.category.all'), icon: categoryIcons.all, isActive: selectedCategory === 'all' },
+      { id: 'flowers', name: t('feed.category.flowers'), icon: categoryIcons.flowers, isActive: selectedCategory === 'flowers' },
+      { id: 'chocolates', name: t('feed.category.chocolates'), icon: categoryIcons.chocolates, isActive: selectedCategory === 'chocolates' },
+      { id: 'jewellery', name: t('feed.category.jewellery'), icon: categoryIcons.jewellery, isActive: selectedCategory === 'jewellery' },
+      { id: 'cosmetics', name: t('feed.category.cosmetics'), icon: categoryIcons.cosmetics, isActive: selectedCategory === 'cosmetics' },
+    ];
+  }, [t, selectedCategory]);
 
   // Предстоящие события
   const upcomingEvents = events.slice(0, 1);
   
   // Популярные события
   const popularEvents = events.slice(1);
+
+  // Эффект для скрытия приветствия через 5 секунд
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowGreeting(false);
+    }, 5000);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   // Функция для обработки нажатия на событие
   const handleEventPress = (event: any) => {
@@ -172,17 +193,21 @@ export default function FeedScreen() {
         end={{ x: 0, y: 1 }}
       >
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Привет, Алексей! 👋</Text>
-          <Text style={styles.headerSubtitle}>Найди идеальный подарок для любимых</Text>
+          {showGreeting && (
+            <>
+              <Text style={styles.headerTitle}>{t('feed.greeting').replace('%s', 'Алексей')}</Text>
+              <Text style={styles.headerSubtitle}>{t('feed.findGifts')}</Text>
+            </>
+          )}
           
           <Pressable
-            style={styles.searchBar}
+            style={[styles.searchBar, !showGreeting && styles.searchBarNoGreeting]}
             onPress={() => searchInputRef.current?.focus()}
           >
             <Search size={20} color={COLORS.gray500} />
             <TextInput
               ref={searchInputRef}
-              placeholder="Искать подарки..."
+              placeholder={t('feed.searchPlaceholder')}
               placeholderTextColor={COLORS.gray500}
               style={styles.searchInput}
               value={searchQuery}
@@ -204,9 +229,9 @@ export default function FeedScreen() {
         {/* Спецпредложения */}
         <View style={styles.specialsSection}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Спецпредложения</Text>
+            <Text style={styles.sectionTitle}>{t('feed.specialOffers')}</Text>
             <TouchableOpacity>
-              <Text style={styles.seeAllText}>Все</Text>
+              <Text style={styles.seeAllText}>{t('feed.viewAll')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -231,7 +256,7 @@ export default function FeedScreen() {
                     <Text style={styles.specialCardTitle}>{item.title}</Text>
                     <Text style={styles.specialCardDescription}>{item.description}</Text>
                     <TouchableOpacity style={styles.viewButton}>
-                      <Text style={styles.viewButtonText}>Посмотреть</Text>
+                      <Text style={styles.viewButtonText}>{t('feed.viewButton')}</Text>
                     </TouchableOpacity>
                   </View>
                   <Image source={{ uri: item.image }} style={styles.specialCardImage} />
@@ -243,7 +268,7 @@ export default function FeedScreen() {
 
         {/* Категории */}
         <View style={styles.categoriesSection}>
-          <Text style={styles.sectionTitle}>Категории</Text>
+          <Text style={styles.sectionTitle}>{t('feed.categories')}</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -276,9 +301,9 @@ export default function FeedScreen() {
         {/* Популярные продукты */}
         <View style={styles.productsSection}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Популярные</Text>
+            <Text style={styles.sectionTitle}>{t('feed.popular')}</Text>
             <TouchableOpacity>
-              <Text style={styles.seeAllText}>Все</Text>
+              <Text style={styles.seeAllText}>{t('feed.viewAll')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -329,12 +354,12 @@ export default function FeedScreen() {
           >
             <View style={styles.ideasContent}>
               <Gift size={28} color="#FF0844" />
-              <Text style={styles.ideasTitle}>Не знаете что подарить?</Text>
+              <Text style={styles.ideasTitle}>{t('feed.giftIdeas')}</Text>
               <Text style={styles.ideasDescription}>
-                Наш AI-ассистент поможет подобрать идеальный подарок для вашего случая
+                {t('feed.giftIdeasDesc')}
               </Text>
               <TouchableOpacity style={styles.ideasButton}>
-                <Text style={styles.ideasButtonText}>Начать</Text>
+                <Text style={styles.ideasButtonText}>{t('feed.startButton')}</Text>
                 <ArrowUpRight size={16} color="#FF0844" />
               </TouchableOpacity>
             </View>
@@ -370,10 +395,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
   },
   headerTitle: {
-    fontSize: FONTS.sizes.xxxl,
+    fontSize: FONTS.sizes.xl,
     fontWeight: '700',
     color: COLORS.white,
     marginBottom: SPACING.xs,
+    paddingRight: SPACING.lg,
+    flexShrink: 1,
   },
   headerSubtitle: {
     fontSize: FONTS.sizes.md,
@@ -389,6 +416,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
     marginBottom: SPACING.sm,
+  },
+  searchBarNoGreeting: {
+    marginTop: SPACING.lg,
+    marginBottom: SPACING.md,
   },
   searchInput: {
     flex: 1,
