@@ -50,6 +50,7 @@ export default function TabLayout() {
           marginTop: Platform.OS === 'ios' ? -1 : 1,
         },
         headerShown: false,
+        tabBarHideOnKeyboard: false,
       }}>
       <Tabs.Screen
         name="index"

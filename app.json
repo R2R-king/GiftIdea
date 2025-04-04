@@ -11,6 +11,10 @@
     "ios": {
       "supportsTablet": true
     },
+    "android": {
+      "softwareKeyboardLayoutMode": "pan",
+      "androidWindowSoftInputMode": "adjustPan"
+    },
     "web": {
       "bundler": "metro",
       "output": "single",

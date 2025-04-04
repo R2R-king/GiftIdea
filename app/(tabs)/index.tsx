@@ -13,6 +13,8 @@ import {
   TextInput,
   ImageBackground,
   Pressable,
+  Keyboard,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { useAppLocalization } from '@/components/LocalizationWrapper';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -70,6 +72,8 @@ export default function FeedScreen() {
     '2': true, // Teddy Bear предустановлен как избранный
   });
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const searchInputRef = useRef<TextInput>(null);
   const [showGreeting, setShowGreeting] = useState(true);
 
@@ -116,6 +120,32 @@ export default function FeedScreen() {
     
     return () => clearTimeout(timer);
   }, []);
+
+  // Эффект для отслеживания появления и скрытия клавиатуры
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setIsKeyboardVisible(true);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setIsKeyboardVisible(false);
+        // Если текстовое поле пустое, сбрасываем фокус поиска
+        if (searchQuery.length === 0) {
+          setIsSearchFocused(false);
+        }
+      }
+    );
+
+    // Очистка слушателей при размонтировании компонента
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, [searchQuery]);
 
   // Функция для обработки нажатия на событие
   const handleEventPress = (event: any) => {
@@ -202,7 +232,10 @@ export default function FeedScreen() {
           
           <Pressable
             style={[styles.searchBar, !showGreeting && styles.searchBarNoGreeting]}
-            onPress={() => searchInputRef.current?.focus()}
+            onPress={() => {
+              searchInputRef.current?.focus();
+              setIsSearchFocused(true);
+            }}
           >
             <Search size={20} color={COLORS.gray500} />
             <TextInput
@@ -212,9 +245,18 @@ export default function FeedScreen() {
               style={styles.searchInput}
               value={searchQuery}
               onChangeText={setSearchQuery}
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => {
+                if (searchQuery.length === 0) {
+                  setIsSearchFocused(false);
+                }
+              }}
             />
             {searchQuery ? (
-              <Pressable onPress={() => setSearchQuery('')}>
+              <Pressable onPress={() => {
+                setSearchQuery('');
+                setIsSearchFocused(false);
+              }}>
                 <X size={20} color={COLORS.gray500} />
               </Pressable>
             ) : null}
@@ -225,6 +267,7 @@ export default function FeedScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Спецпредложения */}
         <View style={styles.specialsSection}>
@@ -367,6 +410,7 @@ export default function FeedScreen() {
         </View>
       </ScrollView>
 
+      {/* Всегда показываем тень для панели навигации */}
       <TabBarShadow />
     </View>
   );
