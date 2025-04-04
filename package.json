@@ -4,9 +4,11 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "EXPO_NO_TELEMETRY=1 expo start",
+    "dev": "expo start",
+    "dev:no-telemetry": "cross-env EXPO_NO_TELEMETRY=1 expo start",
     "build:web": "expo export --platform web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "build:android": "expo run:android"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.2",
@@ -29,7 +31,6 @@
     "expo-status-bar": "^2.0.1",
     "expo-symbols": "^0.2.2",
     "expo-system-ui": "^4.0.7",
-    "expo-updates": "^0.24.8",
     "expo-web-browser": "^14.0.2",
     "firebase": "^10.8.0",
     "lucide-react-native": "^0.475.0",
@@ -49,6 +50,7 @@
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@types/react": "~18.3.12",
+    "cross-env": "^7.0.3",
     "typescript": "^5.3.3"
   }
 }

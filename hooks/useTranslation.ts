@@ -1,6 +1,5 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { I18nManager } from 'react-native';
-import * as Updates from 'expo-updates';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import en from '../translations/en';
 import ru from '../translations/ru';
@@ -74,13 +73,7 @@ export const LocalizationProvider = ({ children }: { children: ReactNode }) => {
       setLocaleInternal(lang);
       
       // В русском языке нет необходимости в RTL
-      // Закомментированный код для будущей поддержки RTL языков
-      /*
-      if (I18nManager.isRTL) {
-        I18nManager.forceRTL(false);
-        await Updates.reloadAsync();
-      }
-      */
+      // Этот код может понадобиться в будущем при добавлении RTL языков
     } catch (error) {
       console.error('Failed to set locale', error);
     }

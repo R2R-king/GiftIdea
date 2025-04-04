@@ -54,7 +54,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: t('tabs.home'),
           tabBarIcon: ({ color, size }) => (
             <View style={styles.iconContainer}>
               <Home size={size * 0.9} color={color} strokeWidth={2.2} />
@@ -65,7 +65,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="catalog"
         options={{
-          title: 'Shop',
+          title: t('tabs.shop'),
           tabBarIcon: ({ color, size }) => (
             <View style={styles.iconContainer}>
               <Gift size={size * 0.9} color={color} strokeWidth={2.2} />
@@ -76,7 +76,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="cart"
         options={{
-          title: 'Cart',
+          title: t('tabs.cart'),
           tabBarIcon: ({ color, size }) => (
             <View style={styles.iconContainer}>
               <ShoppingBag size={size * 0.9} color={color} strokeWidth={2.2} />
@@ -87,7 +87,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="favorites"
         options={{
-          title: 'Favorites',
+          title: t('tabs.favorites'),
           tabBarIcon: ({ color, size }) => (
             <View style={styles.iconContainer}>
               <Heart size={size * 0.9} color={color} strokeWidth={2.2} />
@@ -98,7 +98,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: t('tabs.profile'),
           tabBarIcon: ({ color, size }) => (
             <View style={styles.iconContainer}>
               <User size={size * 0.9} color={color} strokeWidth={2.2} />

@@ -4,6 +4,10 @@ export default {
     catalog: 'Каталог',
     chat: 'ИИ Чат',
     profile: 'Профиль',
+    home: 'Главная',
+    shop: 'Магазин',
+    cart: 'Корзина',
+    favorites: 'Избранное',
   },
   feed: {
     header: 'События и рекомендации',
@@ -25,6 +29,17 @@ export default {
     favorites: 'Избранное',
     orders: 'Заказы',
     logout: 'Выйти',
+    language: 'Язык',
+    valentineOffer: 'Праздничное предложение',
+    offerDescription: 'Скидка на подарки к праздникам',
+    editProfile: 'Редактировать профиль',
+    premiumMember: 'Премиум-аккаунт',
+    account: 'Мой аккаунт',
+    version: 'Версия',
+    privacyPolicy: 'Политика конфиденциальности',
+    termsOfService: 'Условия использования',
+    notifications: 'Уведомления',
+    help: 'Помощь и поддержка'
   },
   catalog: {
     header: 'Каталог подарков',

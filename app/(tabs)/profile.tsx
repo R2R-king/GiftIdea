@@ -96,11 +96,11 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.valentinePink} />
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
       
       {/* Фоновые элементы */}
       <LinearGradient
-        colors={[COLORS.valentineBackground, COLORS.valentineLightBackground]}
+        colors={[COLORS.primaryBackground, COLORS.white]}
         style={styles.backgroundGradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -114,7 +114,7 @@ export default function ProfileScreen() {
         <View style={styles.profileHeader}>
           {/* Фон профиля */}
           <LinearGradient
-            colors={[COLORS.valentinePink, COLORS.valentineLightPink]}
+            colors={[COLORS.primary, COLORS.primaryLight]}
             style={styles.profileHeaderBackground}
             start={{ x: 0, y: 0 }}
             end={{ x: 0, y: 1 }}
@@ -125,9 +125,9 @@ export default function ProfileScreen() {
               source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200' }}
               style={styles.profileImage}
             />
-            <View style={styles.editButton}>
+            <TouchableOpacity style={styles.editButton} activeOpacity={0.8}>
               <User size={14} color="#FFFFFF" />
-            </View>
+            </TouchableOpacity>
           </View>
           
           <Text style={styles.profileName}>Sophie Anderson</Text>
@@ -135,28 +135,30 @@ export default function ProfileScreen() {
           
           <View style={styles.memberStatusBadge}>
             <Gift size={14} color={COLORS.white} />
-            <Text style={styles.memberStatusText}>Premium Member</Text>
+            <Text style={styles.memberStatusText}>{t('profile.premiumMember')}</Text>
           </View>
           
-          <TouchableOpacity style={styles.editProfileButton}>
-            <Text style={styles.editProfileText}>Edit Profile</Text>
+          <TouchableOpacity style={styles.editProfileButton} activeOpacity={0.7}>
+            <Text style={styles.editProfileText}>{t('profile.editProfile')}</Text>
           </TouchableOpacity>
         </View>
         
         {/* Valentine's Day Offers */}
         <View style={styles.offerSection}>
           <LinearGradient
-            colors={[COLORS.valentinePink, COLORS.valentineRed]}
+            colors={[COLORS.primary, COLORS.primaryDark]}
             style={styles.offerCard}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
             <View style={styles.offerContent}>
-              <View>
+              <View style={styles.offerTextContainer}>
                 <Text style={styles.offerTitle}>{t('profile.valentineOffer')}</Text>
                 <Text style={styles.offerDescription}>{t('profile.offerDescription')}</Text>
               </View>
-              <Text style={styles.offerDiscount}>30%</Text>
+              <View style={styles.discountContainer}>
+                <Text style={styles.offerDiscount}>30%</Text>
+              </View>
             </View>
           </LinearGradient>
         </View>
@@ -204,7 +206,7 @@ export default function ProfileScreen() {
         
         {/* Опции меню */}
         <View style={styles.menuSection}>
-          <Text style={styles.menuSectionTitle}>My Account</Text>
+          <Text style={styles.menuSectionTitle}>{t('profile.account')}</Text>
           
           {menuOptions.map((option) => (
             <TouchableOpacity
@@ -256,14 +258,14 @@ export default function ProfileScreen() {
         
         {/* Информация о приложении */}
         <View style={styles.appInfoSection}>
-          <Text style={styles.appVersion}>Version 1.0.0</Text>
+          <Text style={styles.appVersion}>{t('profile.version')} 1.0.0</Text>
           <View style={styles.footerLinks}>
             <TouchableOpacity>
-              <Text style={styles.footerLink}>Privacy Policy</Text>
+              <Text style={styles.footerLink}>{t('profile.privacyPolicy')}</Text>
             </TouchableOpacity>
             <Text style={styles.footerDivider}>•</Text>
             <TouchableOpacity>
-              <Text style={styles.footerLink}>Terms of Service</Text>
+              <Text style={styles.footerLink}>{t('profile.termsOfService')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -291,23 +293,32 @@ const styles = StyleSheet.create({
   },
   profileHeader: {
     alignItems: 'center',
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingBottom: 30,
+    paddingTop: Platform.OS === 'ios' ? 90 : 70,
+    paddingBottom: 20,
     position: 'relative',
+    marginBottom: 70,
   },
   profileHeaderBackground: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: 180,
+    height: 240,
     borderBottomLeftRadius: RADIUS.xl,
     borderBottomRightRadius: RADIUS.xl,
   },
   profileImageContainer: {
     position: 'relative',
-    marginBottom: 15,
+    marginBottom: 10,
     zIndex: 1,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
   },
   profileImage: {
     width: 100,
@@ -319,31 +330,39 @@ const styles = StyleSheet.create({
   editButton: {
     position: 'absolute',
     bottom: 0,
-    right: 0,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#FF0844',
+    right: 3,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#FFFFFF',
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
   },
   profileName: {
     fontSize: FONTS.sizes.xl,
     fontWeight: '700',
-    color: '#1E293B',
+    color: '#FFFFFF',
     marginBottom: 2,
   },
   profileEmail: {
     fontSize: FONTS.sizes.sm,
-    color: '#64748B',
-    marginBottom: 15,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginBottom: 10,
   },
   memberStatusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.valentinePink,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     paddingHorizontal: SPACING.sm,
     paddingVertical: 4,
     borderRadius: RADIUS.full,
@@ -359,11 +378,19 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 20,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 8, 68, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   editProfileText: {
     fontSize: 14,
-    color: '#FF0844',
+    color: '#FFFFFF',
     fontWeight: '500',
   },
   offerSection: {
@@ -381,21 +408,33 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  offerTextContainer: {
+    flex: 1,
+    paddingRight: 10,
+  },
+  discountContainer: {
+    justifyContent: 'center', 
+    alignItems: 'flex-end',
+  },
   offerTitle: {
-    fontSize: FONTS.sizes.lg,
+    fontSize: FONTS.sizes.md,
     fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 4,
+    flexWrap: 'wrap',
+    width: '100%',
   },
   offerDescription: {
-    fontSize: FONTS.sizes.sm,
+    fontSize: FONTS.sizes.xs,
     color: 'rgba(255, 255, 255, 0.8)',
-    width: '80%',
+    width: '100%',
+    flexWrap: 'wrap',
   },
   offerDiscount: {
     fontSize: 36,
     fontWeight: '800',
     color: '#FFFFFF',
+    textAlign: 'right',
   },
   languageSection: {
     marginHorizontal: SPACING.lg,
@@ -494,8 +533,8 @@ const styles = StyleSheet.create({
   },
   appInfoSection: {
     alignItems: 'center',
-    marginTop: SPACING.md,
-    paddingBottom: SPACING.lg,
+    marginTop: SPACING.xl,
+    paddingBottom: SPACING.xl,
   },
   appVersion: {
     fontSize: FONTS.sizes.xs,
@@ -509,6 +548,7 @@ const styles = StyleSheet.create({
   footerLink: {
     fontSize: FONTS.sizes.xs,
     color: '#64748B',
+    textDecorationLine: 'underline',
   },
   footerDivider: {
     fontSize: FONTS.sizes.xs,

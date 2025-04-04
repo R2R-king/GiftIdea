@@ -20,7 +20,7 @@ export const useAppLocalization = () => {
 export const LocalizationWrapper: React.FC<{ children: ReactNode }> = ({ children }) => {
   const localization = useLocalization();
   const [isLoading, setIsLoading] = useState(true);
-
+  
   useEffect(() => {
     if (localization.initialized) {
       setIsLoading(false);
@@ -72,6 +72,13 @@ const translations = {
         delivery: 'Delivery'
       }
     },
+    tabs: {
+      home: 'Home',
+      shop: 'Shop',
+      cart: 'Cart',
+      favorites: 'Favorites',
+      profile: 'Profile',
+    },
     catalog: {
       title: 'Gift Catalog',
       subtitle: 'Find the perfect gift for any occasion',
@@ -86,8 +93,14 @@ const translations = {
       logout: 'Log Out',
       language: 'Language',
       accountSettings: 'Account Settings',
-      valentineOffer: 'Valentine\'s Special',
-      offerDescription: 'Get 30% off on all romantic gifts with code LOVE2024'
+      valentineOffer: 'Holiday Special Offer',
+      offerDescription: 'Get 30% off on festive gifts with code HOLIDAY2024',
+      editProfile: 'Edit Profile',
+      premiumMember: 'Premium Member',
+      account: 'My Account',
+      version: 'Version',
+      privacyPolicy: 'Privacy Policy',
+      termsOfService: 'Terms of Service'
     },
     favorites: {
       title: 'My Favorites',
@@ -138,6 +151,13 @@ const translations = {
         delivery: 'Доставка'
       }
     },
+    tabs: {
+      home: 'Главная',
+      shop: 'Магазин',
+      cart: 'Корзина',
+      favorites: 'Избранное',
+      profile: 'Профиль',
+    },
     catalog: {
       title: 'Каталог подарков',
       subtitle: 'Найдите идеальный подарок для любого случая',
@@ -152,8 +172,14 @@ const translations = {
       logout: 'Выйти',
       language: 'Язык',
       accountSettings: 'Настройки аккаунта',
-      valentineOffer: 'Специально к Дню Св. Валентина',
-      offerDescription: 'Скидка 30% на все романтические подарки с кодом ЛЮБОВЬ2024'
+      valentineOffer: 'Праздничное предложение',
+      offerDescription: 'Скидка 30% на подарки к праздникам с кодом ПРАЗДНИК2024',
+      editProfile: 'Редактировать профиль',
+      premiumMember: 'Премиум-аккаунт',
+      account: 'Мой аккаунт',
+      version: 'Версия',
+      privacyPolicy: 'Политика конфиденциальности',
+      termsOfService: 'Условия использования'
     },
     favorites: {
       title: 'Избранное',
