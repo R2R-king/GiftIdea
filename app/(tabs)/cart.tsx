@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   Platform,
   Dimensions,
+  Alert,
+  SafeAreaView,
 } from 'react-native';
 import { 
   Trash2, 
@@ -18,6 +20,8 @@ import {
   Truck,
   Package,
   CalendarClock,
+  ChevronLeft,
+  ArrowUp,
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -25,184 +29,328 @@ import TabBarShadow from '@/components/TabBarShadow';
 import { StatusBar } from 'expo-status-bar';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
 import { useAppLocalization } from '@/components/LocalizationWrapper';
+import Animated, { useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
+const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
+
+// Функция для форматирования цены в рублях с защитой от ошибок
+const formatPrice = (price: number): string => {
+  try {
+    return price.toLocaleString('ru-RU') + ' ₽';
+  } catch (error) {
+    console.error('Ошибка при форматировании цены:', error);
+    return price + ' ₽';
+  }
+};
+
+// Тип для элемента корзины
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image: string;
+}
 
 export default function CartScreen() {
   const { t } = useAppLocalization();
+  const scrollY = useSharedValue(0);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const scrollViewRef = React.useRef<ScrollView>(null);
   
-  const cartItems = [
+  // Мемоизированный список элементов корзины
+  const cartItems: CartItem[] = useMemo(() => [
     {
       id: '1',
-      name: 'Heart Shaped Chocolate Box',
-      price: '$24.99',
+      name: 'Коробка шоколадных конфет в форме сердца',
+      price: 2250,
       quantity: 1,
       image: 'https://images.unsplash.com/photo-1549007994-cb8bed91e518?w=500',
     },
     {
       id: '2',
-      name: 'Red Rose Bouquet',
-      price: '$35.99',
+      name: 'Букет красных роз',
+      price: 3250,
       quantity: 1,
       image: 'https://images.unsplash.com/photo-1519378058457-4c29a0a2efac?w=500',
     },
     {
       id: '3',
-      name: 'Valentine\'s Day Card',
-      price: '$5.50',
+      name: 'Поздравительная открытка',
+      price: 500,
       quantity: 1,
       image: 'https://images.unsplash.com/photo-1582450871972-ab5ca641643d?w=500',
     },
-  ];
+  ], []);
 
-  // Рассчитываем итоговые суммы
-  const subtotal = cartItems.reduce((sum, item) => sum + parseFloat(item.price.substring(1)) * item.quantity, 0);
-  const shipping = 4.99;
-  const discount = 5.00;
-  const total = subtotal + shipping - discount;
+  // Мемоизированные расчеты для предотвращения лишних ререндеров
+  const { subtotal, shipping, discount, total } = useMemo(() => {
+    const calculatedSubtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const calculatedShipping = 450;
+    const calculatedDiscount = 500;
+    const calculatedTotal = calculatedSubtotal + calculatedShipping - calculatedDiscount;
+    
+    return {
+      subtotal: calculatedSubtotal,
+      shipping: calculatedShipping,
+      discount: calculatedDiscount,
+      total: calculatedTotal
+    };
+  }, [cartItems]);
+
+  // Обработчик прокрутки с защитой от ошибок
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      try {
+        scrollY.value = event.contentOffset.y;
+        if (event.contentOffset.y > 200) {
+          setShowScrollTop(true);
+        } else {
+          setShowScrollTop(false);
+        }
+      } catch (error) {
+        console.error('Ошибка в обработчике прокрутки:', error);
+      }
+    },
+  });
+
+  // Безопасная обработка прокрутки вверх
+  const handleScrollToTop = useCallback(() => {
+    try {
+      if (scrollViewRef.current) {
+        scrollViewRef.current.scrollTo({ y: 0, animated: true });
+      }
+    } catch (error) {
+      console.error('Ошибка при прокрутке вверх:', error);
+    }
+  }, []);
+
+  // Анимация для кнопки прокрутки вверх
+  const scrollToTopButtonStyle = useAnimatedStyle(() => {
+    try {
+      return {
+        opacity: withSpring(showScrollTop ? 1 : 0),
+        transform: [{ scale: withSpring(showScrollTop ? 1 : 0) }],
+      };
+    } catch (error) {
+      console.error('Ошибка в анимированном стиле:', error);
+      return { opacity: showScrollTop ? 1 : 0 };
+    }
+  });
+
+  // Функция для получения текста с правильным окончанием
+  const getItemsText = useCallback((count: number) => {
+    try {
+      if (count === 1) {
+        return `1 ${t('cart.item')}`;
+      } else if (count > 1 && count < 5) {
+        return `${count} ${t('cart.items')}`;
+      } else {
+        return `${count} ${t('cart.manyItems')}`;
+      }
+    } catch (error) {
+      console.error('Ошибка при форматировании количества товаров:', error);
+      return count + ' ' + t('cart.items');
+    }
+  }, [t]);
+
+  // Безопасный переход к другим экранам
+  const navigateToCatalog = useCallback(() => {
+    try {
+      router.push('/(tabs)/catalog');
+    } catch (error) {
+      console.error('Ошибка при переходе к каталогу:', error);
+    }
+  }, []);
+
+  // Безопасный вызов всплывающего окна
+  const handleCheckout = useCallback(() => {
+    try {
+      Alert.alert('Заказ оформлен', 'Спасибо за покупку!');
+    } catch (error) {
+      console.error('Ошибка при оформлении заказа:', error);
+    }
+  }, []);
+
+  // Рендер элемента корзины с обработкой ошибок
+  const renderCartItem = useCallback(({ item }: { item: CartItem }) => {
+    return (
+      <View key={item.id} style={styles.cartItem}>
+        <Image 
+          source={{ uri: item.image }} 
+          style={styles.itemImage} 
+          defaultSource={require('@/assets/images/icon.png')}
+        />
+        <View style={styles.itemDetails}>
+          <Text style={styles.itemName} numberOfLines={2} ellipsizeMode="tail">{item.name}</Text>
+          <Text style={styles.itemPrice}>{formatPrice(item.price)}</Text>
+          
+          <View style={styles.itemActions}>
+            <View style={styles.quantityContainer}>
+              <TouchableOpacity style={styles.quantityButton}>
+                <Text style={styles.quantityButtonText}>-</Text>
+              </TouchableOpacity>
+              <Text style={styles.quantityText}>{item.quantity}</Text>
+              <TouchableOpacity style={styles.quantityButton}>
+                <Text style={styles.quantityButtonText}>+</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.actionButtons}>
+              <TouchableOpacity style={styles.saveButton}>
+                <Heart size={18} color={COLORS.valentinePink} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.removeButton}>
+                <Trash2 size={18} color={COLORS.gray600} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </View>
+    );
+  }, []);
 
   return (
-    <View style={styles.container}>
-      {/* Фоновые элементы */}
-      <LinearGradient
-        colors={[COLORS.valentineBackground, COLORS.valentineLightBackground]}
-        style={styles.backgroundGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      />
-      
-      <StatusBar style="light" />
-      
-      {/* Заголовок */}
-      <LinearGradient
-        colors={[COLORS.valentinePink, COLORS.valentineLightPink]}
-        style={styles.header}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-      >
-        <Text style={styles.headerTitle}>Shopping Cart</Text>
-        <Text style={styles.headerSubtitle}>
-          {cartItems.length} {cartItems.length === 1 ? 'item' : 'items'}
-        </Text>
-      </LinearGradient>
+    <SafeAreaView style={styles.safeAreaContainer}>
+      <View style={styles.container}>
+        {/* Фоновые элементы */}
+        <LinearGradient
+          colors={[COLORS.valentineBackground, COLORS.valentineLightBackground]}
+          style={styles.backgroundGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        />
+        
+        <StatusBar style="light" />
+        
+        {/* Заголовок */}
+        <LinearGradient
+          colors={[COLORS.valentinePink, COLORS.valentineLightPink]}
+          style={styles.header}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+        >
+          <Text style={styles.headerTitle}>{t('cart.title')}</Text>
+          <Text style={styles.headerSubtitle}>
+            {getItemsText(cartItems.length)}
+          </Text>
+        </LinearGradient>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* Элементы корзины */}
-        <View style={styles.cartItemsContainer}>
-          {cartItems.map((item) => (
-            <View key={item.id} style={styles.cartItem}>
-              <Image source={{ uri: item.image }} style={styles.itemImage} />
-              <View style={styles.itemDetails}>
-                <Text style={styles.itemName}>{item.name}</Text>
-                <Text style={styles.itemPrice}>{item.price}</Text>
-                
-                <View style={styles.itemActions}>
-                  <View style={styles.quantityContainer}>
-                    <TouchableOpacity style={styles.quantityButton}>
-                      <Text style={styles.quantityButtonText}>-</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.quantityText}>{item.quantity}</Text>
-                    <TouchableOpacity style={styles.quantityButton}>
-                      <Text style={styles.quantityButtonText}>+</Text>
-                    </TouchableOpacity>
-                  </View>
-                  
-                  <View style={styles.actionButtons}>
-                    <TouchableOpacity style={styles.saveButton}>
-                      <Heart size={18} color={COLORS.valentinePink} />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.removeButton}>
-                      <Trash2 size={18} color={COLORS.gray600} />
-                    </TouchableOpacity>
-                  </View>
+        <AnimatedScrollView
+          ref={scrollViewRef}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          onScroll={scrollHandler}
+          scrollEventThrottle={16}
+        >
+          {/* Элементы корзины */}
+          <View style={styles.cartItemsContainer}>
+            {cartItems.map(item => renderCartItem({ item }))}
+          </View>
+
+          {/* Доставка и итоги */}
+          <View style={styles.cartSummarySection}>
+            <View style={styles.deliverySection}>
+              <Text style={styles.sectionTitle}>{t('cart.shippingOptionsTitle')}</Text>
+              
+              <TouchableOpacity style={styles.deliveryOption}>
+                <View style={[styles.deliveryIconContainer, { backgroundColor: COLORS.valentineLightPink }]}>
+                  <Truck size={20} color={COLORS.valentinePink} />
                 </View>
-              </View>
+                <View style={styles.deliveryDetails}>
+                  <Text style={styles.deliveryTitle}>{t('cart.standardDelivery')}</Text>
+                  <Text style={styles.deliveryDate}>14 - 16 февраля</Text>
+                </View>
+                <Text style={styles.deliveryPrice}>{formatPrice(450)}</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={[styles.deliveryOption, styles.selectedDelivery]}>
+                <View style={[styles.deliveryIconContainer, { backgroundColor: COLORS.valentineLightPink }]}>
+                  <CalendarClock size={20} color={COLORS.valentinePink} />
+                </View>
+                <View style={styles.deliveryDetails}>
+                  <Text style={styles.deliveryTitle}>{t('cart.expressDelivery')}</Text>
+                  <Text style={styles.deliveryDate}>13 февраля</Text>
+                </View>
+                <Text style={styles.deliveryPrice}>{formatPrice(900)}</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.deliveryOption}>
+                <View style={[styles.deliveryIconContainer, { backgroundColor: COLORS.valentineLightPink }]}>
+                  <Package size={20} color={COLORS.valentinePink} />
+                </View>
+                <View style={styles.deliveryDetails}>
+                  <Text style={styles.deliveryTitle}>{t('cart.pickupDelivery')}</Text>
+                  <Text style={styles.deliveryDate}>{t('cart.today')}</Text>
+                </View>
+                <Text style={styles.deliveryPrice}>{t('cart.free')}</Text>
+              </TouchableOpacity>
             </View>
-          ))}
-        </View>
 
-        {/* Доставка и итоги */}
-        <View style={styles.cartSummarySection}>
-          <View style={styles.deliverySection}>
-            <Text style={styles.sectionTitle}>Shipping Options</Text>
-            
-            <TouchableOpacity style={styles.deliveryOption}>
-              <View style={[styles.deliveryIconContainer, { backgroundColor: COLORS.valentineLightPink }]}>
-                <Truck size={20} color={COLORS.valentinePink} />
+            <View style={styles.cartTotals}>
+              <Text style={styles.sectionTitle}>{t('cart.orderSummaryTitle')}</Text>
+              
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>{t('cart.subtotalLabel')}</Text>
+                <Text style={styles.summaryValue}>{formatPrice(subtotal)}</Text>
               </View>
-              <View style={styles.deliveryDetails}>
-                <Text style={styles.deliveryTitle}>Standard Delivery</Text>
-                <Text style={styles.deliveryDate}>Feb 14 - Feb 16</Text>
+              
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>{t('cart.shippingLabel')}</Text>
+                <Text style={styles.summaryValue}>{formatPrice(shipping)}</Text>
               </View>
-              <Text style={styles.deliveryPrice}>$4.99</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={[styles.deliveryOption, styles.selectedDelivery]}>
-              <View style={[styles.deliveryIconContainer, { backgroundColor: COLORS.valentineLightPink }]}>
-                <CalendarClock size={20} color={COLORS.valentinePink} />
+              
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>{t('cart.discountLabel')}</Text>
+                <Text style={[styles.summaryValue, { color: COLORS.valentinePink }]}>-{formatPrice(discount)}</Text>
               </View>
-              <View style={styles.deliveryDetails}>
-                <Text style={styles.deliveryTitle}>Express Delivery</Text>
-                <Text style={styles.deliveryDate}>Feb 13</Text>
+              
+              <View style={[styles.summaryRow, styles.totalRow]}>
+                <Text style={styles.totalLabel}>{t('cart.totalLabel')}</Text>
+                <Text style={styles.totalValue}>{formatPrice(total)}</Text>
               </View>
-              <Text style={styles.deliveryPrice}>$9.99</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.deliveryOption}>
-              <View style={[styles.deliveryIconContainer, { backgroundColor: COLORS.valentineLightPink }]}>
-                <Package size={20} color={COLORS.valentinePink} />
-              </View>
-              <View style={styles.deliveryDetails}>
-                <Text style={styles.deliveryTitle}>In-Store Pickup</Text>
-                <Text style={styles.deliveryDate}>Today</Text>
-              </View>
-              <Text style={styles.deliveryPrice}>Free</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.cartTotals}>
-            <Text style={styles.sectionTitle}>Order Summary</Text>
-            
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Subtotal</Text>
-              <Text style={styles.summaryValue}>${subtotal.toFixed(2)}</Text>
-            </View>
-            
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Shipping</Text>
-              <Text style={styles.summaryValue}>${shipping.toFixed(2)}</Text>
-            </View>
-            
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Discount</Text>
-              <Text style={[styles.summaryValue, { color: COLORS.valentinePink }]}>-${discount.toFixed(2)}</Text>
-            </View>
-            
-            <View style={[styles.summaryRow, styles.totalRow]}>
-              <Text style={styles.totalLabel}>Total</Text>
-              <Text style={styles.totalValue}>${total.toFixed(2)}</Text>
             </View>
           </View>
-        </View>
-      </ScrollView>
+        </AnimatedScrollView>
 
-      {/* Кнопка оформления заказа */}
-      <View style={styles.checkoutContainer}>
-        <TouchableOpacity style={styles.checkoutButton}>
-          <CreditCard size={20} color="#FFFFFF" />
-          <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
-        </TouchableOpacity>
+        {/* Кнопка прокрутки вверх */}
+        <Animated.View style={[styles.scrollTopButton, scrollToTopButtonStyle]}>
+          <TouchableOpacity onPress={handleScrollToTop} style={styles.scrollTopButtonContent}>
+            <ArrowUp size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+        </Animated.View>
+
+        {/* Кнопки внизу экрана */}
+        <View style={styles.bottomButtonsContainer}>
+          <TouchableOpacity 
+            style={styles.backToShoppingButton}
+            onPress={navigateToCatalog}
+          >
+            <ChevronLeft size={20} color={COLORS.valentinePink} />
+            <Text style={styles.backToShoppingText}>{t('cart.backToShopping')}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.checkoutButton}
+            onPress={handleCheckout}
+          >
+            <CreditCard size={20} color="#FFFFFF" />
+            <Text style={styles.checkoutButtonText}>{t('cart.proceedToCheckout')}</Text>
+          </TouchableOpacity>
+        </View>
+
+        <TabBarShadow />
       </View>
-
-      <TabBarShadow />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeAreaContainer: {
+    flex: 1,
+    backgroundColor: COLORS.valentineBackground,
+  },
   container: {
     flex: 1,
     backgroundColor: COLORS.white,
@@ -215,7 +363,7 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   header: {
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingTop: Platform.OS === 'ios' ? 10 : 40,
     paddingBottom: 20,
     paddingHorizontal: SPACING.lg,
     borderBottomLeftRadius: RADIUS.xl,
@@ -234,7 +382,7 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   scrollContent: {
-    paddingBottom: 120,
+    paddingBottom: 200,
   },
   cartItemsContainer: {
     padding: SPACING.lg,
@@ -413,22 +561,42 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.valentinePink,
   },
-  checkoutContainer: {
+  bottomButtonsContainer: {
     position: 'absolute',
-    bottom: 0,
+    bottom: 80,
     left: 0,
     right: 0,
     padding: SPACING.md,
     backgroundColor: COLORS.white,
     borderTopWidth: 1,
     borderTopColor: COLORS.gray200,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     ...SHADOWS.medium,
+    zIndex: 10,
+  },
+  backToShoppingButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.valentinePink,
+    borderRadius: RADIUS.full,
+    marginRight: SPACING.sm,
+  },
+  backToShoppingText: {
+    fontSize: FONTS.sizes.sm,
+    fontWeight: '600',
+    color: COLORS.valentinePink,
+    marginLeft: SPACING.xs,
   },
   checkoutButton: {
+    flex: 1,
     flexDirection: 'row',
     backgroundColor: COLORS.valentinePink,
     paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: SPACING.md,
     borderRadius: RADIUS.full,
     justifyContent: 'center',
     alignItems: 'center',
@@ -439,5 +607,24 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.white,
     marginLeft: SPACING.sm,
+  },
+  scrollTopButton: {
+    position: 'absolute',
+    bottom: 150,
+    right: 20,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: COLORS.valentinePink,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...SHADOWS.pink,
+    zIndex: 10,
+  },
+  scrollTopButtonContent: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 }); 

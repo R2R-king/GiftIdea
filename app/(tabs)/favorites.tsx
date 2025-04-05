@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Image,
   TouchableOpacity,
-  ScrollView,
   FlatList,
   Dimensions,
   StatusBar,
@@ -18,6 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import TabBarShadow from '@/components/TabBarShadow';
 import { router } from 'expo-router';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
+import { useFavorites } from '@/hooks/useFavorites';
 
 const { width } = Dimensions.get('window');
 
@@ -27,58 +27,20 @@ interface FavoriteItem {
   subtitle: string;
   price: string;
   image: string;
+  rating?: number;
+  location?: string;
 }
 
 export default function FavoritesScreen() {
   const { t } = useAppLocalization();
+  const { favoriteItems, removeFavorite } = useFavorites();
   
-  // Исходный список избранных товаров
-  const [favorites, setFavorites] = useState<FavoriteItem[]>([
-    {
-      id: '1',
-      name: 'Valentine\'s Rose Bouquet',
-      subtitle: 'Fresh roses with gift wrap',
-      price: '$49.99',
-      image: 'https://images.unsplash.com/photo-1582555172866-f73bb12a2ab3?w=300',
-    },
-    {
-      id: '2',
-      name: 'Heart Shaped Chocolates',
-      subtitle: 'Premium Belgian chocolate',
-      price: '$24.99',
-      image: 'https://images.unsplash.com/photo-1582394785765-717d6a5e1c21?w=300',
-    },
-    {
-      id: '3',
-      name: 'Cute Teddy Bear',
-      subtitle: 'Soft plush with heart',
-      price: '$19.99',
-      image: 'https://images.unsplash.com/photo-1605980625600-88c7a85c31cd?w=300',
-    },
-    {
-      id: '4',
-      name: 'Love Letter Stationery',
-      subtitle: 'Luxury paper set with envelopes',
-      price: '$14.99',
-      image: 'https://images.unsplash.com/photo-1567011355042-42ce535e6a82?w=300',
-    },
-    {
-      id: '5',
-      name: 'Valentine\'s Day Card',
-      subtitle: 'Handcrafted with message',
-      price: '$5.99',
-      image: 'https://images.unsplash.com/photo-1549048144-9d2a7495ef3e?w=300',
-    }
-  ]);
-
-  // Функция для удаления товара из избранного
-  const removeFromFavorites = (id: string) => {
-    setFavorites(favorites.filter(item => item.id !== id));
-  };
-
   // Функция для перехода к деталям товара
   const navigateToProductDetails = (item: FavoriteItem) => {
-    router.push('/product-details');
+    router.push({
+      pathname: '/product-details',
+      params: { productId: item.id }
+    });
   };
 
   // Функция для добавления товара в корзину
@@ -105,7 +67,7 @@ export default function FavoritesScreen() {
         <View style={styles.favoriteActions}>
           <TouchableOpacity
             style={[styles.actionButton, styles.removeButton]}
-            onPress={() => removeFromFavorites(item.id)}
+            onPress={() => removeFavorite(item.id)}
           >
             <X size={18} color={COLORS.gray600} />
           </TouchableOpacity>
@@ -147,7 +109,7 @@ export default function FavoritesScreen() {
 
       {/* Список избранного */}
       <FlatList
-        data={favorites}
+        data={favoriteItems}
         renderItem={renderFavoriteItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.favoritesList}
@@ -161,7 +123,7 @@ export default function FavoritesScreen() {
             </Text>
             <TouchableOpacity
               style={styles.browseButton}
-              onPress={() => router.push('/catalog')}
+              onPress={() => router.push('/(tabs)/catalog')}
             >
               <Text style={styles.browseButtonText}>
                 {t('favorites.browse')}

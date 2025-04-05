@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import en from '../translations/en';
-import ru from '../translations/ru';
+import * as en from '../translations/en';
+import * as ru from '../translations/ru';
 import { mockEventsRu, mockPartnersRu } from '../data/mockDataRu';
 import { mockEvents, mockPartners } from '../data/mockData';
 
@@ -59,13 +59,23 @@ export const useLocalization = () => {
   
   // Словари переводов
   const translations = {
-    en,
-    ru,
+    en: en.default,
+    ru: ru.default,
   };
   
   // Функция для получения перевода
-  const t = (key: string): string => {
-    return getTranslation(translations[locale], key);
+  const t = (key: string, ...args: any[]): string => {
+    const translation = getTranslation(translations[locale], key);
+    
+    // Если есть аргументы для форматирования, применяем их
+    if (args.length > 0 && typeof translation === 'string') {
+      return translation.replace(/%s/g, (match, index) => {
+        const argIndex = parseInt(index) || 0;
+        return args[argIndex] !== undefined ? String(args[argIndex]) : match;
+      });
+    }
+    
+    return translation;
   };
   
   // Получить локализованные данные для mockData

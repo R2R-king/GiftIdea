@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,9 +12,59 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronLeft, Heart, ShoppingBag } from 'lucide-react-native';
-import { Stack, router } from 'expo-router';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
+import { useFavorites } from '@/hooks/useFavorites';
 
 const { width } = Dimensions.get('window');
+
+// Sample products data (in a real app, this would come from an API or context)
+const sampleProducts = [
+  {
+    id: '1',
+    name: 'Valentine\'s Rose Bouquet',
+    subtitle: 'Fresh roses with gift wrap',
+    price: '$49.99',
+    image: 'https://images.unsplash.com/photo-1582555172866-f73bb12a2ab3?w=800',
+    rating: 4.8,
+    location: 'delivery'
+  },
+  {
+    id: '2',
+    name: 'Heart Shaped Chocolates',
+    subtitle: 'Premium Belgian chocolate',
+    price: '$24.99',
+    image: 'https://images.unsplash.com/photo-1582394785765-717d6a5e1c21?w=800',
+    rating: 4.5,
+    location: 'nearby'
+  },
+  {
+    id: '3',
+    name: 'Cute Teddy Bear',
+    subtitle: 'Soft plush with heart',
+    price: '$19.99',
+    image: 'https://images.unsplash.com/photo-1605980625600-88c7a85c31cd?w=800',
+    rating: 4.2,
+    location: 'nearby'
+  },
+  {
+    id: '4',
+    name: 'Love Letter Stationery',
+    subtitle: 'Luxury paper set with envelopes',
+    price: '$14.99',
+    image: 'https://images.unsplash.com/photo-1567011355042-42ce535e6a82?w=800',
+    rating: 4.3,
+    location: 'delivery'
+  },
+  {
+    id: 'perfume-1',
+    name: 'Perfume',
+    subtitle: 'Scents of Love',
+    price: '$50',
+    image: 'https://images.unsplash.com/photo-1615354065567-5580e55f66d5?w=800',
+    rating: 4.8,
+    location: 'delivery'
+  }
+];
 
 // Варианты объёма парфюма
 const volumeOptions = [
@@ -24,12 +74,23 @@ const volumeOptions = [
 ];
 
 export default function ProductDetailScreen() {
-  const [isFavorite, setIsFavorite] = useState(false);
+  const { productId } = useLocalSearchParams();
+  const { isFavorite, toggleFavorite } = useFavorites();
   const [selectedVolume, setSelectedVolume] = useState('150 ml');
   const [price, setPrice] = useState('$50');
   
-  const toggleFavorite = () => {
-    setIsFavorite(!isFavorite);
+  // Find the product based on ID
+  const product = sampleProducts.find(p => p.id === productId) || sampleProducts[4]; // Default to perfume if not found
+  
+  // Update price based on product
+  useEffect(() => {
+    if (product) {
+      setPrice(product.price);
+    }
+  }, [product]);
+  
+  const handleToggleFavorite = () => {
+    toggleFavorite(product);
   };
   
   const handleVolumeChange = (volume: string) => {
@@ -60,12 +121,12 @@ export default function ProductDetailScreen() {
         
         <TouchableOpacity 
           style={styles.favoriteButton}
-          onPress={toggleFavorite}
+          onPress={handleToggleFavorite}
         >
           <Heart 
             size={20} 
-            color={isFavorite ? "#FF0844" : "#64748B"} 
-            fill={isFavorite ? "#FF0844" : "transparent"} 
+            color={isFavorite(product.id) ? "#FF0844" : "#64748B"} 
+            fill={isFavorite(product.id) ? "#FF0844" : "transparent"} 
           />
         </TouchableOpacity>
       </View>
@@ -77,7 +138,7 @@ export default function ProductDetailScreen() {
         {/* Изображение продукта */}
         <View style={styles.imageContainer}>
           <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1615354065567-5580e55f66d5?w=800' }}
+            source={{ uri: product.image }}
             style={styles.productImage}
             resizeMode="contain"
           />
@@ -107,8 +168,8 @@ export default function ProductDetailScreen() {
         <View style={styles.productInfoCard}>
           <View style={styles.productHeader}>
             <View>
-              <Text style={styles.productCategory}>Scents of Love</Text>
-              <Text style={styles.productName}>Perfume</Text>
+              <Text style={styles.productCategory}>{product.subtitle}</Text>
+              <Text style={styles.productName}>{product.name}</Text>
             </View>
             <Text style={styles.productPrice}>{price}</Text>
           </View>
@@ -117,28 +178,30 @@ export default function ProductDetailScreen() {
             Elevate the romance with a timeless fragrance. A perfect gift to make your loved one feel special and cherished. Choose a scent that speaks to their unique personality.
           </Text>
 
-          {/* Выбор объема */}
-          <View style={styles.volumeSelector}>
-            {volumeOptions.map((option) => (
-              <TouchableOpacity
-                key={option.value}
-                style={[
-                  styles.volumeOption,
-                  selectedVolume === option.value && styles.selectedVolumeOption,
-                ]}
-                onPress={() => handleVolumeChange(option.value)}
-              >
-                <Text
+          {/* Only show volume selector for perfume */}
+          {product.id === 'perfume-1' && (
+            <View style={styles.volumeSelector}>
+              {volumeOptions.map((option) => (
+                <TouchableOpacity
+                  key={option.value}
                   style={[
-                    styles.volumeText,
-                    selectedVolume === option.value && styles.selectedVolumeText,
+                    styles.volumeOption,
+                    selectedVolume === option.value && styles.selectedVolumeOption,
                   ]}
+                  onPress={() => handleVolumeChange(option.value)}
                 >
-                  {option.value}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+                  <Text
+                    style={[
+                      styles.volumeText,
+                      selectedVolume === option.value && styles.selectedVolumeText,
+                    ]}
+                  >
+                    {option.value}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
 
           {/* Кнопки действий */}
           <View style={styles.actionButtons}>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import TabBarShadow from '@/components/TabBarShadow';
 import Filters from '@/components/Filters';
 import { router } from 'expo-router';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
+import { useFavorites } from '@/hooks/useFavorites';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - SPACING.lg * 3) / 2;
@@ -37,6 +38,7 @@ interface Product {
 
 export default function CatalogScreen() {
   const { t } = useAppLocalization();
+  const { favoriteItems, toggleFavorite } = useFavorites();
   const [activeFilters, setActiveFilters] = useState({
     occasion: '',
     budget: '',
@@ -127,6 +129,15 @@ export default function CatalogScreen() {
     }
   ]);
 
+  // Update local product state to match favorites in Redux
+  useEffect(() => {
+    const updatedProducts = products.map(product => ({
+      ...product,
+      isFavorite: favoriteItems.some(item => item.id === product.id)
+    }));
+    setProducts(updatedProducts);
+  }, [favoriteItems]);
+
   // Фильтрация товаров
   const filteredProducts = products.filter(product => {
     const matchesOccasion = !activeFilters.occasion || product.occasion === activeFilters.occasion;
@@ -144,12 +155,19 @@ export default function CatalogScreen() {
     setActiveFilters(filters);
   };
 
-  const toggleFavorite = (productId: string) => {
-    setProducts(products.map(product => 
-      product.id === productId 
-        ? {...product, isFavorite: !product.isFavorite}
-        : product
-    ));
+  const handleToggleFavorite = (productId: string) => {
+    const product = products.find(p => p.id === productId);
+    if (product) {
+      toggleFavorite(product);
+    }
+  };
+
+  // Функция для перехода к деталям товара
+  const navigateToProductDetails = (item: Product) => {
+    router.push({
+      pathname: '/product-details',
+      params: { productId: item.id }
+    });
   };
 
   const renderProduct = ({ item, index }: { item: Product; index: number }) => {
@@ -165,14 +183,14 @@ export default function CatalogScreen() {
             marginRight: isOdd ? 0 : SPACING.sm
           }
         ]}
-        onPress={() => router.push('/product-details')}
+        onPress={() => navigateToProductDetails(item)}
         activeOpacity={0.95}
       >
         <View style={styles.imageContainer}>
           <Image source={{ uri: item.image }} style={styles.productImage} />
           <TouchableOpacity 
             style={styles.favoriteButton}
-            onPress={() => toggleFavorite(item.id)}
+            onPress={() => handleToggleFavorite(item.id)}
           >
             <Heart 
               size={18} 

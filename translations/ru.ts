@@ -1,4 +1,4 @@
-export default {
+const translations = {
   tabs: {
     feed: 'Лента',
     catalog: 'Каталог',
@@ -80,6 +80,46 @@ export default {
   },
   favorites: {
     title: 'Избранное',
-    subtitle: 'Ваша коллекция избранных товаров'
+    subtitle: 'Ваша коллекция избранных товаров',
+    empty: 'Избранных товаров нет',
+    emptyDesc: 'Добавьте товары, которые вам понравились',
+    browse: 'Перейти в каталог',
+    addedToCart: 'Товар добавлен в корзину'
+  },
+  cart: {
+    title: 'Корзина',
+    subtitle: 'товаров',
+    subtotalLabel: 'Сумма',
+    shippingLabel: 'Доставка',
+    discountLabel: 'Скидка',
+    totalLabel: 'Итого',
+    emptyCart: 'Ваша корзина пуста',
+    emptyCartDesc: 'Добавьте товары для оформления заказа',
+    shippingOptionsTitle: 'Способы доставки',
+    orderSummaryTitle: 'Детали заказа',
+    proceedToCheckout: 'Оформить заказ',
+    backToShopping: 'Вернуться к покупкам',
+    standardDelivery: 'Стандартная доставка',
+    expressDelivery: 'Экспресс-доставка',
+    pickupDelivery: 'Самовывоз',
+    today: 'Сегодня',
+    free: 'Бесплатно',
+    item: 'товар',
+    items: 'товара',
+    manyItems: 'товаров'
+  },
+  filters: {
+    locations: {
+      nearby: 'Поблизости',
+      delivery: 'Доставка'
+    }
+  },
+  common: {
+    cancel: 'Отмена',
+    remove: 'Удалить',
+    add: 'Добавить',
+    save: 'Сохранить'
   }
-}; 
+};
+
+export default translations; 
