@@ -33,6 +33,8 @@ interface Product {
   location: string;
   rating: number;
   isFavorite: boolean;
+  translationKey: string;
+  subtitleTranslationKey: string;
 }
 
 export default function CatalogScreen() {
@@ -45,85 +47,97 @@ export default function CatalogScreen() {
     searchQuery: ''
   });
 
-  // Исходный список товаров
+  // Исходный список товаров с ключами для перевода
   const [products, setProducts] = useState<Product[]>([
     {
       id: '1',
       name: 'Valentine\'s Rose Bouquet',
       subtitle: 'Fresh roses with gift wrap',
-      price: '$49.99',
-      image: 'https://images.unsplash.com/photo-1582555172866-f73bb12a2ab3?w=300',
+      price: '3 499 ₽',
+      image: 'https://plus.unsplash.com/premium_photo-1682431264193-41352acd1fe4?w=800&q=80',
       occasion: 'valentine',
       budget: 'expensive',
       type: 'emotional',
       location: 'delivery',
       rating: 4.8,
-      isFavorite: true
+      isFavorite: true,
+      translationKey: 'valentineRose',
+      subtitleTranslationKey: 'valentineRoseSubtitle'
     },
     {
       id: '2',
       name: 'Heart Shaped Chocolates',
       subtitle: 'Premium Belgian chocolate',
-      price: '$24.99',
-      image: 'https://images.unsplash.com/photo-1582394785765-717d6a5e1c21?w=300',
+      price: '1 799 ₽',
+      image: 'https://images.unsplash.com/photo-1549007994-cb8bed490c79?w=800&q=80',
       occasion: 'valentine',
       budget: 'medium',
       type: 'emotional',
       location: 'nearby',
       rating: 4.5,
-      isFavorite: false
+      isFavorite: false,
+      translationKey: 'heartChocolates',
+      subtitleTranslationKey: 'heartChocolatesSubtitle'
     },
     {
       id: '3',
       name: 'Cute Teddy Bear',
       subtitle: 'Soft plush with heart',
-      price: '$19.99',
-      image: 'https://images.unsplash.com/photo-1605980625600-88c7a85c31cd?w=300',
+      price: '1 299 ₽',
+      image: 'https://images.unsplash.com/photo-1615031335724-f7fb76ae5fc9?w=800&q=80',
       occasion: 'valentine',
       budget: 'cheap',
       type: 'emotional',
       location: 'nearby',
       rating: 4.2,
-      isFavorite: false
+      isFavorite: false,
+      translationKey: 'teddyBear',
+      subtitleTranslationKey: 'teddyBearSubtitle'
     },
     {
       id: '4',
       name: 'Love Letter Stationery',
       subtitle: 'Luxury paper set with envelopes',
-      price: '$14.99',
-      image: 'https://images.unsplash.com/photo-1567011355042-42ce535e6a82?w=300',
+      price: '999 ₽',
+      image: 'https://images.unsplash.com/photo-1484755560615-a4c64e778a6c?w=800&q=80',
       occasion: 'valentine',
       budget: 'cheap',
       type: 'handmade',
       location: 'delivery',
       rating: 4.3,
-      isFavorite: false
+      isFavorite: false,
+      translationKey: 'loveLetter',
+      subtitleTranslationKey: 'loveLetterSubtitle'
     },
     {
       id: '5',
       name: 'Valentine\'s Day Card',
       subtitle: 'Handcrafted with message',
-      price: '$5.99',
-      image: 'https://images.unsplash.com/photo-1549048144-9d2a7495ef3e?w=300',
+      price: '399 ₽',
+      image: 'https://images.unsplash.com/photo-1612344891345-1b62d29d9d6d?w=800&q=80',
       occasion: 'valentine',
       budget: 'cheap',
       type: 'handmade',
       location: 'nearby',
       rating: 4.0,
-      isFavorite: true
+      isFavorite: true,
+      translationKey: 'valentineCard',
+      subtitleTranslationKey: 'valentineCardSubtitle'
     },
     {
       id: '6',
       name: 'Diamond Pendant Necklace',
       subtitle: 'Sterling silver with heart charm',
-      price: '$129.99',
-      image: 'https://images.unsplash.com/photo-1588444650733-d76f8a408aae?w=300',
+      price: '8 999 ₽',
+      image: 'https://images.unsplash.com/photo-1636138390765-c2bf51992db1?w=800&q=80',
       occasion: 'valentine',
       budget: 'expensive',
       type: 'emotional',
       location: 'delivery',
       rating: 4.9,
-      isFavorite: false
+      isFavorite: false,
+      translationKey: 'diamondPendant',
+      subtitleTranslationKey: 'diamondPendantSubtitle'
     }
   ]);
 
@@ -156,6 +170,19 @@ export default function CatalogScreen() {
     // Determine if the item should be rendered on the left or right
     const isOdd = index % 2 === 1;
     
+    // Map product ID to productKey for details page
+    const getProductKey = (id: string) => {
+      switch(id) {
+        case '1': return 'roses';
+        case '2': return 'chocolates';
+        case '3': return 'teddyBear';
+        case '4': return 'loveLetterSet';
+        case '5': return 'valentineCard';
+        case '6': return 'diamondPendant';
+        default: return 'perfume';
+      }
+    };
+    
     return (
       <TouchableOpacity
         style={[
@@ -165,11 +192,18 @@ export default function CatalogScreen() {
             marginRight: isOdd ? 0 : SPACING.sm
           }
         ]}
-        onPress={() => router.push('/product-details')}
+        onPress={() => router.push({
+          pathname: '/product-details',
+          params: { id: getProductKey(item.id) }
+        })}
         activeOpacity={0.95}
       >
         <View style={styles.imageContainer}>
-          <Image source={{ uri: item.image }} style={styles.productImage} />
+          <Image 
+            source={{ uri: item.image }} 
+            style={styles.productImage}
+            resizeMode="cover"
+          />
           <TouchableOpacity 
             style={styles.favoriteButton}
             onPress={() => toggleFavorite(item.id)}
@@ -195,8 +229,12 @@ export default function CatalogScreen() {
             <Text style={styles.ratingText}>{item.rating.toFixed(1)}</Text>
           </View>
           
-          <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
-          <Text style={styles.productSubtitle} numberOfLines={1}>{item.subtitle}</Text>
+          <Text style={styles.productName} numberOfLines={1}>
+            {t(`products.${item.translationKey}`)}
+          </Text>
+          <Text style={styles.productSubtitle} numberOfLines={1}>
+            {t(`products.${item.subtitleTranslationKey}`)}
+          </Text>
           
           <View style={styles.productFooter}>
             <Text style={styles.productPrice}>{item.price}</Text>
@@ -232,7 +270,7 @@ export default function CatalogScreen() {
         <Text style={styles.headerSubtitle}>{t('catalog.subtitle')}</Text>
       </LinearGradient>
 
-      {/* Фильтры */}
+      {/* Поиск */}
       <Filters onApplyFilters={handleApplyFilters} />
 
       {/* Список товаров */}
@@ -277,13 +315,13 @@ const styles = StyleSheet.create({
     ...SHADOWS.pink,
   },
   headerTitle: {
-    fontSize: FONTS.sizes.xxxl,
+    fontSize: FONTS.sizes.xxl,
     fontWeight: '700',
     color: COLORS.white,
     marginBottom: SPACING.xs,
   },
   headerSubtitle: {
-    fontSize: FONTS.sizes.md,
+    fontSize: FONTS.sizes.sm,
     color: COLORS.white,
     opacity: 0.9,
   },
@@ -306,11 +344,14 @@ const styles = StyleSheet.create({
     position: 'relative',
     height: 140,
     width: '100%',
+    backgroundColor: '#F8F8F8',
+    overflow: 'hidden',
   },
   productImage: {
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
+    backgroundColor: '#F8F8F8',
   },
   favoriteButton: {
     position: 'absolute',
@@ -340,27 +381,27 @@ const styles = StyleSheet.create({
     marginLeft: 2,
   },
   productInfo: {
-    padding: SPACING.md,
+    padding: SPACING.sm,
   },
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   ratingText: {
-    fontSize: FONTS.sizes.xs,
+    fontSize: FONTS.sizes.xs - 1,
     color: COLORS.gray700,
     marginLeft: 4,
     fontWeight: '500',
   },
   productName: {
-    fontSize: FONTS.sizes.md,
+    fontSize: FONTS.sizes.sm,
     fontWeight: '600',
     color: COLORS.gray800,
     marginBottom: 2,
   },
   productSubtitle: {
-    fontSize: FONTS.sizes.xs,
+    fontSize: FONTS.sizes.xs - 1,
     color: COLORS.gray500,
     marginBottom: SPACING.sm,
   },
@@ -370,7 +411,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   productPrice: {
-    fontSize: FONTS.sizes.lg,
+    fontSize: FONTS.sizes.md,
     fontWeight: '700',
     color: COLORS.valentinePink,
   },

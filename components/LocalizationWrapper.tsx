@@ -142,7 +142,7 @@ const translations = {
         emotional: 'Эмоциональный',
         practical: 'Практичный',
         experience: 'Впечатление',
-        handmade: 'Handmade'
+        handmade: 'Ручная работа'
       },
       locations: {
         title: 'Местоположение',
@@ -150,6 +150,20 @@ const translations = {
         nearby: 'Рядом',
         delivery: 'Доставка'
       }
+    },
+    products: {
+      valentineRose: 'Букет роз на День святого Валентина',
+      valentineRoseSubtitle: 'Свежие розы с подарочной упаковкой',
+      heartChocolates: 'Шоколадные конфеты в форме сердца',
+      heartChocolatesSubtitle: 'Премиальный бельгийский шоколад',
+      teddyBear: 'Милый плюшевый мишка',
+      teddyBearSubtitle: 'Мягкий плюш с сердечком',
+      loveLetter: 'Набор для писем о любви',
+      loveLetterSubtitle: 'Роскошный набор бумаги с конвертами',
+      valentineCard: 'Открытка ко Дню святого Валентина',
+      valentineCardSubtitle: 'Ручная работа с посланием',
+      diamondPendant: 'Кулон с бриллиантом',
+      diamondPendantSubtitle: 'Стерлинговое серебро с подвеской в форме сердца'
     },
     tabs: {
       home: 'Главная',
