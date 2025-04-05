@@ -6,6 +6,9 @@ import { Provider } from 'react-redux';
 import { store } from '@/store';
 import { LocalizationWrapper } from '@/components/LocalizationWrapper';
 import * as SplashScreen from 'expo-splash-screen';
+import 'react-native-reanimated';
+import 'react-native-gesture-handler';
+import { Platform } from 'react-native';
 
 // Предотвращаем скрытие сплэш экрана
 SplashScreen.preventAutoHideAsync();
@@ -32,11 +35,36 @@ export default function RootLayout() {
   return (
     <Provider store={store}>
       <LocalizationWrapper>
-        <Stack screenOptions={{ headerShown: false }}>
+        <Stack 
+          screenOptions={{
+            headerShown: false,
+            animation: Platform.OS === 'android' ? 'fade_from_bottom' : 'default',
+            animationDuration: 400,
+            gestureEnabled: true,
+            presentation: 'transparentModal',
+            animationTypeForReplace: 'push',
+            gestureDirection: 'horizontal',
+          }}
+        >
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen 
+            name="(tabs)" 
+            options={{ 
+              headerShown: false, 
+              animation: 'fade', 
+              animationDuration: 200 
+            }} 
+          />
           <Stack.Screen name="valentine-promo" options={{ headerShown: false, gestureEnabled: false }} />
-          <Stack.Screen name="product-details" options={{ headerShown: false, presentation: 'modal' }} />
+          <Stack.Screen 
+            name="product-details" 
+            options={{ 
+              headerShown: false, 
+              presentation: 'modal',
+              animation: 'slide_from_bottom',
+              animationDuration: 400,
+            }} 
+          />
         </Stack>
         <StatusBar style="auto" />
       </LocalizationWrapper>

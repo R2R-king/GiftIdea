@@ -1,11 +1,31 @@
 import { Tabs } from 'expo-router';
-import { Chrome as Home, Gift, MessageSquare, User, ShoppingBag, Heart } from 'lucide-react-native';
+import { Home, Gift, User, ShoppingCart, Heart } from 'lucide-react-native';
 import { useAppLocalization } from '@/components/LocalizationWrapper';
 import { View, StyleSheet, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Animatable from 'react-native-animatable';
+import React from 'react';
 
 export default function TabLayout() {
   const { t } = useAppLocalization();
+
+  // Кастомная анимированная иконка для табов
+  const AnimatedTabIcon: React.FC<{
+    focused: boolean;
+    Icon: React.ElementType;
+    color: string;
+  }> = ({ focused, Icon, color }) => {
+    return (
+      <Animatable.View
+        animation={focused ? 'pulse' : undefined}
+        iterationCount={focused ? 'infinite' : 1}
+        duration={1500}
+        style={styles.iconContainer}
+      >
+        <Icon color={color} size={24} />
+      </Animatable.View>
+    );
+  };
 
   return (
     <Tabs
@@ -51,15 +71,14 @@ export default function TabLayout() {
         },
         headerShown: false,
         tabBarHideOnKeyboard: false,
-      }}>
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
           title: t('tabs.home'),
-          tabBarIcon: ({ color, size }) => (
-            <View style={styles.iconContainer}>
-              <Home size={size * 0.9} color={color} strokeWidth={2.2} />
-            </View>
+          tabBarIcon: ({ color, focused }) => (
+            <AnimatedTabIcon focused={focused} Icon={Home} color={color} />
           ),
         }}
       />
@@ -67,21 +86,8 @@ export default function TabLayout() {
         name="catalog"
         options={{
           title: t('tabs.shop'),
-          tabBarIcon: ({ color, size }) => (
-            <View style={styles.iconContainer}>
-              <Gift size={size * 0.9} color={color} strokeWidth={2.2} />
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="cart"
-        options={{
-          title: t('tabs.cart'),
-          tabBarIcon: ({ color, size }) => (
-            <View style={styles.iconContainer}>
-              <ShoppingBag size={size * 0.9} color={color} strokeWidth={2.2} />
-            </View>
+          tabBarIcon: ({ color, focused }) => (
+            <AnimatedTabIcon focused={focused} Icon={Gift} color={color} />
           ),
         }}
       />
@@ -89,10 +95,17 @@ export default function TabLayout() {
         name="favorites"
         options={{
           title: t('tabs.favorites'),
-          tabBarIcon: ({ color, size }) => (
-            <View style={styles.iconContainer}>
-              <Heart size={size * 0.9} color={color} strokeWidth={2.2} />
-            </View>
+          tabBarIcon: ({ color, focused }) => (
+            <AnimatedTabIcon focused={focused} Icon={Heart} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="cart"
+        options={{
+          title: t('tabs.cart'),
+          tabBarIcon: ({ color, focused }) => (
+            <AnimatedTabIcon focused={focused} Icon={ShoppingCart} color={color} />
           ),
         }}
       />
@@ -100,10 +113,8 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: t('tabs.profile'),
-          tabBarIcon: ({ color, size }) => (
-            <View style={styles.iconContainer}>
-              <User size={size * 0.9} color={color} strokeWidth={2.2} />
-            </View>
+          tabBarIcon: ({ color, focused }) => (
+            <AnimatedTabIcon focused={focused} Icon={User} color={color} />
           ),
         }}
       />

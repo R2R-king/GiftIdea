@@ -27,13 +27,13 @@ import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 60) / 2;
 
-// Иконки категорий остаются неизменными для всех языков
+// Иконки категорий из интернета
 const categoryIcons = {
-  all: '🎁',
-  flowers: '💐',
-  chocolates: '🍫',
-  jewellery: '💍',
-  cosmetics: '💄',
+  all: 'https://cdn-icons-png.flaticon.com/128/3500/3500833.png',
+  flowers: 'https://cdn-icons-png.flaticon.com/128/2971/2971749.png',
+  chocolates: 'https://cdn-icons-png.flaticon.com/128/2413/2413384.png',
+  jewellery: 'https://cdn-icons-png.flaticon.com/128/2933/2933069.png',
+  cosmetics: 'https://cdn-icons-png.flaticon.com/128/2553/2553651.png',
 };
 
 // Популярные продукты
@@ -327,7 +327,10 @@ export default function FeedScreen() {
                 onPress={() => setSelectedCategory(category.id)}
                 activeOpacity={0.7}
               >
-                <Text style={styles.categoryIcon}>{category.icon}</Text>
+                <Image 
+                  source={{ uri: category.icon }} 
+                  style={styles.categoryIcon} 
+                />
                 <Text
                   style={[
                     styles.categoryText,
@@ -585,7 +588,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF0844',
   },
   categoryIcon: {
-    fontSize: 18,
+    width: 24,
+    height: 24,
     marginRight: 8,
   },
   categoryText: {
