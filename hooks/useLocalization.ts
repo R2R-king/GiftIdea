@@ -26,7 +26,7 @@ const getTranslation = (obj: any, path: string): string => {
 
 // Хук для использования локализации
 export const useLocalization = () => {
-  const [locale, setLocaleState] = useState<Language>('en');
+  const [locale, setLocaleState] = useState<Language>('ru');
   const [initialized, setInitialized] = useState(false);
   
   // Загрузка языка при инициализации
