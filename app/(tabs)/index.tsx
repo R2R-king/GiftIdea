@@ -29,11 +29,11 @@ const CARD_WIDTH = (width - 60) / 2;
 
 // Иконки категорий из интернета
 const categoryIcons = {
-  all: 'https://cdn-icons-png.flaticon.com/128/3500/3500833.png',
-  flowers: 'https://cdn-icons-png.flaticon.com/128/2971/2971749.png',
-  chocolates: 'https://cdn-icons-png.flaticon.com/128/2413/2413384.png',
-  jewellery: 'https://cdn-icons-png.flaticon.com/128/2933/2933069.png',
-  cosmetics: 'https://cdn-icons-png.flaticon.com/128/2553/2553651.png',
+  all: 'https://cdn-icons-png.flaticon.com/128/4474/4474132.png',
+  flowers: 'https://cdn-icons-png.flaticon.com/128/2518/2518224.png',
+  chocolates: 'https://cdn-icons-png.flaticon.com/128/3361/3361005.png',
+  jewellery: 'https://cdn-icons-png.flaticon.com/128/7627/7627448.png',
+  cosmetics: 'https://cdn-icons-png.flaticon.com/128/10801/10801811.png',
 };
 
 // Популярные продукты
@@ -61,6 +61,62 @@ const popularProducts = [
     rating: 4.9,
     image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400',
     isFavorite: true,
+  },
+  {
+    id: '4',
+    name: 'Подарочный набор чая',
+    price: '2 490 ₽',
+    rating: 4.6,
+    image: 'https://images.unsplash.com/photo-1564890369478-c89ca6d9cde9?w=400',
+    isFavorite: false,
+  },
+  {
+    id: '5',
+    name: 'Ароматическая свеча',
+    price: '1 790 ₽',
+    rating: 4.8,
+    image: 'https://images.unsplash.com/photo-1603006905003-be475563bc59?w=400',
+    isFavorite: false,
+  },
+  {
+    id: '6',
+    name: 'Подушка с фото',
+    price: '2 190 ₽',
+    rating: 4.5,
+    image: 'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?w=400',
+    isFavorite: false,
+  },
+  {
+    id: '7',
+    name: 'Браслет с шармами',
+    price: '3 290 ₽',
+    rating: 4.7,
+    image: 'https://images.unsplash.com/photo-1601121141461-9d6647bca1ed?w=400',
+    isFavorite: false,
+  },
+  {
+    id: '8',
+    name: 'Набор косметики',
+    price: '4 990 ₽',
+    rating: 4.9,
+    image: 'https://images.unsplash.com/photo-1612817288484-6f916006741a?w=400',
+    isFavorite: false,
+  },
+  {
+    id: '9',
+    name: 'Мягкая игрушка',
+    price: '1 490 ₽',
+    rating: 4.6,
+    image: 'https://images.unsplash.com/photo-1563170261-90260910461d?w=400',
+    isFavorite: false,
+  },
+  {
+    id: '10',
+    name: 'Подарочный набор вина',
+    price: '5 990 ₽',
+    rating: 4.8,
+    image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=400',
+    isFavorite: false,
   },
 ];
 
@@ -404,7 +460,10 @@ export default function FeedScreen() {
               <Text style={styles.ideasDescription}>
                 {t('feed.giftIdeasDesc')}
               </Text>
-              <TouchableOpacity style={styles.ideasButton}>
+              <TouchableOpacity 
+                style={styles.ideasButton}
+                onPress={() => router.push("/gift-assistant" as any)}
+              >
                 <Text style={styles.ideasButtonText}>{t('feed.startButton')}</Text>
                 <ArrowUpRight size={16} color="#FF0844" />
               </TouchableOpacity>
@@ -606,12 +665,12 @@ const styles = StyleSheet.create({
   productsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: 20,
+    justifyContent: 'space-between',
+    paddingHorizontal: 0,
   },
   productCard: {
-    width: CARD_WIDTH,
-    marginRight: 10,
-    marginBottom: 20,
+    width: '48%',
+    marginBottom: 16,
     borderRadius: 15,
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',

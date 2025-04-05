@@ -73,21 +73,7 @@ export default function FavoritesScreen() {
 
   // Функция для удаления товара из избранного
   const removeFromFavorites = (id: string) => {
-    Alert.alert(
-      t('favorites.removeTitle'),
-      t('favorites.removeConfirm'),
-      [
-        {
-          text: t('common.cancel'),
-          style: 'cancel',
-        },
-        {
-          text: t('common.remove'),
-          onPress: () => setFavorites(favorites.filter(item => item.id !== id)),
-          style: 'destructive',
-        },
-      ]
-    );
+    setFavorites(favorites.filter(item => item.id !== id));
   };
 
   // Функция для перехода к деталям товара
