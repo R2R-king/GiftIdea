@@ -26,7 +26,7 @@ export default function RootLayout() {
       await SplashScreen.hideAsync();
       
       // Перенаправляем на промо экран
-      router.replace('/valentine-promo');
+      router.replace('/gift-promo');
     };
 
     redirectToPromo();
@@ -55,7 +55,7 @@ export default function RootLayout() {
               animationDuration: 200 
             }} 
           />
-          <Stack.Screen name="valentine-promo" options={{ headerShown: false, gestureEnabled: false }} />
+          <Stack.Screen name="gift-promo" options={{ headerShown: false, gestureEnabled: false }} />
           <Stack.Screen 
             name="product-details" 
             options={{ 

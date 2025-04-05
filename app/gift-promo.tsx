@@ -13,29 +13,29 @@ import { Stack, router } from 'expo-router';
 
 const { width, height } = Dimensions.get('window');
 
-export default function ValentinePromoScreen() {
+export default function GiftPromoScreen() {
   const handleStartPlanning = () => {
     router.replace('/(tabs)');
   };
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#880E4F" />
+      <StatusBar barStyle="light-content" backgroundColor="#5D4037" />
       <Stack.Screen options={{ headerShown: false }} />
       
       <ImageBackground
-        source={{ uri: 'https://images.unsplash.com/photo-1547414368-ac947d00b91d?w=800' }}
+        source={{ uri: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=800' }}
         style={styles.background}
       >
         <LinearGradient
-          colors={['rgba(136, 14, 79, 0.5)', 'rgba(136, 14, 79, 0.9)', '#880E4F']}
+          colors={['rgba(93, 64, 55, 0.5)', 'rgba(93, 64, 55, 0.9)', '#5D4037']}
           style={styles.gradient}
         >
           <View style={styles.contentContainer}>
             <View style={styles.textContainer}>
-              <Text style={styles.createText}>Create an</Text>
-              <Text style={styles.unforgettableText}>Unforgettable</Text>
-              <Text style={styles.valentineText}>Valentine's Day!</Text>
+              <Text style={styles.createText}>Find the</Text>
+              <Text style={styles.unforgettableText}>Perfect</Text>
+              <Text style={styles.giftText}>Gift!</Text>
             </View>
             
             <TouchableOpacity
@@ -87,13 +87,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 5,
   },
-  valentineText: {
-    color: '#FF4081',
+  giftText: {
+    color: '#FFAB91',
     fontSize: 36,
     fontWeight: 'bold',
   },
   startButton: {
-    backgroundColor: '#FF4081',
+    backgroundColor: '#FFAB91',
     paddingVertical: 16,
     paddingHorizontal: 40,
     borderRadius: 30,
