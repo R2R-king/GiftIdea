@@ -29,6 +29,8 @@ import TabBarShadow from '@/components/TabBarShadow';
 import { StatusBar } from 'expo-status-bar';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
 import { useAppLocalization } from '@/components/LocalizationWrapper';
+import { useCart } from '@/hooks/useCart';
+import { useFavorites } from '@/hooks/useFavorites';
 import Animated, { 
   useAnimatedScrollHandler, 
   useAnimatedStyle, 
@@ -36,6 +38,7 @@ import Animated, {
   withSpring,
   runOnJS
 } from 'react-native-reanimated';
+import { CartItem } from '@/store/slices/cartSlice';
 
 const { width } = Dimensions.get('window');
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
@@ -50,51 +53,30 @@ const formatPrice = (price: number): string => {
   }
 };
 
-// Тип для элемента корзины
-interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  image: string;
-}
-
 export default function CartScreen() {
   const { t } = useAppLocalization();
   const scrollY = useSharedValue(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const scrollViewRef = React.useRef<ScrollView>(null);
   
-  // Мемоизированный список элементов корзины
-  const cartItems: CartItem[] = useMemo(() => [
-    {
-      id: '1',
-      name: 'Коробка шоколадных конфет в форме сердца',
-      price: 2250,
-      quantity: 1,
-      image: 'https://images.unsplash.com/photo-1549007994-cb8bed91e518?w=500',
-    },
-    {
-      id: '2',
-      name: 'Букет красных роз',
-      price: 3250,
-      quantity: 1,
-      image: 'https://images.unsplash.com/photo-1519378058457-4c29a0a2efac?w=500',
-    },
-    {
-      id: '3',
-      name: 'Поздравительная открытка',
-      price: 500,
-      quantity: 1,
-      image: 'https://images.unsplash.com/photo-1582450871972-ab5ca641643d?w=500',
-    },
-  ], []);
+  // Используем хук для работы с корзиной
+  const { 
+    cartItems, 
+    getTotalItems, 
+    getTotalPrice, 
+    removeItem, 
+    increaseQuantity, 
+    decreaseQuantity 
+  } = useCart();
+  
+  // Используем хук для работы с избранным
+  const { toggleFavorite, isFavorite } = useFavorites();
 
   // Мемоизированные расчеты для предотвращения лишних ререндеров
   const { subtotal, shipping, discount, total } = useMemo(() => {
-    const calculatedSubtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const calculatedShipping = 450;
-    const calculatedDiscount = 500;
+    const calculatedSubtotal = getTotalPrice();
+    const calculatedShipping = calculatedSubtotal > 0 ? 450 : 0;
+    const calculatedDiscount = calculatedSubtotal > 0 ? 500 : 0;
     const calculatedTotal = calculatedSubtotal + calculatedShipping - calculatedDiscount;
     
     return {
@@ -103,7 +85,7 @@ export default function CartScreen() {
       discount: calculatedDiscount,
       total: calculatedTotal
     };
-  }, [cartItems]);
+  }, [getTotalPrice]);
 
   // Исправлен обработчик прокрутки с дополнительными проверками
   const scrollHandler = useAnimatedScrollHandler((event) => {
@@ -182,6 +164,49 @@ export default function CartScreen() {
     }
   }, []);
 
+  // Функция для удаления товара из корзины с подтверждением
+  const handleRemoveItem = useCallback((itemId: string) => {
+    try {
+      // Показать подтверждение перед удалением
+      Alert.alert(
+        "Удаление товара",
+        "Вы уверены, что хотите удалить этот товар из корзины?",
+        [
+          {
+            text: "Отмена",
+            style: "cancel"
+          },
+          { 
+            text: "Удалить", 
+            onPress: () => {
+              removeItem(itemId);
+            },
+            style: "destructive"
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('Ошибка при удалении товара:', error);
+    }
+  }, [removeItem]);
+
+  // Функция для добавления/удаления из избранного
+  const handleToggleFavorite = useCallback((item: CartItem) => {
+    try {
+      toggleFavorite({
+        id: item.id,
+        name: item.name,
+        subtitle: item.subtitle || '',
+        price: formatPrice(item.price),
+        image: item.image,
+        rating: 5,
+        location: 'delivery'
+      });
+    } catch (error) {
+      console.error('Ошибка при добавлении в избранное:', error);
+    }
+  }, [toggleFavorite]);
+
   // Рендер элемента корзины с обработкой ошибок
   const renderCartItem = useCallback(({ item }: { item: CartItem }) => {
     return (
@@ -197,20 +222,36 @@ export default function CartScreen() {
           
           <View style={styles.itemActions}>
             <View style={styles.quantityContainer}>
-              <TouchableOpacity style={styles.quantityButton}>
+              <TouchableOpacity 
+                style={styles.quantityButton}
+                onPress={() => decreaseQuantity(item.id)}
+              >
                 <Text style={styles.quantityButtonText}>-</Text>
               </TouchableOpacity>
               <Text style={styles.quantityText}>{item.quantity}</Text>
-              <TouchableOpacity style={styles.quantityButton}>
+              <TouchableOpacity 
+                style={styles.quantityButton}
+                onPress={() => increaseQuantity(item.id)}
+              >
                 <Text style={styles.quantityButtonText}>+</Text>
               </TouchableOpacity>
             </View>
             
             <View style={styles.actionButtons}>
-              <TouchableOpacity style={styles.saveButton}>
-                <Heart size={18} color={COLORS.valentinePink} />
+              <TouchableOpacity 
+                style={styles.saveButton}
+                onPress={() => handleToggleFavorite(item)}
+              >
+                <Heart 
+                  size={18} 
+                  color={COLORS.valentinePink} 
+                  fill={isFavorite(item.id) ? COLORS.valentinePink : 'transparent'}
+                />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.removeButton}>
+              <TouchableOpacity 
+                style={styles.removeButton}
+                onPress={() => handleRemoveItem(item.id)}
+              >
                 <Trash2 size={18} color={COLORS.gray600} />
               </TouchableOpacity>
             </View>
@@ -218,7 +259,24 @@ export default function CartScreen() {
         </View>
       </View>
     );
-  }, []);
+  }, [decreaseQuantity, increaseQuantity, handleRemoveItem, handleToggleFavorite, isFavorite]);
+
+  // Отображаем пустое состояние корзины, если нет товаров
+  const renderEmptyCart = useCallback(() => {
+    return (
+      <View style={styles.emptyCartContainer}>
+        <ShoppingBag size={80} color={COLORS.gray300} />
+        <Text style={styles.emptyCartTitle}>{t('cart.emptyCart')}</Text>
+        <Text style={styles.emptyCartDescription}>{t('cart.emptyCartDesc')}</Text>
+        <TouchableOpacity 
+          style={styles.browseButton}
+          onPress={navigateToCatalog}
+        >
+          <Text style={styles.browseButtonText}>{t('favorites.browse')}</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }, [t, navigateToCatalog]);
 
   return (
     <SafeAreaView style={styles.safeAreaContainer}>
@@ -242,7 +300,7 @@ export default function CartScreen() {
         >
           <Text style={styles.headerTitle}>{t('cart.title')}</Text>
           <Text style={styles.headerSubtitle}>
-            {getItemsText(cartItems.length)}
+            {getItemsText(getTotalItems())}
           </Text>
         </LinearGradient>
 
@@ -253,74 +311,80 @@ export default function CartScreen() {
           onScroll={scrollHandler}
           scrollEventThrottle={16}
         >
-          {/* Элементы корзины */}
-          <View style={styles.cartItemsContainer}>
-            {cartItems.map(item => renderCartItem({ item }))}
-          </View>
+          {/* Элементы корзины или пустое состояние */}
+          {cartItems.length > 0 ? (
+            <>
+              <View style={styles.cartItemsContainer}>
+                {cartItems.map(item => renderCartItem({ item }))}
+              </View>
 
-          {/* Доставка и итоги */}
-          <View style={styles.cartSummarySection}>
-            <View style={styles.deliverySection}>
-              <Text style={styles.sectionTitle}>{t('cart.shippingOptionsTitle')}</Text>
-              
-              <TouchableOpacity style={styles.deliveryOption}>
-                <View style={[styles.deliveryIconContainer, { backgroundColor: COLORS.valentineLightPink }]}>
-                  <Truck size={20} color={COLORS.valentinePink} />
+              {/* Доставка и итоги только если есть товары */}
+              <View style={styles.cartSummarySection}>
+                <View style={styles.deliverySection}>
+                  <Text style={styles.sectionTitle}>{t('cart.shippingOptionsTitle')}</Text>
+                  
+                  <TouchableOpacity style={styles.deliveryOption}>
+                    <View style={[styles.deliveryIconContainer, { backgroundColor: COLORS.valentineLightPink }]}>
+                      <Truck size={20} color={COLORS.valentinePink} />
+                    </View>
+                    <View style={styles.deliveryDetails}>
+                      <Text style={styles.deliveryTitle}>{t('cart.standardDelivery')}</Text>
+                      <Text style={styles.deliveryDate}>14 - 16 февраля</Text>
+                    </View>
+                    <Text style={styles.deliveryPrice}>{formatPrice(450)}</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity style={[styles.deliveryOption, styles.selectedDelivery]}>
+                    <View style={[styles.deliveryIconContainer, { backgroundColor: COLORS.valentineLightPink }]}>
+                      <CalendarClock size={20} color={COLORS.valentinePink} />
+                    </View>
+                    <View style={styles.deliveryDetails}>
+                      <Text style={styles.deliveryTitle}>{t('cart.expressDelivery')}</Text>
+                      <Text style={styles.deliveryDate}>13 февраля</Text>
+                    </View>
+                    <Text style={styles.deliveryPrice}>{formatPrice(900)}</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity style={styles.deliveryOption}>
+                    <View style={[styles.deliveryIconContainer, { backgroundColor: COLORS.valentineLightPink }]}>
+                      <Package size={20} color={COLORS.valentinePink} />
+                    </View>
+                    <View style={styles.deliveryDetails}>
+                      <Text style={styles.deliveryTitle}>{t('cart.pickupDelivery')}</Text>
+                      <Text style={styles.deliveryDate}>{t('cart.today')}</Text>
+                    </View>
+                    <Text style={styles.deliveryPrice}>{t('cart.free')}</Text>
+                  </TouchableOpacity>
                 </View>
-                <View style={styles.deliveryDetails}>
-                  <Text style={styles.deliveryTitle}>{t('cart.standardDelivery')}</Text>
-                  <Text style={styles.deliveryDate}>14 - 16 февраля</Text>
-                </View>
-                <Text style={styles.deliveryPrice}>{formatPrice(450)}</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity style={[styles.deliveryOption, styles.selectedDelivery]}>
-                <View style={[styles.deliveryIconContainer, { backgroundColor: COLORS.valentineLightPink }]}>
-                  <CalendarClock size={20} color={COLORS.valentinePink} />
-                </View>
-                <View style={styles.deliveryDetails}>
-                  <Text style={styles.deliveryTitle}>{t('cart.expressDelivery')}</Text>
-                  <Text style={styles.deliveryDate}>13 февраля</Text>
-                </View>
-                <Text style={styles.deliveryPrice}>{formatPrice(900)}</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.deliveryOption}>
-                <View style={[styles.deliveryIconContainer, { backgroundColor: COLORS.valentineLightPink }]}>
-                  <Package size={20} color={COLORS.valentinePink} />
-                </View>
-                <View style={styles.deliveryDetails}>
-                  <Text style={styles.deliveryTitle}>{t('cart.pickupDelivery')}</Text>
-                  <Text style={styles.deliveryDate}>{t('cart.today')}</Text>
-                </View>
-                <Text style={styles.deliveryPrice}>{t('cart.free')}</Text>
-              </TouchableOpacity>
-            </View>
 
-            <View style={styles.cartTotals}>
-              <Text style={styles.sectionTitle}>{t('cart.orderSummaryTitle')}</Text>
-              
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>{t('cart.subtotalLabel')}</Text>
-                <Text style={styles.summaryValue}>{formatPrice(subtotal)}</Text>
+                <View style={styles.cartTotals}>
+                  <Text style={styles.sectionTitle}>{t('cart.orderSummaryTitle')}</Text>
+                  
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>{t('cart.subtotalLabel')}</Text>
+                    <Text style={styles.summaryValue}>{formatPrice(subtotal)}</Text>
+                  </View>
+                  
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>{t('cart.shippingLabel')}</Text>
+                    <Text style={styles.summaryValue}>{formatPrice(shipping)}</Text>
+                  </View>
+                  
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>{t('cart.discountLabel')}</Text>
+                    <Text style={[styles.summaryValue, { color: COLORS.valentinePink }]}>-{formatPrice(discount)}</Text>
+                  </View>
+                  
+                  <View style={[styles.summaryRow, styles.totalRow]}>
+                    <Text style={styles.totalLabel}>{t('cart.totalLabel')}</Text>
+                    <Text style={styles.totalValue}>{formatPrice(total)}</Text>
+                  </View>
+                </View>
               </View>
-              
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>{t('cart.shippingLabel')}</Text>
-                <Text style={styles.summaryValue}>{formatPrice(shipping)}</Text>
-              </View>
-              
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>{t('cart.discountLabel')}</Text>
-                <Text style={[styles.summaryValue, { color: COLORS.valentinePink }]}>-{formatPrice(discount)}</Text>
-              </View>
-              
-              <View style={[styles.summaryRow, styles.totalRow]}>
-                <Text style={styles.totalLabel}>{t('cart.totalLabel')}</Text>
-                <Text style={styles.totalValue}>{formatPrice(total)}</Text>
-              </View>
-            </View>
-          </View>
+            </>
+          ) : (
+            renderEmptyCart()
+          )}
         </AnimatedScrollView>
 
         {/* Кнопка прокрутки вверх */}
@@ -330,24 +394,26 @@ export default function CartScreen() {
           </TouchableOpacity>
         </Animated.View>
 
-        {/* Кнопки внизу экрана */}
-        <View style={styles.bottomButtonsContainer}>
-          <TouchableOpacity 
-            style={styles.backToShoppingButton}
-            onPress={navigateToCatalog}
-          >
-            <ChevronLeft size={20} color={COLORS.valentinePink} />
-            <Text style={styles.backToShoppingText}>{t('cart.backToShopping')}</Text>
-          </TouchableOpacity>
+        {/* Кнопки внизу экрана - показываем только если есть товары */}
+        {cartItems.length > 0 && (
+          <View style={styles.bottomButtonsContainer}>
+            <TouchableOpacity 
+              style={styles.backToShoppingButton}
+              onPress={navigateToCatalog}
+            >
+              <ChevronLeft size={20} color={COLORS.valentinePink} />
+              <Text style={styles.backToShoppingText}>{t('cart.backToShopping')}</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.checkoutButton}
-            onPress={handleCheckout}
-          >
-            <CreditCard size={20} color="#FFFFFF" />
-            <Text style={styles.checkoutButtonText}>{t('cart.proceedToCheckout')}</Text>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity 
+              style={styles.checkoutButton}
+              onPress={handleCheckout}
+            >
+              <CreditCard size={20} color="#FFFFFF" />
+              <Text style={styles.checkoutButtonText}>{t('cart.proceedToCheckout')}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <TabBarShadow />
       </View>
@@ -635,5 +701,37 @@ const styles = StyleSheet.create({
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  emptyCartContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: SPACING.lg,
+    marginTop: 100,
+  },
+  emptyCartTitle: {
+    fontSize: FONTS.sizes.xl,
+    fontWeight: '600',
+    color: COLORS.gray800,
+    marginTop: SPACING.lg,
+    marginBottom: SPACING.sm,
+  },
+  emptyCartDescription: {
+    fontSize: FONTS.sizes.md,
+    color: COLORS.gray600,
+    textAlign: 'center',
+    marginBottom: SPACING.xl,
+  },
+  browseButton: {
+    backgroundColor: COLORS.valentinePink,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.xl,
+    borderRadius: RADIUS.lg,
+    ...SHADOWS.medium,
+  },
+  browseButtonText: {
+    color: COLORS.white,
+    fontSize: FONTS.sizes.md,
+    fontWeight: '600',
   },
 }); 

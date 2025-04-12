@@ -9,6 +9,7 @@ import {
   Dimensions,
   StatusBar,
   Platform,
+  Alert,
 } from 'react-native';
 import { Heart, ShoppingBag, MapPin, Star } from 'lucide-react-native';
 import { useAppLocalization } from '@/components/LocalizationWrapper';
@@ -18,6 +19,7 @@ import Filters from '@/components/Filters';
 import { router } from 'expo-router';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useCart } from '@/hooks/useCart';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - SPACING.lg * 3) / 2;
@@ -39,6 +41,7 @@ interface Product {
 export default function CatalogScreen() {
   const { t, localizedData } = useAppLocalization();
   const { favoriteItems, toggleFavorite } = useFavorites();
+  const { addItem } = useCart();
   const [activeFilters, setActiveFilters] = useState({
     occasion: '',
     budget: '',
@@ -96,6 +99,37 @@ export default function CatalogScreen() {
     });
   };
 
+  // Функция для добавления товара в корзину
+  const handleAddToCart = (item: Product, event: any) => {
+    // Останавливаем всплытие события, чтобы не переходить на страницу деталей
+    event.stopPropagation();
+    
+    try {
+      // Преобразование цены из строки в число
+      const numericPrice = parseFloat(item.price.replace(/\s+/g, '').replace('₽', '').replace(',', '.'));
+      
+      if (isNaN(numericPrice)) {
+        console.error('Не удалось преобразовать цену в число:', item.price);
+        return;
+      }
+      
+      // Добавляем товар в корзину
+      addItem({
+        id: item.id,
+        name: item.name,
+        price: numericPrice,
+        quantity: 1,
+        image: item.image,
+        subtitle: item.subtitle
+      });
+      
+      // Показать всплывающее сообщение об успешном добавлении
+      Alert.alert('Товар добавлен в корзину', '', [{ text: 'OK' }], { cancelable: true });
+    } catch (error) {
+      console.error('Ошибка при добавлении в корзину:', error);
+    }
+  };
+
   const renderProduct = ({ item, index }: { item: Product; index: number }) => {
     // Determine if the item should be rendered on the left or right
     const isOdd = index % 2 === 1;
@@ -144,7 +178,10 @@ export default function CatalogScreen() {
           
           <View style={styles.productFooter}>
             <Text style={styles.productPrice}>{item.price}</Text>
-            <TouchableOpacity style={styles.addButton}>
+            <TouchableOpacity 
+              style={styles.addButton}
+              onPress={(event) => handleAddToCart(item, event)}
+            >
               <ShoppingBag size={16} color={COLORS.white} />
             </TouchableOpacity>
           </View>

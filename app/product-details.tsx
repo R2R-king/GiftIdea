@@ -9,12 +9,14 @@ import {
   ScrollView,
   Dimensions,
   StatusBar,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronLeft, Heart, ShoppingBag } from 'lucide-react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useAppLocalization } from '@/components/LocalizationWrapper';
+import { useCart } from '@/hooks/useCart';
 
 const { width, height } = Dimensions.get('window');
 
@@ -29,6 +31,7 @@ export default function ProductDetailScreen() {
   const { productId } = useLocalSearchParams();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { localizedData } = useAppLocalization();
+  const { addItem, isInCart } = useCart();
   const [selectedVolume, setSelectedVolume] = useState('150 мл');
   const [price, setPrice] = useState('3 800 ₽');
   
@@ -53,6 +56,41 @@ export default function ProductDetailScreen() {
     if (option) {
       setPrice(option.price);
     }
+  };
+
+  // Функция для добавления товара в корзину
+  const handleAddToCart = () => {
+    try {
+      // Преобразование цены из строки в число
+      const numericPrice = parseFloat(price.replace(/\s+/g, '').replace('₽', '').replace(',', '.'));
+      
+      if (isNaN(numericPrice)) {
+        console.error('Не удалось преобразовать цену в число:', price);
+        return;
+      }
+      
+      // Добавляем товар в корзину
+      addItem({
+        id: product.id,
+        name: product.name,
+        price: numericPrice,
+        quantity: 1,
+        image: product.image,
+        subtitle: product.subtitle
+      });
+      
+      // Показать всплывающее сообщение об успехе
+      Alert.alert('Товар добавлен в корзину', '', [{ text: 'OK' }], { cancelable: true });
+    } catch (error) {
+      console.error('Ошибка при добавлении в корзину:', error);
+    }
+  };
+  
+  // Функция для покупки сейчас (добавляем в корзину и переходим к оформлению)
+  const handleBuyNow = () => {
+    handleAddToCart();
+    // Переходим на страницу корзины
+    router.push('/(tabs)/cart');
   };
 
   return (
@@ -193,14 +231,10 @@ export default function ProductDetailScreen() {
       {/* Фиксированные кнопки действий внизу экрана */}
       <View style={styles.fixedActionButtonsContainer}>
         <View style={styles.actionButtonsWrapper}>
-          <TouchableOpacity style={styles.addToCartButton}>
-            <View style={styles.addToCartContent}>
-              <ShoppingBag size={18} color="#1E293B" />
-              <Text style={styles.addToCartText}>В корзину</Text>
-            </View>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.buyNowButton}>
+          <TouchableOpacity 
+            style={styles.buyNowButton}
+            onPress={handleBuyNow}
+          >
             <Text style={styles.buyNowText}>Купить сейчас</Text>
           </TouchableOpacity>
         </View>
@@ -400,27 +434,6 @@ const styles = StyleSheet.create({
   actionButtonsWrapper: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-  },
-  addToCartButton: {
-    flex: 1,
-    height: 56,
-    borderRadius: 28,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-    backgroundColor: '#FFFFFF',
-  },
-  addToCartContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  addToCartText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1E293B',
-    marginLeft: 8,
   },
   buyNowButton: {
     flex: 1,
