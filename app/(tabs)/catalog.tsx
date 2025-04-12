@@ -37,7 +37,7 @@ interface Product {
 }
 
 export default function CatalogScreen() {
-  const { t } = useAppLocalization();
+  const { t, localizedData } = useAppLocalization();
   const { favoriteItems, toggleFavorite } = useFavorites();
   const [activeFilters, setActiveFilters] = useState({
     occasion: '',
@@ -47,87 +47,13 @@ export default function CatalogScreen() {
     searchQuery: ''
   });
 
-  // Исходный список товаров
-  const [products, setProducts] = useState<Product[]>([
-    {
-      id: '1',
-      name: 'Valentine\'s Rose Bouquet',
-      subtitle: 'Fresh roses with gift wrap',
-      price: '$49.99',
-      image: 'https://images.unsplash.com/photo-1582555172866-f73bb12a2ab3?w=300',
-      occasion: 'valentine',
-      budget: 'expensive',
-      type: 'emotional',
-      location: 'delivery',
-      rating: 4.8,
-      isFavorite: true
-    },
-    {
-      id: '2',
-      name: 'Heart Shaped Chocolates',
-      subtitle: 'Premium Belgian chocolate',
-      price: '$24.99',
-      image: 'https://images.unsplash.com/photo-1582394785765-717d6a5e1c21?w=300',
-      occasion: 'valentine',
-      budget: 'medium',
-      type: 'emotional',
-      location: 'nearby',
-      rating: 4.5,
+  // Исходный список товаров из локализованных данных
+  const [products, setProducts] = useState<Product[]>(() => 
+    localizedData.products.map(product => ({
+      ...product,
       isFavorite: false
-    },
-    {
-      id: '3',
-      name: 'Cute Teddy Bear',
-      subtitle: 'Soft plush with heart',
-      price: '$19.99',
-      image: 'https://images.unsplash.com/photo-1605980625600-88c7a85c31cd?w=300',
-      occasion: 'valentine',
-      budget: 'cheap',
-      type: 'emotional',
-      location: 'nearby',
-      rating: 4.2,
-      isFavorite: false
-    },
-    {
-      id: '4',
-      name: 'Love Letter Stationery',
-      subtitle: 'Luxury paper set with envelopes',
-      price: '$14.99',
-      image: 'https://images.unsplash.com/photo-1567011355042-42ce535e6a82?w=300',
-      occasion: 'valentine',
-      budget: 'cheap',
-      type: 'handmade',
-      location: 'delivery',
-      rating: 4.3,
-      isFavorite: false
-    },
-    {
-      id: '5',
-      name: 'Valentine\'s Day Card',
-      subtitle: 'Handcrafted with message',
-      price: '$5.99',
-      image: 'https://images.unsplash.com/photo-1549048144-9d2a7495ef3e?w=300',
-      occasion: 'valentine',
-      budget: 'cheap',
-      type: 'handmade',
-      location: 'nearby',
-      rating: 4.0,
-      isFavorite: true
-    },
-    {
-      id: '6',
-      name: 'Diamond Pendant Necklace',
-      subtitle: 'Sterling silver with heart charm',
-      price: '$129.99',
-      image: 'https://images.unsplash.com/photo-1588444650733-d76f8a408aae?w=300',
-      occasion: 'valentine',
-      budget: 'expensive',
-      type: 'emotional',
-      location: 'delivery',
-      rating: 4.9,
-      isFavorite: false
-    }
-  ]);
+    }))
+  );
 
   // Update local product state to match favorites in Redux
   useEffect(() => {

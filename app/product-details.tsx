@@ -14,75 +14,28 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronLeft, Heart, ShoppingBag } from 'lucide-react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useAppLocalization } from '@/components/LocalizationWrapper';
 
-const { width } = Dimensions.get('window');
-
-// Sample products data (in a real app, this would come from an API or context)
-const sampleProducts = [
-  {
-    id: '1',
-    name: 'Valentine\'s Rose Bouquet',
-    subtitle: 'Fresh roses with gift wrap',
-    price: '$49.99',
-    image: 'https://images.unsplash.com/photo-1582555172866-f73bb12a2ab3?w=800',
-    rating: 4.8,
-    location: 'delivery'
-  },
-  {
-    id: '2',
-    name: 'Heart Shaped Chocolates',
-    subtitle: 'Premium Belgian chocolate',
-    price: '$24.99',
-    image: 'https://images.unsplash.com/photo-1582394785765-717d6a5e1c21?w=800',
-    rating: 4.5,
-    location: 'nearby'
-  },
-  {
-    id: '3',
-    name: 'Cute Teddy Bear',
-    subtitle: 'Soft plush with heart',
-    price: '$19.99',
-    image: 'https://images.unsplash.com/photo-1605980625600-88c7a85c31cd?w=800',
-    rating: 4.2,
-    location: 'nearby'
-  },
-  {
-    id: '4',
-    name: 'Love Letter Stationery',
-    subtitle: 'Luxury paper set with envelopes',
-    price: '$14.99',
-    image: 'https://images.unsplash.com/photo-1567011355042-42ce535e6a82?w=800',
-    rating: 4.3,
-    location: 'delivery'
-  },
-  {
-    id: 'perfume-1',
-    name: 'Perfume',
-    subtitle: 'Scents of Love',
-    price: '$50',
-    image: 'https://images.unsplash.com/photo-1615354065567-5580e55f66d5?w=800',
-    rating: 4.8,
-    location: 'delivery'
-  }
-];
+const { width, height } = Dimensions.get('window');
 
 // Варианты объёма парфюма
 const volumeOptions = [
-  { value: '50 ml', price: '$40' },
-  { value: '100 ml', price: '$45' },
-  { value: '150 ml', price: '$50' },
+  { value: '50 мл', price: '3 000 ₽' },
+  { value: '100 мл', price: '3 400 ₽' },
+  { value: '150 мл', price: '3 800 ₽' },
 ];
 
 export default function ProductDetailScreen() {
   const { productId } = useLocalSearchParams();
   const { isFavorite, toggleFavorite } = useFavorites();
-  const [selectedVolume, setSelectedVolume] = useState('150 ml');
-  const [price, setPrice] = useState('$50');
+  const { localizedData } = useAppLocalization();
+  const [selectedVolume, setSelectedVolume] = useState('150 мл');
+  const [price, setPrice] = useState('3 800 ₽');
   
-  // Find the product based on ID
-  const product = sampleProducts.find(p => p.id === productId) || sampleProducts[4]; // Default to perfume if not found
+  // Найти продукт по ID из локализованных данных
+  const product = localizedData.products.find(p => p.id === productId) || localizedData.products[0];
   
-  // Update price based on product
+  // Обновить цену при изменении продукта
   useEffect(() => {
     if (product) {
       setPrice(product.price);
@@ -104,23 +57,30 @@ export default function ProductDetailScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
       <Stack.Screen options={{ headerShown: false }} />
       
-      {/* Розовый фон */}
-      <View style={styles.pinkBackground} />
-
-      {/* Верхняя панель с кнопками */}
+      {/* Статичный фоновый градиент - не скроллится */}
+      <View style={styles.backgroundContainer}>
+        <LinearGradient
+          colors={['#FFD1DC', '#FFE6EB']}
+          style={styles.backgroundGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+        />
+      </View>
+      
+      {/* Фиксированная верхняя панель */}
       <View style={styles.header}>
         <TouchableOpacity 
-          style={styles.backButton}
+          style={styles.headerButton}
           onPress={() => router.back()}
         >
           <ChevronLeft size={24} color="#1E293B" />
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={styles.favoriteButton}
+          style={styles.headerButton}
           onPress={handleToggleFavorite}
         >
           <Heart 
@@ -130,13 +90,19 @@ export default function ProductDetailScreen() {
           />
         </TouchableOpacity>
       </View>
-
-      <ScrollView
+      
+      {/* Скроллящийся контент */}
+      <ScrollView 
+        style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        bounces={false}
+        contentContainerStyle={styles.scrollViewContent}
       >
-        {/* Изображение продукта */}
-        <View style={styles.imageContainer}>
+        {/* Верхний отступ для прозрачной навигации */}
+        <View style={styles.topSpacer} />
+        
+        {/* Область изображения продукта */}
+        <View style={styles.imageSection}>
           <Image
             source={{ uri: product.image }}
             style={styles.productImage}
@@ -163,61 +129,82 @@ export default function ProductDetailScreen() {
           <View style={[styles.petalDecoration, { top: '75%', left: '20%', transform: [{ rotate: '120deg' }] }]} />
           <View style={[styles.petalDecoration, { top: '60%', left: '75%', transform: [{ rotate: '210deg' }] }]} />
         </View>
-
-        {/* Информация о продукте */}
-        <View style={styles.productInfoCard}>
-          <View style={styles.productHeader}>
-            <View>
-              <Text style={styles.productCategory}>{product.subtitle}</Text>
-              <Text style={styles.productName}>{product.name}</Text>
-            </View>
-            <Text style={styles.productPrice}>{price}</Text>
-          </View>
-
-          <Text style={styles.productDescription}>
-            Elevate the romance with a timeless fragrance. A perfect gift to make your loved one feel special and cherished. Choose a scent that speaks to their unique personality.
-          </Text>
-
-          {/* Only show volume selector for perfume */}
-          {product.id === 'perfume-1' && (
-            <View style={styles.volumeSelector}>
-              {volumeOptions.map((option) => (
-                <TouchableOpacity
-                  key={option.value}
-                  style={[
-                    styles.volumeOption,
-                    selectedVolume === option.value && styles.selectedVolumeOption,
-                  ]}
-                  onPress={() => handleVolumeChange(option.value)}
-                >
-                  <Text
-                    style={[
-                      styles.volumeText,
-                      selectedVolume === option.value && styles.selectedVolumeText,
-                    ]}
-                  >
-                    {option.value}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-
-          {/* Кнопки действий */}
-          <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.addToCartButton}>
-              <View style={styles.addToCartContent}>
-                <ShoppingBag size={18} color="#1E293B" />
-                <Text style={styles.addToCartText}>Add to Cart</Text>
+        
+        {/* Блок с информацией о продукте */}
+        <View style={styles.infoCardContainer}>
+          <View style={styles.infoCard}>
+            {/* Заголовок и цена */}
+            <View style={styles.productHeader}>
+              <View>
+                <Text style={styles.productCategory}>{product.subtitle}</Text>
+                <Text style={styles.productName}>{product.name}</Text>
               </View>
-            </TouchableOpacity>
+              <Text style={styles.productPrice}>{price}</Text>
+            </View>
             
-            <TouchableOpacity style={styles.buyNowButton}>
-              <Text style={styles.buyNowText}>Buy now</Text>
-            </TouchableOpacity>
+            {/* Описание */}
+            <Text style={styles.productDescription}>
+              {product.description}
+            </Text>
+            
+            {/* Селектор объема (для парфюма) */}
+            {product.id === '5' && (
+              <View style={styles.volumeSelector}>
+                {volumeOptions.map((option) => (
+                  <TouchableOpacity
+                    key={option.value}
+                    style={[
+                      styles.volumeOption,
+                      selectedVolume === option.value && styles.selectedVolumeOption,
+                    ]}
+                    onPress={() => handleVolumeChange(option.value)}
+                  >
+                    <Text
+                      style={[
+                        styles.volumeText,
+                        selectedVolume === option.value && styles.selectedVolumeText,
+                      ]}
+                    >
+                      {option.value}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+            
+            {/* Характеристики продукта */}
+            {product.features && (
+              <View style={styles.featuresContainer}>
+                {product.features.map((feature, index) => (
+                  <View key={index} style={styles.featureItem}>
+                    <View style={styles.featureDot} />
+                    <Text style={styles.featureText}>{feature}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+            
+            {/* Добавляем пустое пространство внизу для кнопок */}
+            <View style={styles.bottomPadding} />
           </View>
         </View>
       </ScrollView>
+      
+      {/* Фиксированные кнопки действий внизу экрана */}
+      <View style={styles.fixedActionButtonsContainer}>
+        <View style={styles.actionButtonsWrapper}>
+          <TouchableOpacity style={styles.addToCartButton}>
+            <View style={styles.addToCartContent}>
+              <ShoppingBag size={18} color="#1E293B" />
+              <Text style={styles.addToCartText}>В корзину</Text>
+            </View>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.buyNowButton}>
+            <Text style={styles.buyNowText}>Купить сейчас</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
   );
 }
@@ -227,24 +214,31 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  pinkBackground: {
+  backgroundContainer: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: 500,
-    backgroundColor: '#FFD1DC',
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    height: height * 0.55, // 55% экрана
+    overflow: 'hidden',
+    zIndex: 0,
+  },
+  backgroundGradient: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
   },
   header: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 50 : 30,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'ios' ? 60 : 30,
     zIndex: 10,
   },
-  backButton: {
+  headerButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -257,32 +251,25 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  favoriteButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+  scrollView: {
+    flex: 1,
+    zIndex: 1,
+  },
+  scrollViewContent: {
+    paddingBottom: 90, // Добавляем отступ снизу для кнопок
+  },
+  topSpacer: {
+    height: Platform.OS === 'ios' ? 100 : 80,
+  },
+  imageSection: {
+    height: 320,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  scrollContent: {
-    paddingBottom: 30,
-  },
-  imageContainer: {
-    height: 400,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 20,
-    position: 'relative',
+    marginBottom: 20,
   },
   productImage: {
-    width: width * 0.7,
-    height: 350,
+    width: width * 0.8,
+    height: 280,
   },
   heartDecoration: {
     position: 'absolute',
@@ -301,18 +288,25 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF5E87',
     opacity: 0.3,
   },
-  productInfoCard: {
+  infoCardContainer: {
+    flex: 1,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    overflow: 'hidden',
+  },
+  infoCard: {
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     paddingHorizontal: 25,
     paddingTop: 30,
-    paddingBottom: 50,
+    paddingBottom: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: -5 },
+    shadowOpacity: 0.1,
     shadowRadius: 10,
-    elevation: 4,
+    elevation: 5,
+    minHeight: 400, // Уменьшаем минимальную высоту, так как кнопки теперь отдельно
   },
   productHeader: {
     flexDirection: 'row',
@@ -363,7 +357,47 @@ const styles = StyleSheet.create({
   selectedVolumeText: {
     color: '#FFFFFF',
   },
-  actionButtons: {
+  featuresContainer: {
+    marginBottom: 25,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  featureDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#FF0844',
+    marginRight: 8,
+  },
+  featureText: {
+    fontSize: 14,
+    color: '#64748B',
+  },
+  bottomPadding: {
+    height: 20, // Дополнительный отступ внизу контента
+  },
+  fixedActionButtonsContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: Platform.OS === 'ios' ? 30 : 20,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.05)',
+    zIndex: 99,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 10,
+  },
+  actionButtonsWrapper: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
@@ -376,6 +410,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
+    backgroundColor: '#FFFFFF',
   },
   addToCartContent: {
     flexDirection: 'row',

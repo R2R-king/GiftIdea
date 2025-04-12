@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as en from '../translations/en';
 import * as ru from '../translations/ru';
-import { mockEventsRu, mockPartnersRu } from '../data/mockDataRu';
-import { mockEvents, mockPartners } from '../data/mockData';
+import { mockEventsRu, mockPartnersRu, mockProductsRu } from '../data/mockDataRu';
+import { mockEvents, mockPartners, mockProducts } from '../data/mockData';
 
 // Доступные языки
 export type Language = 'en' | 'ru';
@@ -83,13 +83,15 @@ export const useLocalization = () => {
     if (locale === 'ru') {
       return {
         events: mockEventsRu,
-        partners: mockPartnersRu
+        partners: mockPartnersRu,
+        products: mockProductsRu
       };
     }
     
     return {
       events: mockEvents,
-      partners: mockPartners
+      partners: mockPartners,
+      products: mockProducts
     };
   };
   
