@@ -1,0 +1,10 @@
+com\giftidea\model\Product.class
+com\giftidea\repository\ProductRepository.class
+com\giftidea\controller\CartController.class
+com\giftidea\controller\ProductController.class
+com\giftidea\model\CartItem.class
+com\giftidea\GiftIdeaApplication.class
+com\giftidea\repository\CartItemRepository.class
+com\giftidea\service\ProductService.class
+com\giftidea\service\CartService.class
+com\giftidea\config\DataInitializer.class
