@@ -29,7 +29,13 @@ import TabBarShadow from '@/components/TabBarShadow';
 import { StatusBar } from 'expo-status-bar';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
 import { useAppLocalization } from '@/components/LocalizationWrapper';
-import Animated, { useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { 
+  useAnimatedScrollHandler, 
+  useAnimatedStyle, 
+  useSharedValue, 
+  withSpring,
+  runOnJS
+} from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
@@ -99,20 +105,23 @@ export default function CartScreen() {
     };
   }, [cartItems]);
 
-  // Обработчик прокрутки с защитой от ошибок
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      try {
-        scrollY.value = event.contentOffset.y;
-        if (event.contentOffset.y > 200) {
-          setShowScrollTop(true);
-        } else {
-          setShowScrollTop(false);
+  // Исправлен обработчик прокрутки с дополнительными проверками
+  const scrollHandler = useAnimatedScrollHandler((event) => {
+    try {
+      if (event && typeof event.contentOffset === 'object' && event.contentOffset !== null) {
+        const y = event.contentOffset.y;
+        if (typeof y === 'number' && !isNaN(y)) {
+          scrollY.value = y;
+          if (y > 200) {
+            runOnJS(setShowScrollTop)(true);
+          } else {
+            runOnJS(setShowScrollTop)(false);
+          }
         }
-      } catch (error) {
-        console.error('Ошибка в обработчике прокрутки:', error);
       }
-    },
+    } catch (error) {
+      console.error('Ошибка в обработчике прокрутки:', error);
+    }
   });
 
   // Безопасная обработка прокрутки вверх

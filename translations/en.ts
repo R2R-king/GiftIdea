@@ -71,7 +71,8 @@ const translations = {
     filter: 'Filter',
     sort: 'Sort',
     title: 'Gift Catalog',
-    subtitle: 'Find the perfect gift for any occasion'
+    subtitle: 'Find the perfect gift for any occasion',
+    noProducts: 'No products found'
   },
   chat: {
     header: 'AI Gift Assistant',
@@ -109,10 +110,35 @@ const translations = {
     manyItems: 'items'
   },
   filters: {
+    search_placeholder: 'Search...',
+    occasions: {
+      title: 'Occasions',
+      birthday: 'Birthday',
+      anniversary: 'Anniversary',
+      new_year: 'New Year',
+      valentine: 'Valentine\'s Day'
+    },
+    budgets: {
+      title: 'Budget',
+      cheap: 'Budget-friendly',
+      medium: 'Mid-range',
+      expensive: 'Premium'
+    },
+    types: {
+      title: 'Gift Type',
+      emotional: 'Emotional',
+      practical: 'Practical',
+      experience: 'Experience',
+      handmade: 'Handmade'
+    },
     locations: {
+      title: 'Location',
+      all: 'All locations',
       nearby: 'Nearby',
       delivery: 'Delivery'
-    }
+    },
+    clear: 'Clear All',
+    apply: 'Apply Filters'
   },
   common: {
     cancel: 'Cancel',

@@ -71,7 +71,8 @@ const translations = {
     filter: 'Фильтр',
     sort: 'Сортировка',
     title: 'Каталог подарков',
-    subtitle: 'Найдите идеальный подарок для любого случая'
+    subtitle: 'Найдите идеальный подарок для любого случая',
+    noProducts: 'Товары не найдены'
   },
   chat: {
     header: 'ИИ Ассистент по подаркам',
@@ -109,10 +110,35 @@ const translations = {
     manyItems: 'товаров'
   },
   filters: {
+    search_placeholder: 'Поиск...',
+    occasions: {
+      title: 'Повод',
+      birthday: 'День рождения',
+      anniversary: 'Годовщина',
+      new_year: 'Новый год',
+      valentine: 'День св. Валентина'
+    },
+    budgets: {
+      title: 'Бюджет',
+      cheap: 'Экономный',
+      medium: 'Средний',
+      expensive: 'Премиум'
+    },
+    types: {
+      title: 'Тип подарка',
+      emotional: 'Эмоциональный',
+      practical: 'Практичный',
+      experience: 'Впечатления',
+      handmade: 'Ручная работа'
+    },
     locations: {
+      title: 'Расположение',
+      all: 'Все места',
       nearby: 'Поблизости',
       delivery: 'Доставка'
-    }
+    },
+    clear: 'Очистить',
+    apply: 'Применить'
   },
   common: {
     cancel: 'Отмена',
