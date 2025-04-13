@@ -11,6 +11,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
   Alert,
+  Keyboard,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -102,9 +103,14 @@ export default function GiftAssistantScreen() {
         timestamp: new Date(),
       };
       
-      setMessages(prev => [...prev, newMessage]);
+      addMessage(newMessage);
       setIsTyping(false);
     }, 1000);
+  };
+
+  // Функция для безопасного добавления сообщения
+  const addMessage = (message: MessageType) => {
+    setMessages(prev => [...prev, message]);
   };
 
   // Stream messages from GigaChat API
@@ -145,7 +151,7 @@ export default function GiftAssistantScreen() {
             timestamp: new Date(),
           };
             
-          setMessages(prev => [...prev, newMessage]);
+          addMessage(newMessage);
           setStreamingMessage('');
           setIsTyping(false);
           setIsRetrying(false);
@@ -218,7 +224,7 @@ export default function GiftAssistantScreen() {
         timestamp: new Date(),
       };
       
-      setMessages(prev => [...prev, newMessage]);
+      addMessage(newMessage);
       setIsTyping(false);
       setIsRetrying(false);
     } catch (error) {
@@ -252,7 +258,7 @@ export default function GiftAssistantScreen() {
       timestamp: new Date(),
     };
     
-    setMessages(prev => [...prev, userMessage]);
+    addMessage(userMessage);
     
     // Clear input
     const messageToSend = inputText;
@@ -265,6 +271,22 @@ export default function GiftAssistantScreen() {
       sendMessageToGigaChat();
     }
   };
+
+  // Render all messages including streaming message if available
+  const allMessages = React.useMemo(() => {
+    const result = [...messages];
+    
+    if (streamingMessage) {
+      result.push({
+        id: 'streaming-' + Date.now(),
+        text: streamingMessage,
+        isUser: false,
+        timestamp: new Date(),
+      });
+    }
+    
+    return result;
+  }, [messages, streamingMessage]);
 
   const renderMessage = ({ item }: { item: MessageType }) => (
     <View
@@ -310,38 +332,23 @@ export default function GiftAssistantScreen() {
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoidView}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 20}
       >
         <View style={styles.chatContainer}>
           <FlatList
             ref={flatListRef}
-            data={messages}
+            data={allMessages}
             renderItem={renderMessage}
             keyExtractor={item => item.id}
-            contentContainerStyle={styles.messageList}
-            onContentSizeChange={() => 
-              flatListRef.current?.scrollToEnd({ animated: true })
-            }
+            contentContainerStyle={[
+              styles.messageList,
+              { flexGrow: 1, justifyContent: 'flex-start' }
+            ]}
+            showsVerticalScrollIndicator={true}
+            // Простой автоматический скролл при изменении данных
+            onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
+            // Нет другой настройки для скролла - только этот метод автоскролла
           />
-          
-          {/* Show streaming message if available */}
-          {streamingMessage && (
-            <View
-              style={[
-                styles.messageBubble,
-                styles.assistantBubble,
-              ]}
-            >
-              <View style={styles.assistantIconContainer}>
-                <Gift size={18} color="#FF0844" />
-              </View>
-              <View style={styles.assistantTextContainer}>
-                <Text style={styles.assistantMessageText}>
-                  {streamingMessage}
-                </Text>
-              </View>
-            </View>
-          )}
           
           {/* Показываем индикатор набора текста */}
           {isTyping && !streamingMessage && (
@@ -369,7 +376,9 @@ export default function GiftAssistantScreen() {
               value={inputText}
               onChangeText={setInputText}
               multiline
+              maxLength={500}
               editable={!isTyping}
+              placeholderTextColor="#999"
             />
             <TouchableOpacity
               style={[
@@ -532,5 +541,15 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: FONTS.sizes.sm,
     marginLeft: 4,
+  },
+  emptyChat: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING.xl,
+  },
+  emptyChatText: {
+    color: '#999',
+    fontSize: FONTS.sizes.md,
   },
 }); 

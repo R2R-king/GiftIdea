@@ -61,10 +61,13 @@ export const GiftAssistantScreen: React.FC = () => {
 
   const checkBackendConnection = async (): Promise<boolean> => {
     try {
+      console.log('Attempting to connect to backend at:', gigaChatService.getBackendUrl());
       const isAvailable = await gigaChatService.checkBackendStatus();
+      console.log('Backend connection result:', isAvailable);
       return isAvailable;
     } catch (error) {
       console.error('Error checking backend connection:', error);
+      console.error('Error details:', JSON.stringify(error));
       return false;
     }
   };

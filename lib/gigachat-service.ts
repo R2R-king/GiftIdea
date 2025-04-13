@@ -30,12 +30,85 @@ export type GigaChatResponse = {
 
 class GigaChatService {
   // Set the backend URL based on platform
-  private backendUrl = Platform.OS === 'web' 
-    ? 'http://localhost:4000' 
-    : 'http://172.20.10.9:4000'; // Updated with current IP address and port
+  private backendUrl: string;
+  private token: string | null = null;
   
   constructor() {
+    this.backendUrl = this.determineBackendUrl();
     console.log('GigaChat service initialized with backend URL:', this.backendUrl);
+    
+    // Запрос токена при инициализации сервиса
+    this.refreshToken().catch(err => {
+      console.warn('Failed to get initial token:', err);
+    });
+  }
+  
+  /**
+   * Determine the correct backend URL based on platform and environment
+   */
+  private determineBackendUrl(): string {
+    // Web platform handling
+    if (Platform.OS === 'web') {
+      // For web, use the same host but different port
+      const windowUrl = new URL(window.location.href);
+      const port = '4000'; // Hardcoded backend port
+      
+      return `${windowUrl.protocol}//${windowUrl.hostname}:${port}`;
+    }
+    
+    // For Android emulator
+    if (Platform.OS === 'android') {
+      return 'http://10.0.2.2:4000';  // Special IP for Android emulator to access host
+    }
+    
+    // For iOS or other devices
+    return 'http://172.20.10.9:4000';
+  }
+  
+  /**
+   * Get or refresh GigaChat API token
+   */
+  private async refreshToken(): Promise<string> {
+    try {
+      console.log('Requesting new token from backend');
+      
+      const response = await fetch(`${this.backendUrl}/api/gigachat/direct`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: 'Hello' }],
+          model: 'GigaChat'
+        }),
+        ...(Platform.OS === 'web' ? { mode: 'cors', credentials: 'omit' } : {})
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Token refresh error:', errorText);
+        throw new Error(`Token error (${response.status}): ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log('Token received successfully');
+      
+      // Используем прямой доступ - запрос не требует токена
+      return 'direct-access-authorized';
+    } catch (error) {
+      console.error('Failed to refresh token:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Get current token or refresh if needed
+   */
+  private async getToken(): Promise<string> {
+    if (!this.token) {
+      this.token = await this.refreshToken();
+    }
+    return this.token;
   }
   
   /**
@@ -45,16 +118,23 @@ class GigaChatService {
     try {
       console.log('Sending message to backend');
       
-      const chatResponse = await fetch(`${this.backendUrl}/api/gigachat/chat`, {
+      // Получаем токен перед запросом
+      const token = await this.getToken();
+      
+      const chatResponse = await fetch(`${this.backendUrl}/api/gigachat/direct`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           messages: messages,
+          model: 'GigaChat',
           temperature: 0.7,
           max_tokens: 1500,
         }),
+        // CORS options for web
+        ...(Platform.OS === 'web' ? { mode: 'cors', credentials: 'omit' } : {})
       });
       
       if (!chatResponse.ok) {
@@ -85,17 +165,24 @@ class GigaChatService {
     try {
       console.log('Requesting streaming response from backend');
       
-      // Create a connection to our backend streaming endpoint
-      const response = await fetch(`${this.backendUrl}/api/gigachat/stream`, {
+      // Получаем токен перед запросом
+      const token = await this.getToken();
+      
+      // Используем прямой endpoint без потоковой передачи
+      const response = await fetch(`${this.backendUrl}/api/gigachat/direct`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           messages: messages,
+          model: 'GigaChat',
           temperature: 0.7,
           max_tokens: 1500,
         }),
+        // CORS options for web
+        ...(Platform.OS === 'web' ? { mode: 'cors', credentials: 'omit' } : {})
       });
       
       if (!response.ok) {
@@ -104,42 +191,38 @@ class GigaChatService {
         throw new Error(`Backend stream error (${response.status}): ${errorText}`);
       }
       
-      // Get a reader from the response body
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error('Failed to get response reader');
-      }
+      // Обработка обычного ответа как потокового (имитация)
+      const responseData = await response.json();
       
-      const decoder = new TextDecoder();
-      let receivedText = '';
-      
-      // Read the stream chunk by chunk
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+      if (responseData.choices && responseData.choices.length > 0) {
+        const content = responseData.choices[0].message.content;
         
-        const chunk = decoder.decode(value, { stream: true });
-        // Check if the chunk is a data event from SSE
-        const chunkLines = chunk.split('\n\n');
+        // Симуляция потока - разбиваем текст на части
+        const chunkSize = 15; // Количество символов в части
+        let processed = 0;
         
-        for (const line of chunkLines) {
-          if (line.startsWith('data: ')) {
-            const data = line.substring(6);
-            // Ignore '[DONE]' marker which indicates end of stream
-            if (data !== '[DONE]') {
-              try {
-                onChunk(data);
-                receivedText += data;
-              } catch (e) {
-                console.error('Error processing chunk:', e);
-              }
-            }
+        const simulateChunk = () => {
+          if (processed < content.length) {
+            const end = Math.min(processed + chunkSize, content.length);
+            const chunk = content.substring(processed, end);
+            onChunk(chunk);
+            processed = end;
+            
+            // Имитируем задержку для реалистичной потоковой передачи
+            setTimeout(simulateChunk, 50);
+          } else {
+            console.log('Stream completed successfully');
+            onComplete();
           }
-        }
+        };
+        
+        // Запускаем симуляцию
+        simulateChunk();
+      } else {
+        // Если ответ не содержит сообщения
+        console.error('Invalid response format:', responseData);
+        onError(new Error('Invalid response format from backend'));
       }
-      
-      console.log('Stream completed successfully');
-      onComplete();
     } catch (error) {
       console.error('Error in stream message:', error);
       onError(error instanceof Error ? error : new Error(String(error)));
@@ -147,14 +230,41 @@ class GigaChatService {
   }
   
   /**
+   * Get the current backend URL (for debugging)
+   */
+  public getBackendUrl(): string {
+    return this.backendUrl;
+  }
+  
+  /**
    * Check backend connectivity
    */
   public async checkBackendStatus(): Promise<boolean> {
     try {
-      const response = await fetch(`${this.backendUrl}/api/status`);
-      return response.ok;
+      console.log('Checking backend connectivity at:', this.backendUrl);
+      
+      const response = await fetch(`${this.backendUrl}/api/status`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // Важно для веб-версии - без этого CORS может блокировать
+        mode: 'cors',
+        credentials: 'omit'
+      });
+      
+      const result = response.ok;
+      console.log('Backend status check response:', result);
+      return result;
     } catch (error) {
       console.error('Backend connectivity check failed:', error);
+      console.error('Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+      
+      // Проверка, связана ли ошибка с CORS (только для веб-версии)
+      if (Platform.OS === 'web' && error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        console.warn('Возможная ошибка CORS. Убедитесь, что сервер разрешает запросы с этого источника.');
+      }
+      
       return false;
     }
   }
