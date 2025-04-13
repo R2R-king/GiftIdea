@@ -78,4 +78,55 @@
 
 - [Документация GigaChat API](https://developers.sber.ru/docs/ru/gigachat/api/overview)
 - [Expo Documentation](https://docs.expo.dev/)
-- [React Native Documentation](https://reactnative.dev/docs/getting-started) 
+- [React Native Documentation](https://reactnative.dev/docs/getting-started)
+
+## Chat Interface with Streaming Support
+
+The application includes a reusable `ChatInterface` component that properly handles streaming messages from AI assistants. This fixes the common issue where streaming messages can cause the chat view to jump around or fail to show the latest content.
+
+### Key Features
+
+- **Streaming Text Display**: Properly displays and auto-scrolls during streaming text responses
+- **Visual Indicators**: Shows when a message is being streamed with a visual indicator
+- **Scroll Position Maintenance**: Maintains proper scroll position during updates
+- **Reusable Component**: Can be used in any part of the application that needs chat functionality
+
+### Usage
+
+```tsx
+import { ChatInterface, ChatMessage } from '@/components/ChatInterface';
+import { Gift } from 'lucide-react-native';
+
+// In your component
+const [messages, setMessages] = useState<ChatMessage[]>([]);
+const [isTyping, setIsTyping] = useState(false);
+const [streamingMessage, setStreamingMessage] = useState('');
+
+// Handle sending message
+const handleSendMessage = (text: string) => {
+  // Add user message
+  const userMessage: ChatMessage = {
+    id: Date.now().toString(),
+    text,
+    isUser: true,
+    timestamp: new Date(),
+  };
+  setMessages(prev => [...prev, userMessage]);
+  
+  // Trigger your streaming response here
+  // During streaming, update the streamingMessage state
+  // When complete, add the full response to messages
+};
+
+// In your render method
+return (
+  <ChatInterface
+    messages={messages}
+    onSendMessage={handleSendMessage}
+    isTyping={isTyping}
+    streamingMessage={streamingMessage}
+    messageIcon={<Gift size={18} color="#FF0844" />}
+    placeholderText="Введите сообщение..."
+  />
+);
+``` 

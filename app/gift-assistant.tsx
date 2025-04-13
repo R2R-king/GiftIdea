@@ -12,6 +12,8 @@ import {
   ActivityIndicator,
   Alert,
   Keyboard,
+  Dimensions,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -36,6 +38,8 @@ export default function GiftAssistantScreen() {
   const [useStreaming, setUseStreaming] = useState<boolean>(true);
   const [isError, setIsError] = useState<boolean>(false);
   const [isRetrying, setIsRetrying] = useState<boolean>(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const lastMessageRef = useRef<GigaChatMessage[]>([]);
 
@@ -49,6 +53,47 @@ export default function GiftAssistantScreen() {
         timestamp: new Date(),
       }]);
     }
+  }, []);
+
+  // Add this effect after other useEffects
+  useEffect(() => {
+    // This ensures that when streaming message updates, we scroll to the bottom
+    if (streamingMessage && flatListRef.current) {
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: false });
+      }, 50);
+    }
+  }, [streamingMessage]);
+
+  // Handle keyboard show/hide events
+  useEffect(() => {
+    const keyboardWillShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setKeyboardVisible(true);
+        setKeyboardHeight(e.endCoordinates.height);
+        
+        // Scroll to bottom with a slight delay to ensure layout is updated
+        setTimeout(() => {
+          if (flatListRef.current) {
+            flatListRef.current.scrollToEnd({ animated: false });
+          }
+        }, 100);
+      }
+    );
+    
+    const keyboardWillHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+        setKeyboardHeight(0);
+      }
+    );
+    
+    return () => {
+      keyboardWillShowListener.remove();
+      keyboardWillHideListener.remove();
+    };
   }, []);
 
   // Convert our app messages to GigaChat format
@@ -140,6 +185,13 @@ export default function GiftAssistantScreen() {
         (chunk) => {
           accumulatedText += chunk;
           setStreamingMessage(accumulatedText);
+          
+          // Manually trigger scroll after each chunk update
+          requestAnimationFrame(() => {
+            if (flatListRef.current) {
+              flatListRef.current.scrollToEnd({ animated: false });
+            }
+          });
         },
         // On complete handler
         () => {
@@ -293,6 +345,7 @@ export default function GiftAssistantScreen() {
       style={[
         styles.messageBubble,
         item.isUser ? styles.userBubble : styles.assistantBubble,
+        item.id.startsWith('streaming-') && styles.streamingBubble,
       ]}
     >
       {!item.isUser && (
@@ -304,6 +357,11 @@ export default function GiftAssistantScreen() {
         <Text style={item.isUser ? styles.userMessageText : styles.assistantMessageText}>
           {item.text}
         </Text>
+        {item.id.startsWith('streaming-') && (
+          <View style={styles.streamingIndicator}>
+            <ActivityIndicator size="small" color={COLORS.valentinePink} />
+          </View>
+        )}
       </View>
     </View>
   );
@@ -334,67 +392,94 @@ export default function GiftAssistantScreen() {
         style={styles.keyboardAvoidView}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 20}
       >
-        <View style={styles.chatContainer}>
-          <FlatList
-            ref={flatListRef}
-            data={allMessages}
-            renderItem={renderMessage}
-            keyExtractor={item => item.id}
-            contentContainerStyle={[
-              styles.messageList,
-              { flexGrow: 1, justifyContent: 'flex-start' }
-            ]}
-            showsVerticalScrollIndicator={true}
-            // Простой автоматический скролл при изменении данных
-            onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
-            // Нет другой настройки для скролла - только этот метод автоскролла
-          />
-          
-          {/* Показываем индикатор набора текста */}
-          {isTyping && !streamingMessage && (
-            <View style={styles.typingIndicator}>
-              <ActivityIndicator size="small" color={COLORS.valentinePink} />
-              <Text style={styles.typingText}>Ассистент печатает...</Text>
-            </View>
-          )}
-          
-          {/* Показываем кнопку повторной попытки */}
-          {isError && (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>Не удалось получить ответ</Text>
-              <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
-                <RefreshCw size={16} color="#FFFFFF" />
-                <Text style={styles.retryButtonText}>Повторить</Text>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          <View style={styles.chatContainer}>
+            <FlatList
+              ref={flatListRef}
+              data={allMessages}
+              renderItem={renderMessage}
+              keyExtractor={item => item.id}
+              contentContainerStyle={[
+                styles.messageList,
+                { 
+                  flexGrow: 1, 
+                  justifyContent: 'flex-start',
+                  paddingBottom: keyboardVisible ? Math.max(keyboardHeight * 0.7, 120) : SPACING.md 
+                }
+              ]}
+              showsVerticalScrollIndicator={true}
+              // Improved autoscroll configuration for streaming responses
+              onContentSizeChange={() => {
+                if (flatListRef.current) {
+                  flatListRef.current.scrollToEnd({ animated: true });
+                }
+              }}
+              onLayout={() => {
+                if (flatListRef.current) {
+                  flatListRef.current.scrollToEnd({ animated: false });
+                }
+              }}
+              // Add maintenance of scroll position during updates
+              maintainVisibleContentPosition={{
+                minIndexForVisible: 0,
+                autoscrollToTopThreshold: 10,
+              }}
+            />
+            
+            {/* Показываем индикатор набора текста */}
+            {isTyping && !streamingMessage && (
+              <View style={styles.typingIndicator}>
+                <ActivityIndicator size="small" color={COLORS.valentinePink} />
+                <Text style={styles.typingText}>Ассистент печатает...</Text>
+              </View>
+            )}
+            
+            {/* Показываем кнопку повторной попытки */}
+            {isError && (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>Не удалось получить ответ</Text>
+                <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
+                  <RefreshCw size={16} color="#FFFFFF" />
+                  <Text style={styles.retryButtonText}>Повторить</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Введите сообщение..."
+                value={inputText}
+                onChangeText={setInputText}
+                multiline
+                maxLength={500}
+                editable={!isTyping}
+                placeholderTextColor="#999"
+                onFocus={() => {
+                  // When input gets focus, scroll to bottom after a short delay
+                  setTimeout(() => {
+                    if (flatListRef.current) {
+                      flatListRef.current.scrollToEnd({ animated: true });
+                    }
+                  }, 200);
+                }}
+              />
+              <TouchableOpacity
+                style={[
+                  styles.sendButton,
+                  (!inputText.trim() || isTyping) && styles.sendButtonDisabled,
+                ]}
+                onPress={handleSend}
+                disabled={!inputText.trim() || isTyping}
+              >
+                <Send
+                  size={20}
+                  color={inputText.trim() && !isTyping ? "#FFFFFF" : "rgba(255, 255, 255, 0.5)"}
+                />
               </TouchableOpacity>
             </View>
-          )}
-          
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Введите сообщение..."
-              value={inputText}
-              onChangeText={setInputText}
-              multiline
-              maxLength={500}
-              editable={!isTyping}
-              placeholderTextColor="#999"
-            />
-            <TouchableOpacity
-              style={[
-                styles.sendButton,
-                (!inputText.trim() || isTyping) && styles.sendButtonDisabled,
-              ]}
-              onPress={handleSend}
-              disabled={!inputText.trim() || isTyping}
-            >
-              <Send
-                size={20}
-                color={inputText.trim() && !isTyping ? "#FFFFFF" : "rgba(255, 255, 255, 0.5)"}
-              />
-            </TouchableOpacity>
           </View>
-        </View>
+        </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -551,5 +636,14 @@ const styles = StyleSheet.create({
   emptyChatText: {
     color: '#999',
     fontSize: FONTS.sizes.md,
+  },
+  streamingBubble: {
+    borderColor: COLORS.valentinePink,
+    borderWidth: 1,
+  },
+  streamingIndicator: {
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
   },
 }); 
