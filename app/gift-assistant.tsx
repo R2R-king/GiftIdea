@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,12 +10,15 @@ import {
   Platform,
   SafeAreaView,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ArrowLeft, Send, Gift } from 'lucide-react-native';
+import { ArrowLeft, Send, Gift, RefreshCw } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
+import gigaChatService, { GigaChatMessage } from '@/lib/gigachat-service';
+import { v4 as uuidv4 } from 'uuid';
 
 type MessageType = {
   id: string;
@@ -24,31 +27,224 @@ type MessageType = {
   timestamp: Date;
 };
 
-const mockResponses = [
-  "Я могу предложить подарок для разных случаев. Для кого вы ищете подарок?",
-  "Отлично! А по какому случаю вы хотите сделать подарок?",
-  "Бюджет подарка имеет значение. В каком ценовом диапазоне вы рассматриваете подарок?",
-  "Спасибо за информацию! Вот несколько идей, которые могут вам подойти: букет цветов с шоколадными конфетами, парфюмерный набор, ювелирное украшение или подарочный сертификат на СПА-процедуры.",
-  "Еще я могу предложить персонализированный фотоальбом, билеты в театр или на концерт, подписку на стриминговый сервис или набор натуральной косметики."
-];
-
 export default function GiftAssistantScreen() {
-  const [messages, setMessages] = useState<MessageType[]>([
-    {
-      id: '1',
-      text: 'Привет! Я помогу подобрать идеальный подарок. Расскажите, для кого вы ищете подарок?',
-      isUser: false,
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<MessageType[]>([]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [streamingMessage, setStreamingMessage] = useState<string>('');
+  const [useStreaming, setUseStreaming] = useState<boolean>(true);
+  const [isError, setIsError] = useState<boolean>(false);
+  const [isRetrying, setIsRetrying] = useState<boolean>(false);
   const flatListRef = useRef<FlatList>(null);
+  const lastMessageRef = useRef<GigaChatMessage[]>([]);
+
+  // Initialize chat with welcome message
+  useEffect(() => {
+    if (messages.length === 0) {
+      setMessages([{
+        id: '1',
+        text: 'Привет! Я помогу подобрать идеальный подарок. Расскажите, для кого вы ищете подарок?',
+        isUser: false,
+        timestamp: new Date(),
+      }]);
+    }
+  }, []);
+
+  // Convert our app messages to GigaChat format
+  const prepareMessagesForAPI = (): GigaChatMessage[] => {
+    // Add system message to guide the AI
+    const systemMessage: GigaChatMessage = {
+      role: 'system',
+      content: 'Ты — помощник по выбору подарков. Твоя задача — помочь пользователю подобрать идеальный подарок. Задавай уточняющие вопросы о человеке, для которого ищут подарок: возраст, пол, увлечения, повод для подарка, бюджет. На основе этой информации предлагай конкретные идеи подарков. Отвечай кратко, но информативно. Используй дружелюбный, но профессиональный тон. Всегда старайся предложить несколько вариантов подарков с разными ценовыми категориями.'
+    };
+
+    // Convert app messages to GigaChat format
+    const apiMessages: GigaChatMessage[] = messages.map(msg => ({
+      role: msg.isUser ? 'user' : 'assistant',
+      content: msg.text
+    }));
+
+    // Add the current user input if any
+    if (inputText.trim()) {
+      apiMessages.push({
+        role: 'user',
+        content: inputText
+      });
+    }
+
+    // Add system message at the beginning
+    return [systemMessage, ...apiMessages];
+  };
+
+  // Handle retry when connection fails
+  const handleRetry = () => {
+    setIsError(false);
+    setIsRetrying(true);
+    
+    if (useStreaming) {
+      streamMessageFromGigaChat();
+    } else {
+      sendMessageToGigaChat();
+    }
+  };
+
+  // Fallback function for when server is unavailable
+  const handleUseLocalResponse = () => {
+    setIsError(false);
+    setIsRetrying(false);
+    
+    // Simple fallback for demonstration
+    setTimeout(() => {
+      const newMessage: MessageType = {
+        id: Date.now().toString(),
+        text: "Извините, сервер недоступен, но я могу предложить несколько универсальных идей подарков: подарочный сертификат в популярный магазин, набор качественного чая/кофе, смарт-гаджет, книгу бестселлер, или персонализированный предмет с памятной надписью.",
+        isUser: false,
+        timestamp: new Date(),
+      };
+      
+      setMessages(prev => [...prev, newMessage]);
+      setIsTyping(false);
+    }, 1000);
+  };
+
+  // Stream messages from GigaChat API
+  const streamMessageFromGigaChat = async () => {
+    setIsTyping(true);
+    setStreamingMessage('');
+    setIsError(false);
+    
+    const apiMessages = prepareMessagesForAPI();
+    lastMessageRef.current = apiMessages;
+    
+    try {
+      // Check if backend is available
+      const isConnected = await gigaChatService.checkBackendStatus();
+      if (!isConnected) {
+        console.log('Backend is not available, using local response');
+        handleUseLocalResponse();
+        return;
+      }
+      
+      let accumulatedText = '';
+      
+      // Use the streaming method from our service
+      await gigaChatService.streamMessage(
+        apiMessages,
+        // On chunk handler
+        (chunk) => {
+          accumulatedText += chunk;
+          setStreamingMessage(accumulatedText);
+        },
+        // On complete handler
+        () => {
+          // Add the complete message to our list
+          const newMessage: MessageType = {
+            id: Date.now().toString(),
+            text: accumulatedText,
+            isUser: false,
+            timestamp: new Date(),
+          };
+            
+          setMessages(prev => [...prev, newMessage]);
+          setStreamingMessage('');
+          setIsTyping(false);
+          setIsRetrying(false);
+        },
+        // On error handler
+        (error) => {
+          console.error('Error with streaming message:', error);
+          setIsTyping(false);
+          setIsRetrying(false);
+          setIsError(true);
+          
+          // Only show alert if not retrying
+          if (!isRetrying) {
+            Alert.alert(
+              'Ошибка соединения',
+              'Не удалось получить ответ от сервера. Проверьте подключение к интернету.',
+              [
+                { text: 'Отмена', style: 'cancel' },
+                { text: 'Повторить', onPress: handleRetry }
+              ]
+            );
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Error setting up streaming message:', error);
+      setIsTyping(false);
+      setIsRetrying(false);
+      setIsError(true);
+      
+      if (!isRetrying) {
+        Alert.alert(
+          'Ошибка соединения',
+          'Не удалось получить ответ от сервера. Проверьте подключение к интернету.',
+          [
+            { text: 'Отмена', style: 'cancel' },
+            { text: 'Повторить', onPress: handleRetry }
+          ]
+        );
+      }
+    }
+  };
+
+  // Send message to GigaChat API using the standard option
+  const sendMessageToGigaChat = async () => {
+    setIsTyping(true);
+    setIsError(false);
+    
+    const apiMessages = prepareMessagesForAPI();
+    lastMessageRef.current = apiMessages;
+    
+    try {
+      // Check if backend is available
+      const isConnected = await gigaChatService.checkBackendStatus();
+      if (!isConnected) {
+        console.log('Backend is not available, using local response');
+        handleUseLocalResponse();
+        return;
+      }
+      
+      // Use the new sendMessage method
+      const response = await gigaChatService.sendMessage(apiMessages);
+      const assistantMessage = response.choices[0].message.content;
+
+      // Add the assistant's response to our messages
+      const newMessage: MessageType = {
+        id: Date.now().toString(),
+        text: assistantMessage,
+        isUser: false,
+        timestamp: new Date(),
+      };
+      
+      setMessages(prev => [...prev, newMessage]);
+      setIsTyping(false);
+      setIsRetrying(false);
+    } catch (error) {
+      console.error('Error sending message to GigaChat:', error);
+      setIsTyping(false);
+      setIsRetrying(false);
+      setIsError(true);
+      
+      // Only show alert if not retrying
+      if (!isRetrying) {
+        Alert.alert(
+          'Ошибка соединения',
+          'Не удалось получить ответ от сервера. Проверьте подключение к интернету.',
+          [
+            { text: 'Отмена', style: 'cancel' },
+            { text: 'Повторить', onPress: handleRetry }
+          ]
+        );
+      }
+    }
+  };
 
   const handleSend = () => {
-    if (inputText.trim() === '') return;
+    if (inputText.trim() === '' || isTyping) return;
     
-    // Добавляем сообщение пользователя
+    // Add user message
     const userMessage: MessageType = {
       id: Date.now().toString(),
       text: inputText,
@@ -57,26 +253,17 @@ export default function GiftAssistantScreen() {
     };
     
     setMessages(prev => [...prev, userMessage]);
-    setInputText('');
-    setIsTyping(true);
     
-    // Симулируем ответ ассистента с небольшой задержкой
-    setTimeout(() => {
-      const responseIndex = Math.min(
-        messages.filter(m => !m.isUser).length,
-        mockResponses.length - 1
-      );
-      
-      const botMessage: MessageType = {
-        id: (Date.now() + 1).toString(),
-        text: mockResponses[responseIndex],
-        isUser: false,
-        timestamp: new Date(),
-      };
-      
-      setMessages(prev => [...prev, botMessage]);
-      setIsTyping(false);
-    }, 1500);
+    // Clear input
+    const messageToSend = inputText;
+    setInputText('');
+    
+    // Use streaming or standard response based on setting
+    if (useStreaming) {
+      streamMessageFromGigaChat();
+    } else {
+      sendMessageToGigaChat();
+    }
   };
 
   const renderMessage = ({ item }: { item: MessageType }) => (
@@ -137,10 +324,41 @@ export default function GiftAssistantScreen() {
             }
           />
           
-          {isTyping && (
+          {/* Show streaming message if available */}
+          {streamingMessage && (
+            <View
+              style={[
+                styles.messageBubble,
+                styles.assistantBubble,
+              ]}
+            >
+              <View style={styles.assistantIconContainer}>
+                <Gift size={18} color="#FF0844" />
+              </View>
+              <View style={styles.assistantTextContainer}>
+                <Text style={styles.assistantMessageText}>
+                  {streamingMessage}
+                </Text>
+              </View>
+            </View>
+          )}
+          
+          {/* Показываем индикатор набора текста */}
+          {isTyping && !streamingMessage && (
             <View style={styles.typingIndicator}>
               <ActivityIndicator size="small" color={COLORS.valentinePink} />
               <Text style={styles.typingText}>Ассистент печатает...</Text>
+            </View>
+          )}
+          
+          {/* Показываем кнопку повторной попытки */}
+          {isError && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>Не удалось получить ответ</Text>
+              <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
+                <RefreshCw size={16} color="#FFFFFF" />
+                <Text style={styles.retryButtonText}>Повторить</Text>
+              </TouchableOpacity>
             </View>
           )}
           
@@ -151,18 +369,19 @@ export default function GiftAssistantScreen() {
               value={inputText}
               onChangeText={setInputText}
               multiline
+              editable={!isTyping}
             />
             <TouchableOpacity
               style={[
                 styles.sendButton,
-                !inputText.trim() && styles.sendButtonDisabled,
+                (!inputText.trim() || isTyping) && styles.sendButtonDisabled,
               ]}
               onPress={handleSend}
-              disabled={!inputText.trim()}
+              disabled={!inputText.trim() || isTyping}
             >
               <Send
                 size={20}
-                color={inputText.trim() ? "#FFFFFF" : "rgba(255, 255, 255, 0.5)"}
+                color={inputText.trim() && !isTyping ? "#FFFFFF" : "rgba(255, 255, 255, 0.5)"}
               />
             </TouchableOpacity>
           </View>
@@ -248,32 +467,19 @@ const styles = StyleSheet.create({
     fontSize: FONTS.sizes.md,
     color: '#1E293B',
   },
-  typingIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: SPACING.sm,
-    paddingHorizontal: SPACING.sm,
-  },
-  typingText: {
-    fontSize: FONTS.sizes.sm,
-    color: COLORS.gray500,
-    marginLeft: SPACING.xs,
-  },
   inputContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.sm,
     backgroundColor: '#FFFFFF',
     borderRadius: RADIUS.lg,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xs,
     marginBottom: SPACING.md,
     ...SHADOWS.small,
   },
   input: {
     flex: 1,
-    fontSize: FONTS.sizes.md,
-    color: '#1E293B',
-    paddingVertical: SPACING.sm,
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
     maxHeight: 100,
   },
   sendButton: {
@@ -283,8 +489,48 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.valentinePink,
     justifyContent: 'center',
     alignItems: 'center',
+    alignSelf: 'flex-end',
   },
   sendButtonDisabled: {
     backgroundColor: 'rgba(255, 8, 68, 0.5)',
+  },
+  typingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: SPACING.xs,
+    marginBottom: SPACING.xs,
+  },
+  typingText: {
+    marginLeft: SPACING.xs,
+    color: '#666',
+    fontSize: FONTS.sizes.sm,
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: SPACING.sm,
+    marginBottom: SPACING.sm,
+    backgroundColor: '#FEF2F2',
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: '#FEE2E2',
+  },
+  errorText: {
+    color: '#B91C1C',
+    fontSize: FONTS.sizes.sm,
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.valentinePink,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
+    borderRadius: RADIUS.sm,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: FONTS.sizes.sm,
+    marginLeft: 4,
   },
 }); 
