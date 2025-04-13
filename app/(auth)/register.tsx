@@ -1,26 +1,66 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import React, { useState } from 'react';
 import { router } from 'expo-router';
+import AuthService from '@/lib/auth-service';
 
 export default function RegisterScreen() {
-  const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleRegister = () => {
-    // TODO: Implement actual registration logic
-    router.replace('/(tabs)');
+  const handleRegister = async () => {
+    // Validate inputs
+    if (!username || !email || !password) {
+      Alert.alert('Error', 'Please fill all fields');
+      return;
+    }
+    
+    // Simple email validation
+    const emailRegex = /\S+@\S+\.\S+/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return;
+    }
+    
+    // Password strength validation
+    if (password.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Call registration API
+      await AuthService.register(username, email, password);
+      Alert.alert(
+        'Success', 
+        'Registration successful! You can now login.',
+        [{ text: 'Login', onPress: () => router.replace('/login') }]
+      );
+    } catch (error) {
+      // Display error message
+      Alert.alert(
+        'Registration Failed', 
+        error instanceof Error ? error.message : 'Please try again with different information'
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Create Account</Text>
+      
       <TextInput
         style={styles.input}
-        placeholder="Full Name"
-        value={name}
-        onChangeText={setName}
+        placeholder="Username"
+        value={username}
+        onChangeText={setUsername}
+        editable={!loading}
       />
+      
       <TextInput
         style={styles.input}
         placeholder="Email"
@@ -28,18 +68,31 @@ export default function RegisterScreen() {
         onChangeText={setEmail}
         autoCapitalize="none"
         keyboardType="email-address"
+        editable={!loading}
       />
+      
       <TextInput
         style={styles.input}
         placeholder="Password"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
+        editable={!loading}
       />
-      <TouchableOpacity style={styles.button} onPress={handleRegister}>
-        <Text style={styles.buttonText}>Register</Text>
+      
+      <TouchableOpacity 
+        style={[styles.button, loading && styles.disabledButton]} 
+        onPress={handleRegister}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Register</Text>
+        )}
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => router.push('/login')}>
+      
+      <TouchableOpacity onPress={() => router.push('/login')} disabled={loading}>
         <Text style={styles.linkText}>Already have an account? Login</Text>
       </TouchableOpacity>
     </View>
@@ -72,6 +125,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     marginTop: 10,
+  },
+  disabledButton: {
+    backgroundColor: '#cccccc',
   },
   buttonText: {
     color: '#fff',

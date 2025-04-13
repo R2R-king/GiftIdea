@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   StatusBar,
   Dimensions,
   Switch,
+  ActivityIndicator,
 } from 'react-native';
 import { 
   User, 
@@ -23,12 +24,17 @@ import {
   ChevronRight,
   Settings,
   Gift,
+  Edit2
 } from 'lucide-react-native';
 import { useAppLocalization } from '@/components/LocalizationWrapper';
 import { LinearGradient } from 'expo-linear-gradient';
 import TabBarShadow from '@/components/TabBarShadow';
 import { router } from 'expo-router';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
+import AuthService from '@/lib/auth-service';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
+import EditProfileModal from '@/components/EditProfileModal';
 
 const { width } = Dimensions.get('window');
 
@@ -45,14 +51,42 @@ interface MenuOption {
 
 export default function ProfileScreen() {
   const { t, locale, setLocale } = useAppLocalization();
+  const user = useSelector((state: RootState) => state.auth.user);
+  const [loading, setLoading] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+
+  // Загрузка профиля при монтировании компонента
+  useEffect(() => {
+    loadUserProfile();
+  }, []);
+
+  // Функция для загрузки данных профиля
+  const loadUserProfile = async () => {
+    try {
+      setLoading(true);
+      await AuthService.getProfile();
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const toggleLanguage = () => {
     setLocale(locale === 'en' ? 'ru' : 'en');
   };
 
-  const handleLogout = () => {
-    // TODO: Implement actual logout logic
-    router.replace('/login');
+  const handleLogout = async () => {
+    try {
+      // Call logout from AuthService
+      await AuthService.logoutUser();
+      // Navigate to login screen
+      router.replace('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still try to navigate even if there was an error
+      router.replace('/login');
+    }
   };
 
   // Опции меню в личном кабинете
@@ -94,6 +128,19 @@ export default function ProfileScreen() {
     },
   ];
 
+  // Обработчик для открытия модального окна редактирования
+  const handleEditProfile = () => {
+    setEditModalVisible(true);
+  };
+
+  // Получаем полное имя пользователя или имя пользователя, если полное имя не задано
+  const displayName = () => {
+    if (user?.firstName || user?.lastName) {
+      return `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
+    }
+    return user?.name || t('profile.guestUser');
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
@@ -109,6 +156,8 @@ export default function ProfileScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshing={loading}
+        onRefresh={loadUserProfile}
       >
         {/* Профиль пользователя */}
         <View style={styles.profileHeader}>
@@ -120,27 +169,41 @@ export default function ProfileScreen() {
             end={{ x: 0, y: 1 }}
           />
           
-          <View style={styles.profileImageContainer}>
-            <Image
-              source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200' }}
-              style={styles.profileImage}
-            />
-            <TouchableOpacity style={styles.editButton} activeOpacity={0.8}>
-              <User size={14} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
-          
-          <Text style={styles.profileName}>Sophie Anderson</Text>
-          <Text style={styles.profileEmail}>sophie.a@example.com</Text>
-          
-          <View style={styles.memberStatusBadge}>
-            <Gift size={14} color={COLORS.white} />
-            <Text style={styles.memberStatusText}>{t('profile.premiumMember')}</Text>
-          </View>
-          
-          <TouchableOpacity style={styles.editProfileButton} activeOpacity={0.7}>
-            <Text style={styles.editProfileText}>{t('profile.editProfile')}</Text>
-          </TouchableOpacity>
+          {loading ? (
+            <ActivityIndicator size="large" color={COLORS.white} style={{marginVertical: 30}} />
+          ) : (
+            <>
+              <View style={styles.profileImageContainer}>
+                <Image
+                  source={{ uri: user?.avatar || 'https://via.placeholder.com/100' }}
+                  style={styles.profileImage}
+                />
+                <TouchableOpacity 
+                  style={styles.editButton} 
+                  activeOpacity={0.8}
+                  onPress={handleEditProfile}
+                >
+                  <Edit2 size={14} color="#FFFFFF" />
+                </TouchableOpacity>
+              </View>
+              
+              <Text style={styles.profileName}>{displayName()}</Text>
+              <Text style={styles.profileEmail}>{user?.email || ''}</Text>
+              
+              <View style={styles.memberStatusBadge}>
+                <Gift size={14} color={COLORS.white} />
+                <Text style={styles.memberStatusText}>{t('profile.premiumMember')}</Text>
+              </View>
+              
+              <TouchableOpacity 
+                style={styles.editProfileButton} 
+                activeOpacity={0.7}
+                onPress={handleEditProfile}
+              >
+                <Text style={styles.editProfileText}>{t('profile.editProfile')}</Text>
+              </TouchableOpacity>
+            </>
+          )}
         </View>
         
         {/* Valentine's Day Offers */}
@@ -270,6 +333,12 @@ export default function ProfileScreen() {
           </View>
         </View>
       </ScrollView>
+      
+      {/* Модальное окно редактирования профиля */}
+      <EditProfileModal 
+        visible={editModalVisible} 
+        onClose={() => setEditModalVisible(false)} 
+      />
       
       <TabBarShadow />
     </View>

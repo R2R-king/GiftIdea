@@ -5,78 +5,117 @@ import {
   StyleSheet,
   ActivityIndicator,
   View,
+  TouchableOpacityProps,
+  ViewStyle,
+  TextStyle
 } from 'react-native';
 import { COLORS, RADIUS, SPACING } from '@/constants/theme';
 
-interface ButtonProps {
+interface ButtonProps extends TouchableOpacityProps {
   title: string;
-  onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+  onPress?: () => void;
+  type?: 'primary' | 'secondary' | 'danger' | 'outline' | 'text';
   size?: 'small' | 'medium' | 'large';
-  fullWidth?: boolean;
-  disabled?: boolean;
   loading?: boolean;
+  disabled?: boolean;
+  fullWidth?: boolean;
+  style?: ViewStyle;
+  textStyle?: TextStyle;
 }
 
-const Button = ({
+const Button: React.FC<ButtonProps> = ({
   title,
   onPress,
-  variant = 'primary',
+  type = 'primary',
   size = 'medium',
-  fullWidth = false,
-  disabled = false,
   loading = false,
-}: ButtonProps) => {
-  // Get button style
-  let buttonStyle = [styles.button];
-  
-  // Add size style
-  if (size === 'small') buttonStyle.push(styles.buttonSmall);
-  if (size === 'medium') buttonStyle.push(styles.buttonMedium);
-  if (size === 'large') buttonStyle.push(styles.buttonLarge);
-  
-  // Add variant style
-  if (variant === 'primary') buttonStyle.push(styles.buttonPrimary);
-  if (variant === 'secondary') buttonStyle.push(styles.buttonSecondary);
-  if (variant === 'outline') buttonStyle.push(styles.buttonOutline);
-  if (variant === 'ghost') buttonStyle.push(styles.buttonGhost);
-  
-  // Add other styles
-  if (fullWidth) buttonStyle.push(styles.buttonFullWidth);
-  if (disabled) buttonStyle.push(styles.buttonDisabled);
-  
-  // Get text style
-  let textStyle = [styles.text];
-  
-  // Add size text style
-  if (size === 'small') textStyle.push(styles.textSmall);
-  if (size === 'medium') textStyle.push(styles.textMedium);
-  if (size === 'large') textStyle.push(styles.textLarge);
-  
-  // Add variant text style
-  if (variant === 'outline' || variant === 'ghost') {
-    textStyle.push(styles.textOutline);
-  } else {
-    textStyle.push(styles.textDefault);
-  }
-  
-  // Add disabled text style
-  if (disabled) textStyle.push(styles.textDisabled);
+  disabled = false,
+  fullWidth = false,
+  style,
+  textStyle,
+  ...props
+}) => {
+  const getBackgroundColor = () => {
+    if (disabled) return '#CCCCCC';
+    switch (type) {
+      case 'primary': return COLORS.primary;
+      case 'secondary': return COLORS.secondary || '#6C757D';
+      case 'danger': return COLORS.error || '#DC3545';
+      case 'outline': return 'transparent';
+      case 'text': return 'transparent';
+      default: return COLORS.primary;
+    }
+  };
+
+  const getTextColor = () => {
+    if (disabled) return '#888888';
+    switch (type) {
+      case 'primary': return '#FFFFFF';
+      case 'secondary': return '#FFFFFF';
+      case 'danger': return '#FFFFFF';
+      case 'outline': return COLORS.primary;
+      case 'text': return COLORS.primary;
+      default: return '#FFFFFF';
+    }
+  };
+
+  const getBorderColor = () => {
+    if (disabled) return '#CCCCCC';
+    return type === 'outline' ? COLORS.primary : 'transparent';
+  };
+
+  const getPadding = () => {
+    switch (size) {
+      case 'small': return { paddingVertical: 6, paddingHorizontal: 12 };
+      case 'large': return { paddingVertical: 14, paddingHorizontal: 20 };
+      default: return { paddingVertical: 10, paddingHorizontal: 16 };
+    }
+  };
+
+  const getTextSize = () => {
+    switch (size) {
+      case 'small': return 14;
+      case 'large': return 18;
+      default: return 16;
+    }
+  };
 
   return (
     <TouchableOpacity
-      style={buttonStyle}
-      onPress={onPress}
-      disabled={disabled || loading}
-      activeOpacity={0.7}
+      onPress={loading || disabled ? undefined : onPress}
+      style={[
+        styles.button,
+        {
+          backgroundColor: getBackgroundColor(),
+          borderColor: getBorderColor(),
+          borderWidth: type === 'outline' ? 1 : 0,
+          ...getPadding(),
+          width: fullWidth ? '100%' : undefined
+        },
+        style
+      ]}
+      activeOpacity={0.8}
+      disabled={loading || disabled}
+      {...props}
     >
       {loading ? (
-        <ActivityIndicator 
-          color={variant === 'outline' || variant === 'ghost' ? COLORS.primary : COLORS.white} 
-          size="small" 
+        <ActivityIndicator
+          color={getTextColor()}
+          size={size === 'large' ? 'large' : 'small'}
         />
       ) : (
-        <Text style={textStyle}>{title}</Text>
+        <Text
+          style={[
+            styles.text,
+            {
+              color: getTextColor(),
+              fontSize: getTextSize()
+            },
+            textStyle
+          ]}
+        >
+          {title}
+        </Text>
       )}
     </TouchableOpacity>
   );
@@ -84,69 +123,15 @@ const Button = ({
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.medium || 8,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
   },
-  buttonSmall: {
-    paddingVertical: SPACING.xs,
-    paddingHorizontal: SPACING.md,
-    height: 36,
-  },
-  buttonMedium: {
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.lg,
-    height: 44,
-  },
-  buttonLarge: {
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.xl,
-    height: 52,
-  },
-  buttonFullWidth: {
-    width: '100%',
-  },
-  buttonPrimary: {
-    backgroundColor: COLORS.primary,
-  },
-  buttonSecondary: {
-    backgroundColor: COLORS.secondary,
-  },
-  buttonOutline: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-  },
-  buttonGhost: {
-    backgroundColor: 'transparent',
-  },
-  buttonDisabled: {
-    backgroundColor: COLORS.gray300,
-    borderColor: COLORS.gray300,
-  },
   text: {
     fontWeight: '600',
     textAlign: 'center',
-  },
-  textSmall: {
-    fontSize: 12,
-  },
-  textMedium: {
-    fontSize: 14,
-  },
-  textLarge: {
-    fontSize: 16,
-  },
-  textDefault: {
-    color: COLORS.white,
-  },
-  textOutline: {
-    color: COLORS.primary,
-  },
-  textDisabled: {
-    color: COLORS.gray500,
-  },
+  }
 });
 
 export default Button; 

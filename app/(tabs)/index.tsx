@@ -120,6 +120,73 @@ const popularProducts = [
   },
 ];
 
+// Праздники с иконками, цветами и подсказками для ИИ
+const holidays = [
+  {
+    id: 'birthday',
+    name: 'День рождения',
+    icon: 'https://cdn-icons-png.flaticon.com/128/2290/2290755.png',
+    colors: ['#FF5E87', '#FF0844'],
+    prompt: 'Ты — эксперт по подаркам на дни рождения. Помоги подобрать идеальный подарок имениннику. Задавай уточняющие вопросы о возрасте, поле, интересах человека, бюджете. Предлагай актуальные и интересные подарки на день рождения, которые запомнятся получателю. Учитывай современные тренды в подарках.'
+  },
+  {
+    id: 'newYear',
+    name: 'Новый год',
+    icon: 'https://cdn-icons-png.flaticon.com/128/1356/1356964.png',
+    colors: ['#2589BD', '#1E5F74'],
+    prompt: 'Ты — эксперт по новогодним подаркам. Помоги подобрать идеальный подарок на Новый год. Задавай уточняющие вопросы о человеке, для которого ищут подарок, и о бюджете. Предлагай оригинальные новогодние подарки, которые создадут праздничное настроение. Учитывай зимнюю и новогоднюю тематику.'
+  },
+  {
+    id: 'valentines',
+    name: 'День влюбленных',
+    icon: 'https://cdn-icons-png.flaticon.com/128/2589/2589175.png',
+    colors: ['#FF5E87', '#FF0844'],
+    prompt: 'Ты — эксперт по романтическим подаркам. Помоги подобрать идеальный подарок на День святого Валентина. Задавай уточняющие вопросы о партнере, длительности отношений и бюджете. Предлагай романтичные, оригинальные подарки, которые выразят чувства и произведут впечатление. Акцентируй внимание на романтике и проявлении любви.'
+  },
+  {
+    id: 'wedding',
+    name: 'Свадьба',
+    icon: 'https://cdn-icons-png.flaticon.com/128/2227/2227523.png',
+    colors: ['#845EC2', '#4B3F72'],
+    prompt: 'Ты — эксперт по свадебным подаркам. Помоги подобрать идеальный подарок на свадьбу. Задавай уточняющие вопросы о молодоженах, их интересах, стиле свадьбы и бюджете. Предлагай элегантные, запоминающиеся подарки, которые будут полезны в совместной жизни. Учитывай традиции свадебных подарков и современные тенденции.'
+  },
+  {
+    id: 'womensDay',
+    name: '8 Марта',
+    icon: 'https://cdn-icons-png.flaticon.com/128/2620/2620443.png',
+    colors: ['#FF8C69', '#FF5E62'],
+    prompt: 'Ты — эксперт по подаркам на 8 Марта. Помоги подобрать идеальный подарок для женщины. Задавай уточняющие вопросы о возрасте, интересах, отношениях с этой женщиной и бюджете. Предлагай внимательные, изящные подарки, которые подчеркнут женственность и красоту. Учитывай традиции праздника и современные предпочтения женщин.'
+  },
+  {
+    id: 'mensDay',
+    name: '23 Февраля',
+    icon: 'https://cdn-icons-png.flaticon.com/128/3502/3502686.png',
+    colors: ['#2E86DE', '#3867D6'],
+    prompt: 'Ты — эксперт по подаркам на 23 Февраля. Помоги подобрать идеальный подарок для мужчины. Задавай уточняющие вопросы о возрасте, интересах, профессии и бюджете. Предлагай практичные, интересные подарки, которые будут полезны и понравятся мужчине. Учитывай тематику праздника, но не ограничивайся военной тематикой.'
+  },
+  {
+    id: 'graduation',
+    name: 'Выпускной',
+    icon: 'https://cdn-icons-png.flaticon.com/128/3976/3976631.png',
+    colors: ['#20BF6B', '#0FB9B1'],
+    prompt: 'Ты — эксперт по подаркам на выпускной. Помоги подобрать идеальный подарок для выпускника школы или университета. Задавай уточняющие вопросы о возрасте, поле, учебном заведении, планах на будущее и бюджете. Предлагай вдохновляющие, полезные для новой главы жизни подарки. Учитывай символизм нового начала и достижений.'
+  },
+  {
+    id: 'housewarming',
+    name: 'Новоселье',
+    icon: 'https://cdn-icons-png.flaticon.com/128/1067/1067457.png',
+    colors: ['#F39C12', '#F1C40F'],
+    prompt: 'Ты — эксперт по подаркам на новоселье. Помоги подобрать идеальный подарок для человека или семьи, которые переехали в новый дом. Задавай уточняющие вопросы о типе жилья, стиле интерьера, потребностях и бюджете. Предлагай практичные, стильные подарки для дома, которые сделают новое место более уютным и функциональным.'
+  },
+  {
+    id: 'anniversary',
+    name: 'Годовщина',
+    icon: 'https://cdn-icons-png.flaticon.com/128/3152/3152806.png',
+    colors: ['#6E45E1', '#89216B'],
+    prompt: 'Ты — эксперт по подаркам на годовщину отношений или свадьбы. Помоги подобрать идеальный подарок для партнера. Задавай уточняющие вопросы о том, какая годовщина отмечается, об интересах партнера и бюджете. Предлагай романтические, символичные подарки, которые отражают совместный путь пары. Учитывай традиционные материалы для разных годовщин (бумага для 1 года, серебро для 25 лет и т.д.).'
+  },
+];
+
 export default function FeedScreen() {
   const { t, localizedData } = useAppLocalization();
   const { events } = localizedData;
@@ -259,6 +326,19 @@ export default function FeedScreen() {
     );
   };
 
+  const handleHolidayPress = (holiday: any) => {
+    router.push({
+      pathname: "/holiday-chat",
+      params: { 
+        holidayId: holiday.id, 
+        holidayName: holiday.name,
+        promptTemplate: holiday.prompt,
+        primaryColor: holiday.colors[0],
+        secondaryColor: holiday.colors[1]
+      }
+    } as any);
+  };
+
   return (
     <View style={styles.container}>
       {/* Фоновые элементы */}
@@ -325,6 +405,35 @@ export default function FeedScreen() {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
+        {/* Праздничные AI-рекомендации */}
+        <View style={styles.holidaySection}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>AI-подбор подарков</Text>
+            <Text style={styles.subtitle}>Выберите праздник для уникальных рекомендаций</Text>
+          </View>
+
+          <View style={styles.holidayGrid}>
+            {holidays.map((holiday) => (
+              <TouchableOpacity 
+                key={holiday.id} 
+                style={styles.holidayCard}
+                onPress={() => handleHolidayPress(holiday)}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={holiday.colors}
+                  style={styles.holidayCardGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <Image source={{ uri: holiday.icon }} style={styles.holidayIcon} />
+                  <Text style={styles.holidayName}>{holiday.name}</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
         {/* Спецпредложения */}
         <View style={styles.specialsSection}>
           <View style={styles.sectionHeader}>
@@ -445,31 +554,6 @@ export default function FeedScreen() {
             ))}
           </View>
         </View>
-
-        {/* Раздел идей для подарков */}
-        <View style={styles.ideasSection}>
-          <LinearGradient
-            colors={['rgba(255,94,135,0.1)', 'rgba(255,8,68,0.1)']}
-            style={styles.ideasContainer}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View style={styles.ideasContent}>
-              <Gift size={28} color="#FF0844" />
-              <Text style={styles.ideasTitle}>{t('feed.giftIdeas')}</Text>
-              <Text style={styles.ideasDescription}>
-                {t('feed.giftIdeasDesc')}
-              </Text>
-              <TouchableOpacity 
-                style={styles.ideasButton}
-                onPress={() => router.push("/gift-assistant" as any)}
-              >
-                <Text style={styles.ideasButtonText}>{t('feed.startButton')}</Text>
-                <ArrowUpRight size={16} color="#FF0844" />
-              </TouchableOpacity>
-            </View>
-          </LinearGradient>
-        </View>
       </ScrollView>
 
       {/* Всегда показываем тень для панели навигации */}
@@ -533,36 +617,49 @@ const styles = StyleSheet.create({
     fontSize: FONTS.sizes.md,
     color: COLORS.gray800,
   },
-  backgroundContainer: {
-    display: 'none',
-  },
-  pinkBackground: {
-    display: 'none',
-  },
-  contentContainer: {
-    display: 'none',
-  },
-  welcomeContainer: {
-    display: 'none',
-  },
-  welcomeText: {
-    display: 'none',
-  },
-  subtitleText: {
-    display: 'none',
-  },
-  avatarContainer: {
-    display: 'none',
-  },
-  avatar: {
-    display: 'none',
-  },
-  searchContainer: {
-    display: 'none',
-  },
   scrollContent: {
     paddingHorizontal: SPACING.lg,
     paddingBottom: 100,
+  },
+  holidaySection: {
+    marginTop: SPACING.xl,
+    marginBottom: SPACING.lg,
+  },
+  subtitle: {
+    fontSize: FONTS.sizes.sm,
+    color: COLORS.gray600,
+    marginTop: 2,
+    marginBottom: SPACING.md,
+  },
+  holidayGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginHorizontal: -4,
+  },
+  holidayCard: {
+    width: width / 2 - SPACING.lg - 4,
+    marginBottom: SPACING.md,
+    marginHorizontal: 4,
+  },
+  holidayCardGradient: {
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    height: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.medium,
+  },
+  holidayIcon: {
+    width: 36,
+    height: 36,
+    marginBottom: SPACING.xs,
+  },
+  holidayName: {
+    fontSize: FONTS.sizes.md,
+    fontWeight: '600',
+    color: COLORS.white,
+    textAlign: 'center',
   },
   specialsSection: {
     marginTop: SPACING.lg,
@@ -575,13 +672,13 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: FONTS.sizes.lg,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.gray800,
   },
   seeAllText: {
     fontSize: FONTS.sizes.sm,
     color: COLORS.valentinePink,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   specialsScrollContent: {
     paddingRight: SPACING.lg,
@@ -728,47 +825,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#1E293B',
     marginLeft: 4,
-  },
-  ideasSection: {
-    marginTop: 20,
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  ideasContainer: {
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 8, 68, 0.1)',
-  },
-  ideasContent: {
-    alignItems: 'center',
-  },
-  ideasTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1E293B',
-    marginTop: 15,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  ideasDescription: {
-    fontSize: 14,
-    color: '#64748B',
-    textAlign: 'center',
-    marginBottom: 15,
-  },
-  ideasButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 8, 68, 0.08)',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 25,
-  },
-  ideasButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FF0844',
-    marginRight: 5,
   },
 });

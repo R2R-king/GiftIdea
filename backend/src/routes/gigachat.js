@@ -1,9 +1,10 @@
-const express = require('express');
-const axios = require('axios');
-const { v4: uuidv4 } = require('uuid');
+import express from 'express';
+import axios from 'axios';
+import { v4 as uuidv4 } from 'uuid';
+import https from 'https';
+import { sendChatRequest, testGigaChat, getGigaChatToken } from '../services/gigachat.js';
+
 const router = express.Router();
-const https = require('https');
-const { sendChatRequest, testGigaChat, getGigaChatToken } = require('../services/gigachat');
 
 // GigaChat credentials - these should be stored securely in environment variables
 const CLIENT_ID = process.env.GIGACHAT_CLIENT_ID || 'your-client-id';
@@ -224,4 +225,4 @@ router.post('/direct', async (req, res) => {
   }
 });
 
-module.exports = router; 
+export default router; 

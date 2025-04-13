@@ -9,6 +9,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import 'react-native-reanimated';
 import 'react-native-gesture-handler';
 import { Platform } from 'react-native';
+import AuthService from '@/lib/auth-service';
 
 // Предотвращаем скрытие сплэш экрана
 SplashScreen.preventAutoHideAsync();
@@ -17,19 +18,36 @@ export default function RootLayout() {
   useFrameworkReady();
 
   useEffect(() => {
-    // После загрузки приложения, переходим на промо-экран
-    const redirectToPromo = async () => {
-      // Небольшая задержка для анимаций
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Скрываем сплэш экран
-      await SplashScreen.hideAsync();
-      
-      // Перенаправляем на промо экран
-      router.replace('/gift-promo');
+    // После загрузки приложения, проверяем авторизацию
+    const initApp = async () => {
+      try {
+        // Небольшая задержка для анимаций
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Скрываем сплэш экран
+        await SplashScreen.hideAsync();
+        
+        // Проверяем авторизацию
+        const isAuthenticated = await AuthService.isAuthenticated();
+        
+        // Перенаправляем на соответствующий экран
+        if (isAuthenticated) {
+          router.replace('/(tabs)');
+        } else {
+          // Если первый запуск, показываем промо, иначе - логин
+          // Здесь можно добавить проверку на первый запуск через AsyncStorage
+          router.replace('/gift-promo');
+          // Uncomment to skip promo screen: 
+          // router.replace('/login');
+        }
+      } catch (error) {
+        console.error('App init error:', error);
+        // Если ошибка, отправляем на логин
+        router.replace('/login');
+      }
     };
 
-    redirectToPromo();
+    initApp();
   }, []);
 
   return (
@@ -56,6 +74,8 @@ export default function RootLayout() {
             }} 
           />
           <Stack.Screen name="gift-promo" options={{ headerShown: false, gestureEnabled: false }} />
+          <Stack.Screen name="gift-assistant" options={{ headerShown: false, presentation: 'modal' }} />
+          <Stack.Screen name="holiday-chat" options={{ headerShown: false, presentation: 'modal' }} />
           <Stack.Screen 
             name="product-details" 
             options={{ 

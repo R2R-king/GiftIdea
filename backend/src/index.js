@@ -1,7 +1,8 @@
-const express = require('express');
-const cors = require('cors');
-const dotenv = require('dotenv');
-const bodyParser = require('body-parser');
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import bodyParser from 'body-parser';
+import routes from './routes/index.js';
 
 // Load environment variables
 dotenv.config();
@@ -12,7 +13,7 @@ const PORT = process.env.PORT || 3000;
 
 // Настройка CORS для работы с веб-приложением
 const corsOptions = {
-  origin: ['http://localhost:19006', 'http://localhost:19000', 'http://localhost:8081', 'http://localhost:3000', 'exp://localhost:19000', 'http://localhost'],
+  origin: '*', // Разрешить доступ со всех доменов
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
@@ -22,9 +23,6 @@ const corsOptions = {
 app.use(cors(corsOptions)); // Enable CORS with specific options
 app.use(bodyParser.json()); // Parse JSON requests
 app.use(bodyParser.urlencoded({ extended: true })); // Parse URL-encoded requests
-
-// Import routes
-const routes = require('./routes');
 
 // Preflight CORS handler for OPTIONS requests
 app.options('*', cors(corsOptions));
@@ -53,4 +51,4 @@ process.on('unhandledRejection', (error) => {
   // process.exit(1);
 });
 
-module.exports = app; 
+export default app; 
