@@ -17,6 +17,9 @@ import {
 } from 'react-native';
 import { Send } from 'lucide-react-native';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
+import textFormatter, { formatTextForDisplay } from '@/lib/text-formatter';
+
+const { STYLE_MARKER } = textFormatter;
 
 export type ChatMessage = {
   id: string;
@@ -122,6 +125,42 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     return result;
   }, [messages, streamingMessage]);
 
+  // Function to render formatted text with bold styling
+  const renderFormattedText = (text: string, style: any) => {
+    if (!text) return null;
+    
+    // Split by our custom markers
+    const parts = text.split(new RegExp(`(${STYLE_MARKER.BOLD_START}|${STYLE_MARKER.BOLD_END})`, 'g'));
+    
+    // Remove empty parts and markers
+    const filteredParts = parts.filter(part => 
+      part !== '' && 
+      part !== STYLE_MARKER.BOLD_START && 
+      part !== STYLE_MARKER.BOLD_END
+    );
+    
+    // Track if we're inside a bold section
+    let isBold = false;
+    
+    // Render each part with appropriate styling
+    return filteredParts.map((part, index) => {
+      // We need to toggle the bold state for each marker we pass
+      const currentPart = (
+        <Text 
+          key={index}
+          style={[style, isBold ? styles.boldText : null]}
+        >
+          {part}
+        </Text>
+      );
+      
+      // Toggle the state for the next part
+      isBold = !isBold;
+      
+      return currentPart;
+    });
+  };
+
   // Default message renderer
   const defaultRenderMessage = (item: ChatMessage): ReactElement => (
     <View
@@ -137,9 +176,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </View>
       )}
       <View style={item.isUser ? styles.userTextContainer : styles.assistantTextContainer}>
-        <Text style={item.isUser ? styles.userMessageText : styles.assistantMessageText}>
-          {item.text}
-        </Text>
+        {renderFormattedText(
+          formatTextForDisplay(item.text),
+          item.isUser ? styles.userMessageText : styles.assistantMessageText
+        )}
         {item.id.startsWith('streaming-') && (
           <View style={styles.streamingIndicator}>
             <ActivityIndicator size="small" color={COLORS.valentinePink} />
@@ -245,7 +285,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
   },
   messageBubble: {
-    maxWidth: '80%',
+    maxWidth: '90%',
     marginBottom: SPACING.md,
     borderRadius: RADIUS.lg,
     overflow: 'hidden',
@@ -253,14 +293,16 @@ const styles = StyleSheet.create({
   userBubble: {
     alignSelf: 'flex-end',
     backgroundColor: COLORS.valentinePink,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.md,
   },
   assistantBubble: {
     alignSelf: 'flex-start',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'transparent',
     flexDirection: 'row',
-    borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.05)',
-    ...SHADOWS.small,
+    marginVertical: SPACING.xs,
+    width: '100%',
   },
   streamingBubble: {
     borderColor: COLORS.valentinePink,
@@ -272,21 +314,25 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 8, 68, 0.08)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: RADIUS.md,
+    marginRight: SPACING.xs,
   },
   userTextContainer: {
     padding: SPACING.md,
   },
   assistantTextContainer: {
-    padding: SPACING.md,
     flex: 1,
+    paddingVertical: SPACING.xs,
   },
   userMessageText: {
     fontSize: FONTS.sizes.md,
     color: '#FFFFFF',
+    lineHeight: 22,
   },
   assistantMessageText: {
     fontSize: FONTS.sizes.md,
     color: '#1E293B',
+    lineHeight: 22,
   },
   streamingIndicator: {
     position: 'absolute',
@@ -320,6 +366,9 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: 'rgba(255, 8, 68, 0.5)',
+  },
+  boldText: {
+    fontWeight: 'bold',
   },
 });
 

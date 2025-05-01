@@ -22,6 +22,9 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
 import gigaChatService, { GigaChatMessage } from '@/lib/gigachat-service';
 import { v4 as uuidv4 } from 'uuid';
+import textFormatter, { formatTextForDisplay } from '@/lib/text-formatter';
+
+const { STYLE_MARKER } = textFormatter;
 
 type MessageType = {
   id: string;
@@ -140,7 +143,7 @@ export default function GiftAssistantScreen() {
     // Add system message to guide the AI
     const systemMessage: GigaChatMessage = {
       role: 'system',
-      content: 'Ты — помощник по выбору подарков. Твоя задача — помочь пользователю подобрать идеальный подарок. Задавай уточняющие вопросы о человеке, для которого ищут подарок: возраст, пол, увлечения, повод для подарка, бюджет. На основе этой информации предлагай конкретные идеи подарков. Отвечай кратко, но информативно. Используй дружелюбный, но профессиональный тон. Всегда старайся предложить несколько вариантов подарков с разными ценовыми категориями.'
+      content: 'Ты — помощник по выбору подарков. Твоя задача — помочь пользователю подобрать идеальный подарок. Проанализируй первое сообщение пользователя и извлеки из него информацию о поле, возрасте, увлечениях и поводе для подарка. Не спрашивай информацию, которую пользователь уже предоставил. Задавай только уточняющие вопросы об информации, которая еще не была предоставлена: возраст, пол, увлечения, повод для подарка, бюджет. На основе полученной информации предлагай конкретные идеи подарков. Отвечай кратко и информативно. Используй дружелюбный тон. Предлагай несколько вариантов подарков с разными ценовыми категориями.'
     };
 
     // Convert app messages to GigaChat format
@@ -379,40 +382,106 @@ export default function GiftAssistantScreen() {
     return result;
   }, [messages, streamingMessage]);
 
-  const renderMessage = ({ item }: { item: MessageType }) => (
-    <View
-      style={[
-        styles.messageBubble,
-        item.isUser ? styles.userBubble : styles.assistantBubble,
-        item.id.startsWith('streaming-') && styles.streamingBubble,
-      ]}
-    >
-      {!item.isUser && (
-        <View style={styles.assistantAvatarContainer}>
-          <View style={styles.assistantAvatar}>
-            <Gift size={16} color="#FFFFFF" />
-          </View>
-        </View>
-      )}
-      <View style={[
-        item.isUser ? styles.userTextContainer : styles.assistantTextContainer,
-      ]}>
-        <Text style={item.isUser ? styles.userMessageText : styles.assistantMessageText}>
-          {item.text}
+  // Function to render formatted text with bold styling
+  const renderFormattedText = (text: string, style: any) => {
+    if (!text) return null;
+    
+    // Split by our custom markers
+    const parts = text.split(new RegExp(`(${STYLE_MARKER.BOLD_START}|${STYLE_MARKER.BOLD_END})`, 'g'));
+    
+    // Remove empty parts and markers
+    const filteredParts = parts.filter(part => 
+      part !== '' && 
+      part !== STYLE_MARKER.BOLD_START && 
+      part !== STYLE_MARKER.BOLD_END
+    );
+    
+    // Track if we're inside a bold section
+    let isBold = false;
+    
+    // Render each part with appropriate styling
+    return filteredParts.map((part, index) => {
+      // We need to toggle the bold state for each marker we pass
+      const currentPart = (
+        <Text 
+          key={index}
+          style={[style, isBold ? styles.boldText : null]}
+        >
+          {part}
         </Text>
-        {item.id.startsWith('streaming-') && (
-          <View style={styles.streamingIndicator}>
-            <ActivityIndicator size="small" color={item.isUser ? "#FFFFFF" : COLORS.valentinePink} />
+      );
+      
+      // Toggle the state for the next part
+      isBold = !isBold;
+      
+      return currentPart;
+    });
+  };
+
+  // Enhance the message rendering for form-like content
+  const renderMessage = ({ item }: { item: MessageType }) => {
+    // Special handling for assistant messages that might contain forms
+    const isFormContent = !item.isUser && (
+      item.text.includes(':') || 
+      (item.text.includes('1.') && item.text.includes('2.'))
+    );
+
+    // Apply additional formatting to form text if needed
+    let formattedText = item.text;
+    
+    // Render dividers for sections in assistant messages
+    const renderDividers = isFormContent && !item.isUser && !item.id.startsWith('streaming-');
+
+    return (
+      <View
+        style={[
+          styles.messageBubble,
+          item.isUser ? styles.userBubble : styles.assistantBubble,
+          item.id.startsWith('streaming-') && styles.streamingBubble,
+          isFormContent && styles.formContent,
+        ]}
+      >
+        {!item.isUser && (
+          <View style={styles.assistantAvatarContainer}>
+            <View style={styles.assistantAvatar}>
+              <Gift size={16} color="#FFFFFF" />
+            </View>
+          </View>
+        )}
+        <View style={[
+          item.isUser ? styles.userTextContainer : styles.assistantTextContainer,
+          isFormContent && styles.formContainer,
+        ]}>
+          {renderDividers && (
+            <View style={styles.divider} />
+          )}
+          
+          {renderFormattedText(
+            formatTextForDisplay(formattedText),
+            [
+              item.isUser ? styles.userMessageText : styles.assistantMessageText,
+              isFormContent && styles.formText
+            ]
+          )}
+          
+          {renderDividers && (
+            <View style={styles.divider} />
+          )}
+          
+          {item.id.startsWith('streaming-') && (
+            <View style={styles.streamingIndicator}>
+              <ActivityIndicator size="small" color={item.isUser ? "#FFFFFF" : COLORS.valentinePink} />
+            </View>
+          )}
+        </View>
+        {item.isUser && (
+          <View style={styles.userAvatarContainer}>
+            <View style={styles.userAvatarPlaceholder} />
           </View>
         )}
       </View>
-      {item.isUser && (
-        <View style={styles.userAvatarContainer}>
-          <View style={styles.userAvatarPlaceholder} />
-        </View>
-      )}
-    </View>
-  );
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -564,20 +633,28 @@ const styles = StyleSheet.create({
     maxWidth: '85%',
     marginBottom: SPACING.md,
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'flex-start',
   },
   userBubble: {
     alignSelf: 'flex-end',
   },
   assistantBubble: {
     alignSelf: 'flex-start',
+    maxWidth: '95%',
+  },
+  formContent: {
+    maxWidth: '100%',
+    marginTop: SPACING.md,
+    marginBottom: SPACING.lg,
+    paddingLeft: 0,
   },
   assistantAvatarContainer: {
     width: 36,
     height: 36,
     marginRight: 8,
     alignItems: 'flex-end',
-    justifyContent: 'flex-end',
+    alignSelf: 'flex-start',
+    marginTop: 4,
   },
   assistantAvatar: {
     width: 28,
@@ -610,15 +687,16 @@ const styles = StyleSheet.create({
   },
   assistantTextContainer: {
     padding: SPACING.md,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    borderBottomLeftRadius: 4,
-    maxWidth: '80%',
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 1,
+    paddingLeft: 0,
+    backgroundColor: 'transparent',
+    borderRadius: 0,
+    maxWidth: '90%',
+    paddingTop: 0,
+  },
+  formContainer: {
+    paddingTop: 4,
+    paddingRight: SPACING.lg,
+    paddingBottom: SPACING.md,
   },
   userMessageText: {
     fontSize: FONTS.sizes.md,
@@ -628,7 +706,18 @@ const styles = StyleSheet.create({
   assistantMessageText: {
     fontSize: FONTS.sizes.md,
     color: '#333333',
-    lineHeight: 22,
+    lineHeight: 24,
+  },
+  formText: {
+    lineHeight: 26,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    width: '100%',
+    marginVertical: SPACING.sm,
   },
   inputWrapper: {
     backgroundColor: '#F8F9FB',
@@ -712,10 +801,17 @@ const styles = StyleSheet.create({
   },
   streamingBubble: {
     opacity: 0.9,
+    borderColor: COLORS.valentinePink,
+    borderWidth: 1,
   },
   streamingIndicator: {
     position: 'absolute',
     bottom: 6,
     right: 6,
+  },
+  boldText: {
+    fontWeight: '700',
+    color: '#222',
+    fontSize: FONTS.sizes.md,
   },
 }); 

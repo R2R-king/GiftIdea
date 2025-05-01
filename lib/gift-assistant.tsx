@@ -19,6 +19,9 @@ import { statusBarHeight } from '../utils/constants';
 import { RootStackParamList } from '../navigation/types';
 import gigaChatService, { GigaChatMessage } from './gigachat-service';
 import MockResponses from './mock-responses';
+import textFormatter, { formatTextForDisplay } from './text-formatter';
+
+const { STYLE_MARKER } = textFormatter;
 
 type Message = {
   id: string;
@@ -309,6 +312,42 @@ export const GiftAssistantScreen: React.FC = () => {
     }
   };
 
+  // Function to render formatted text with bold styling
+  const renderFormattedText = (text: string, style: any) => {
+    if (!text) return null;
+    
+    // Split by our custom markers
+    const parts = text.split(new RegExp(`(${STYLE_MARKER.BOLD_START}|${STYLE_MARKER.BOLD_END})`, 'g'));
+    
+    // Remove empty parts and markers
+    const filteredParts = parts.filter(part => 
+      part !== '' && 
+      part !== STYLE_MARKER.BOLD_START && 
+      part !== STYLE_MARKER.BOLD_END
+    );
+    
+    // Track if we're inside a bold section
+    let isBold = false;
+    
+    // Render each part with appropriate styling
+    return filteredParts.map((part, index) => {
+      // We need to toggle the bold state for each marker we pass
+      const currentPart = (
+        <Text 
+          key={index}
+          style={[style, isBold ? styles.boldText : null]}
+        >
+          {part}
+        </Text>
+      );
+      
+      // Toggle the state for the next part
+      isBold = !isBold;
+      
+      return currentPart;
+    });
+  };
+
   const renderMessage = ({ item }: { item: Message }) => {
     if (item.isLoading) {
       return (
@@ -329,10 +368,12 @@ export const GiftAssistantScreen: React.FC = () => {
         disabled={!item.error}
         onPress={() => item.error && handleRetry(item.id)}
       >
-        <Text style={styles.messageText}>{item.text}</Text>
-        {item.error && (
-          <Text style={styles.retryText}>Tap to retry</Text>
-        )}
+        <View style={styles.messageContentContainer}>
+          {renderFormattedText(formatTextForDisplay(item.text), styles.messageText)}
+          {item.error && (
+            <Text style={styles.retryText}>Tap to retry</Text>
+          )}
+        </View>
       </TouchableOpacity>
     );
   };
@@ -486,6 +527,12 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  messageContentContainer: {
+    flex: 1,
+  },
+  boldText: {
+    fontWeight: 'bold',
   },
 });
 
