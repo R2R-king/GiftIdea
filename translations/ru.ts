@@ -40,6 +40,35 @@ const translations = {
     date: {
       ongoing: 'Постоянно',
     },
+    createButton: 'Создать',
+    addEvent: 'Добавить новое событие',
+    addEventSubtext: 'Не пропустите важную дату',
+    createEventTitle: 'Создать новое событие',
+    eventName: 'Название события',
+    eventNamePlaceholder: 'Например: День рождения мамы',
+    eventDate: 'Дата события',
+    eventDatePlaceholder: 'Например: 14 февраля',
+    eventDateHelp: 'Формат: число и название месяца, например "14 февраля"',
+    eventImage: 'URL изображения (опционально)',
+    customEvent: 'Моё событие',
+    cancel: 'Отмена',
+    save: 'Сохранить',
+    delete: {
+      title: 'Удалить событие',
+      message: 'Вы уверены, что хотите удалить событие "{name}"?',
+      confirm: 'Удалить',
+      cancel: 'Отмена',
+      cannotDelete: 'Невозможно удалить',
+      cannotDeleteMessage: 'Стандартные события нельзя удалить',
+      ok: 'OK'
+    },
+    errors: {
+      nameRequired: 'Укажите название события',
+      dateRequired: 'Укажите дату события',
+      dateFormat: 'Неверный формат даты. Используйте формат "14 февраля"',
+      dateMonthInvalid: 'Указан неверный месяц',
+      dateDayInvalid: 'Указан неверный день',
+    },
   },
   partners: {
     categories: {

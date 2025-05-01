@@ -15,15 +15,17 @@ import {
   Pressable,
   Keyboard,
   KeyboardAvoidingView,
+  Modal,
+  Button as NativeButton
 } from 'react-native';
 import { useAppLocalization } from '@/components/LocalizationWrapper';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Calendar, MapPin, ArrowUpRight, Search, Filter, Heart, Gift, Star, ShoppingCart, X } from 'lucide-react-native';
+import { Calendar, MapPin, ArrowUpRight, Search, Filter, Heart, Gift, Star, ShoppingCart, X, ArrowRight, Plus, Trash2 } from 'lucide-react-native';
 import TabBarShadow from '@/components/TabBarShadow';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 60) / 2;
 
@@ -120,6 +122,131 @@ const popularProducts = [
   },
 ];
 
+// Создадим тип для событий
+type HolidayEvent = {
+  id: string;
+  name: string;
+  date: string;
+  daysLeft: number;
+  image: string;
+  color: [string, string];
+};
+
+// Mock upcoming holidays
+const getHolidays = () => {
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const nextYear = currentYear + 1;
+
+  // Get date objects for each holiday
+  const valentinesDay = new Date(currentYear, 1, 14); // Feb 14
+  if (valentinesDay < today) valentinesDay.setFullYear(nextYear);
+
+  const womensDay = new Date(currentYear, 2, 8); // Mar 8
+  if (womensDay < today) womensDay.setFullYear(nextYear);
+
+  const defendersDay = new Date(currentYear, 1, 23); // Feb 23
+  if (defendersDay < today) defendersDay.setFullYear(nextYear);
+
+  const birthdayFriend = new Date(currentYear, 3, 15); // Apr 15
+  if (birthdayFriend < today) birthdayFriend.setFullYear(nextYear);
+
+  // Calculate days left for each holiday
+  const calculateDaysLeft = (date: Date): number => {
+    const diffTime = date.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  // Format date to Russian format (e.g., "14 февраля")
+  const formatDateToRussian = (date: Date): string => {
+    const months = [
+      'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+      'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
+    ];
+    return `${date.getDate()} ${months[date.getMonth()]}`;
+  };
+
+  // Create holidays array with calculated days
+  const holidays = [
+    {
+      id: '1',
+      name: 'День святого Валентина',
+      date: formatDateToRussian(valentinesDay),
+      daysLeft: calculateDaysLeft(valentinesDay),
+      image: 'https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=500',
+      color: ['#FF5E87', '#FF3366'] as [string, string],
+    },
+    {
+      id: '2',
+      name: 'Международный женский день',
+      date: formatDateToRussian(womensDay),
+      daysLeft: calculateDaysLeft(womensDay),
+      image: 'https://images.unsplash.com/photo-1520006403909-838d6b92c22e?w=500',
+      color: ['#9C27B0', '#673AB7'] as [string, string],
+    },
+    {
+      id: '3',
+      name: 'День защитника Отечества',
+      date: formatDateToRussian(defendersDay),
+      daysLeft: calculateDaysLeft(defendersDay),
+      image: 'https://images.unsplash.com/photo-1517263904808-5dc91e3e7044?w=500',
+      color: ['#4CAF50', '#2E7D32'] as [string, string],
+    },
+    {
+      id: '4',
+      name: 'День рождения друга',
+      date: formatDateToRussian(birthdayFriend),
+      daysLeft: calculateDaysLeft(birthdayFriend),
+      image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=500',
+      color: ['#FFC107', '#FF9800'] as [string, string],
+    },
+  ];
+
+  // Sort holidays by days left (closest first)
+  return holidays.sort((a, b) => a.daysLeft - b.daysLeft);
+};
+
+// Get sorted holidays
+const getInitialHolidays = getHolidays();
+
+// Обновляем daysLeft для события на основе текущей даты
+const updateDaysLeft = (event: HolidayEvent): HolidayEvent => {
+  const today = new Date();
+  const eventDateParts = event.date.split(' ');
+  
+  // Находим номер месяца по названию
+  const months = [
+    'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+    'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
+  ];
+  const monthIndex = months.findIndex(month => month === eventDateParts[1]);
+  
+  // Если формат даты корректный
+  if (monthIndex !== -1) {
+    // Создаем объект даты для события
+    const day = parseInt(eventDateParts[0], 10);
+    if (!isNaN(day)) {
+      const eventDate = new Date(today.getFullYear(), monthIndex, day);
+      
+      // Если дата уже прошла, добавляем год
+      if (eventDate < today) {
+        eventDate.setFullYear(today.getFullYear() + 1);
+      }
+      
+      // Вычисляем количество дней до события
+      const diffTime = eventDate.getTime() - today.getTime();
+      const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      // Возвращаем обновленное событие
+      return { ...event, daysLeft };
+    }
+  }
+  
+  // Если формат даты некорректный, возвращаем исходное событие
+  return event;
+};
+
 export default function FeedScreen() {
   const { t, localizedData } = useAppLocalization();
   const { events } = localizedData;
@@ -127,11 +254,87 @@ export default function FeedScreen() {
   const [favorites, setFavorites] = useState<{[key: string]: boolean}>({
     '2': true, // Teddy Bear предустановлен как избранный
   });
+  const [upcomingHolidays, setUpcomingHolidays] = useState<HolidayEvent[]>(getInitialHolidays);
+  const [forceUpdate, setForceUpdate] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const searchInputRef = useRef<TextInput>(null);
   const [showGreeting, setShowGreeting] = useState(true);
+  const [isCreateEventModalVisible, setIsCreateEventModalVisible] = useState(false);
+  const [newEventName, setNewEventName] = useState('');
+  const [newEventDate, setNewEventDate] = useState('');
+  const [newEventImage, setNewEventImage] = useState('https://images.unsplash.com/photo-1513151233558-d860c5398176?w=500');
+  const [validationErrors, setValidationErrors] = useState<{
+    name?: string;
+    date?: string;
+  }>({});
+
+  // Загрузка пользовательских событий при запуске
+  useEffect(() => {
+    const loadCustomEvents = async () => {
+      try {
+        // Сначала обновим daysLeft для предустановленных событий
+        const updatedInitialHolidays = getInitialHolidays.map(updateDaysLeft);
+        setUpcomingHolidays(updatedInitialHolidays);
+        
+        const savedEvents = await AsyncStorage.getItem('customEvents');
+        
+        if (savedEvents) {
+          const parsedEvents = JSON.parse(savedEvents) as HolidayEvent[];
+          console.log("Загружены сохраненные события:", parsedEvents);
+          
+          // Обновляем daysLeft для сохраненных событий
+          const updatedSavedEvents = parsedEvents.map(updateDaysLeft);
+          
+          // Добавляем сохраненные события к существующим, а не заменяем их
+          if (updatedSavedEvents && updatedSavedEvents.length > 0) {
+            setUpcomingHolidays(prevHolidays => {
+              // Собираем все существующие ID, чтобы избежать дубликатов
+              const existingIds = prevHolidays.map(event => event.id);
+              // Фильтруем сохраненные события, чтобы добавить только те, которых еще нет
+              const newEvents = updatedSavedEvents.filter(event => !existingIds.includes(event.id));
+              
+              if (newEvents.length > 0) {
+                // Объединяем существующие и новые события, затем сортируем по дням
+                const allEvents = [...prevHolidays, ...newEvents].sort((a, b) => a.daysLeft - b.daysLeft);
+                console.log("Все события после загрузки:", allEvents);
+                return allEvents;
+              }
+              
+              return prevHolidays;
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Ошибка при загрузке событий:", error);
+      }
+    };
+    
+    loadCustomEvents();
+  }, []);
+  
+  // Сохранение пользовательских событий при изменении
+  useEffect(() => {
+    const saveCustomEvents = async () => {
+      try {
+        // Находим пользовательские события (те, что не входят в предустановленные)
+        const presetEventIds = getInitialHolidays.map(event => event.id);
+        const customEvents = upcomingHolidays.filter(event => !presetEventIds.includes(event.id));
+        
+        // Сохраняем только, если есть что сохранять
+        await AsyncStorage.setItem('customEvents', JSON.stringify(customEvents));
+        console.log("Пользовательские события сохранены:", customEvents);
+      } catch (error) {
+        console.error("Ошибка при сохранении событий:", error);
+      }
+    };
+    
+    // Запускаем сохранение только если был forceUpdate или изменились события
+    if (forceUpdate > 0) {
+      saveCustomEvents();
+    }
+  }, [upcomingHolidays, forceUpdate]);
 
   // Скидки и акции с локализацией
   const discountItems = useMemo(() => [
@@ -203,60 +406,185 @@ export default function FeedScreen() {
     };
   }, [searchQuery]);
 
-  // Функция для обработки нажатия на событие
-  const handleEventPress = (event: any) => {
-    // В будущем можно использовать router.push для перехода на страницу детализации
-    // router.push(`/event-details/${event.id}`);
+  // Эффект для отслеживания изменений в списке событий
+  useEffect(() => {
+    console.log("Список событий изменился:", upcomingHolidays);
     
-    // Пока такой страницы нет, покажем Alert с информацией о событии
-    Alert.alert(
-      event.title,
-      event.description,
-      [
-        { text: 'Закрыть', style: 'cancel' },
-        { text: 'Подробнее', onPress: () => console.log('Переход на детали события', event.id) }
-      ]
-    );
+    // Выводим информацию о количестве стандартных и пользовательских событий
+    const presetEventIds = getInitialHolidays.map(event => event.id);
+    const customEvents = upcomingHolidays.filter(event => !presetEventIds.includes(event.id));
+    
+    console.log(`Всего событий: ${upcomingHolidays.length}`);
+    console.log(`Стандартных событий: ${upcomingHolidays.length - customEvents.length}`);
+    console.log(`Пользовательских событий: ${customEvents.length}`);
+  }, [upcomingHolidays, forceUpdate]);
+
+  // Функция для добавления нового события
+  const handleAddEvent = () => {
+    // Сбрасываем ошибки валидации
+    setValidationErrors({});
+    
+    // Собираем ошибки
+    const errors: {name?: string; date?: string} = {};
+    
+    // Валидация полей
+    if (!newEventName.trim()) {
+      errors.name = t('events.errors.nameRequired');
+    }
+    
+    if (!newEventDate.trim()) {
+      errors.date = t('events.errors.dateRequired');
+    } else {
+      // Проверяем формат даты
+      const eventDateParts = newEventDate.split(' ');
+      if (eventDateParts.length !== 2) {
+        errors.date = t('events.errors.dateFormat');
+      } else {
+        // Находим номер месяца по названию
+        const months = [
+          'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+          'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
+        ];
+        const monthIndex = months.findIndex(month => month === eventDateParts[1]);
+        
+        if (monthIndex === -1) {
+          errors.date = t('events.errors.dateMonthInvalid');
+        } else {
+          // Проверяем, что день является числом
+          const day = parseInt(eventDateParts[0], 10);
+          if (isNaN(day) || day < 1 || day > 31) {
+            errors.date = t('events.errors.dateDayInvalid');
+          }
+        }
+      }
+    }
+    
+    // Если есть ошибки, обновляем состояние и прерываем выполнение
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+    
+    // Создаем новое событие
+    const newEvent: HolidayEvent = {
+      id: Date.now().toString(), // Используем timestamp в качестве уникального ID
+      name: newEventName,
+      date: newEventDate,
+      daysLeft: 0, // Временное значение, будет обновлено функцией updateDaysLeft
+      image: newEventImage || 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=500', // Дефолтная картинка если не указана
+      color: ['#FFC107', '#FF9800'] as [string, string], // Дефолтный цвет для новых событий
+    };
+    
+    // Обновляем daysLeft с помощью нашей функции
+    const updatedNewEvent = updateDaysLeft(newEvent);
+    
+    console.log("Добавляем новое событие:", updatedNewEvent);
+    
+    // Используем функциональное обновление состояния
+    setUpcomingHolidays(prevHolidays => {
+      const newHolidays = [...prevHolidays, updatedNewEvent].sort((a, b) => a.daysLeft - b.daysLeft);
+      console.log("Новый список событий:", newHolidays);
+      return newHolidays;
+    });
+    
+    // Принудительно обновляем компонент
+    setForceUpdate(prev => prev + 1);
+    
+    // Очищаем поля и закрываем модальное окно
+    setNewEventName('');
+    setNewEventDate('');
+    setNewEventImage('https://images.unsplash.com/photo-1513151233558-d860c5398176?w=500');
+    setIsCreateEventModalVisible(false);
+    
+    // Добавляем небольшую задержку перед закрытием модального окна
+    // для обеспечения корректного обновления UI
+    setTimeout(() => {
+      console.log("События после добавления:", upcomingHolidays);
+    }, 100);
   };
 
-  // Функция для обработки нажатия на кнопку поиска
-  const handleSearchPress = () => {
-    Alert.alert('Поиск', 'Поиск событий будет доступен в будущих обновлениях');
-  };
-  
-  // Функция для обработки нажатия на кнопку фильтра
-  const handleFilterPress = () => {
-    Alert.alert('Фильтр', 'Фильтрация событий будет доступна в будущих обновлениях');
-  };
-
-  // Функция для обработки нажатия на элемент
-  const handleItemPress = (item: any) => {
-    Alert.alert(
-      item.name || item.title,
-      item.description || `Цена: ${item.price}, Рейтинг: ${item.rating}`,
-      [
-        { text: 'Закрыть', style: 'cancel' },
-        { text: 'Подробнее', onPress: () => console.log('Переход на детали', item.id) }
-      ]
-    );
-  };
-
-  const toggleFavorite = (id: string) => {
-    setFavorites({
-      ...favorites,
-      [id]: !favorites[id]
+  // Функция для обработки нажатия на праздник
+  const handleHolidayPress = (holiday: any) => {
+    router.push({
+      pathname: '/gift-assistant',
+      params: { occasion: holiday.name }
     });
   };
 
-  const navigateToDetails = (item: any) => {
+  // Обновляем функцию handleGenerateGift, чтобы добавить параметр предзаполненного сообщения
+  const handleGenerateGift = (holiday: any) => {
+    // Создаем предзаполненный промпт на основе события
+    const prefilledPrompt = `Помоги мне выбрать идеальный подарок на ${holiday.name}. Мероприятие состоится ${holiday.date}, осталось ${holiday.daysLeft} дней.`;
+    
+    router.push({
+      pathname: '/gift-assistant',
+      params: { 
+        occasion: holiday.name,
+        prefilledPrompt: encodeURIComponent(prefilledPrompt)
+      }
+    });
+  };
+
+  // Функция для удаления события
+  const handleDeleteEvent = (eventId: string, eventName: string) => {
+    // Проверяем, не является ли событие стандартным (предустановленным)
+    const presetEventIds = getInitialHolidays.map(event => event.id);
+    if (presetEventIds.includes(eventId)) {
+      Alert.alert(
+        t('events.delete.cannotDelete'),
+        t('events.delete.cannotDeleteMessage'),
+        [{ text: t('events.delete.ok'), style: "default" }]
+      );
+      return;
+    }
+
+    // Запрашиваем подтверждение удаления
     Alert.alert(
-      item.name,
-      `View details for ${item.name}. Price: ${item.price}`,
+      t('events.delete.title'),
+      t('events.delete.message').replace('{name}', eventName),
       [
-        { text: 'Close', style: 'cancel' },
-        { text: 'View More', onPress: () => console.log('Navigate to details', item.id) }
+        {
+          text: t('events.delete.cancel'),
+          style: "cancel"
+        },
+        {
+          text: t('events.delete.confirm'),
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // Удаляем событие из списка
+              setUpcomingHolidays(prevEvents => {
+                const updatedEvents = prevEvents.filter(event => event.id !== eventId);
+                console.log(`Событие "${eventName}" удалено. Осталось событий: ${updatedEvents.length}`);
+                return updatedEvents;
+              });
+              
+              // Обновляем UI
+              setForceUpdate(prev => prev + 1);
+              
+              // Получаем актуальные данные, чтобы корректно сохранить
+              // Важно использовать currentEvents, а не upcomingHolidays,
+              // так как upcomingHolidays может еще не обновиться
+              const currentEvents = upcomingHolidays.filter(event => event.id !== eventId);
+              const customEvents = currentEvents.filter(event => !presetEventIds.includes(event.id));
+              
+              // Сохраняем обновленный список
+              await AsyncStorage.setItem('customEvents', JSON.stringify(customEvents));
+              console.log("События обновлены в хранилище после удаления:", customEvents.length);
+            } catch (error) {
+              console.error("Ошибка при удалении события:", error);
+            }
+          }
+        }
       ]
     );
+  };
+  
+  // Предотвращаем всплытие события при нажатии на кнопку удаления
+  const handleDeleteButtonPress = (e: any, eventId: string, eventName: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    handleDeleteEvent(eventId, eventName);
   };
 
   return (
@@ -325,152 +653,276 @@ export default function FeedScreen() {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Спецпредложения */}
-        <View style={styles.specialsSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{t('feed.specialOffers')}</Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAllText}>{t('feed.viewAll')}</Text>
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.specialsScrollContent}
-          >
-            {discountItems.map((item) => (
-              <TouchableOpacity 
-                key={item.id} 
-                activeOpacity={0.9}
-                onPress={() => handleItemPress(item)}
-              >
-                <LinearGradient
-                  colors={item.color}
-                  style={styles.specialCard}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                >
-                  <View style={styles.specialCardContent}>
-                    <Text style={styles.specialCardTitle}>{item.title}</Text>
-                    <Text style={styles.specialCardDescription}>{item.description}</Text>
-                    <TouchableOpacity style={styles.viewButton}>
-                      <Text style={styles.viewButtonText}>{t('feed.viewButton')}</Text>
-                    </TouchableOpacity>
-                  </View>
-                  <Image source={{ uri: item.image }} style={styles.specialCardImage} />
-                </LinearGradient>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* Категории */}
-        <View style={styles.categoriesSection}>
-          <Text style={styles.sectionTitle}>{t('feed.categories')}</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoriesScrollContent}
-          >
-            {categories.map((category) => (
-              <TouchableOpacity
-                key={category.id}
-                style={[
-                  styles.categoryButton,
-                  category.isActive && styles.activeCategoryButton,
-                ]}
-                onPress={() => setSelectedCategory(category.id)}
-                activeOpacity={0.7}
-              >
-                <Image 
-                  source={{ uri: category.icon }} 
-                  style={styles.categoryIcon} 
-                />
-                <Text
-                  style={[
-                    styles.categoryText,
-                    category.isActive && styles.activeCategoryText,
-                  ]}
-                >
-                  {category.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* Популярные продукты */}
-        <View style={styles.productsSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{t('feed.popular')}</Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAllText}>{t('feed.viewAll')}</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.productsGrid}>
-            {popularProducts.map((product) => (
-              <TouchableOpacity 
-                key={product.id} 
-                style={styles.productCard}
-                onPress={() => navigateToDetails(product)}
-                activeOpacity={0.9}
-              >
-                <View style={styles.productImageContainer}>
-                  <Image source={{ uri: product.image }} style={styles.productImage} />
-                  <TouchableOpacity
-                    style={styles.favoriteButton}
-                    onPress={() => toggleFavorite(product.id)}
-                    activeOpacity={0.7}
-                  >
-                    <Heart 
-                      size={16} 
-                      color="#FFFFFF" 
-                      fill={favorites[product.id] ? "#FF0844" : "transparent"} 
-                    />
-                  </TouchableOpacity>
-                </View>
-                <View style={styles.productInfo}>
-                  <Text style={styles.productName} numberOfLines={1}>{product.name}</Text>
-                  <View style={styles.productMeta}>
-                    <Text style={styles.productPrice}>{product.price}</Text>
-                    <View style={styles.ratingContainer}>
-                      <Star size={12} color="#FFC107" fill="#FFC107" />
-                      <Text style={styles.ratingText}>{product.rating}</Text>
-                    </View>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Раздел идей для подарков */}
-        <View style={styles.ideasSection}>
+        {/* ИИ ассистент подарков - перемещен наверх */}
+        <View style={styles.aiAssistantSection}>
           <LinearGradient
-            colors={['rgba(255,94,135,0.1)', 'rgba(255,8,68,0.1)']}
-            style={styles.ideasContainer}
+            colors={['#6A11CB', '#2575FC'] as [string, string]}
+            style={styles.aiCard}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <View style={styles.ideasContent}>
-              <Gift size={28} color="#FF0844" />
-              <Text style={styles.ideasTitle}>{t('feed.giftIdeas')}</Text>
-              <Text style={styles.ideasDescription}>
-                {t('feed.giftIdeasDesc')}
-              </Text>
+            <View style={styles.aiCardContent}>
+              <View>
+                <Text style={styles.aiCardTitle}>ИИ-ассистент подарков</Text>
+                <Text style={styles.aiCardDescription}>
+                  Не знаете что подарить? Наш ИИ-ассистент поможет выбрать идеальный подарок для любого случая
+                </Text>
+              </View>
+              
               <TouchableOpacity 
-                style={styles.ideasButton}
-                onPress={() => router.push("/gift-assistant" as any)}
+                style={styles.aiButton}
+                onPress={() => router.push('/gift-assistant')}
               >
-                <Text style={styles.ideasButtonText}>{t('feed.startButton')}</Text>
-                <ArrowUpRight size={16} color="#FF0844" />
+                <Text style={styles.aiButtonText}>Подобрать подарок</Text>
+                <ArrowRight size={18} color="#FFFFFF" style={styles.buttonIcon} />
               </TouchableOpacity>
             </View>
+            
+            <Image 
+              source={{ uri: 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=500' }} 
+              style={styles.aiCardImage}
+            />
           </LinearGradient>
         </View>
+
+        {/* Ближайшие праздники */}
+        <View style={styles.upcomingSection}>
+          <View style={styles.sectionTitleRow}>
+            <Text style={styles.sectionTitle}>Ближайшие мероприятия</Text>
+          </View>
+          
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.eventsScrollView}
+            contentContainerStyle={styles.eventsScrollContent}
+          >
+            {upcomingHolidays.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={styles.eventCard}
+                activeOpacity={0.95}
+                onPress={() => handleHolidayPress(item)}
+              >
+                <ImageBackground 
+                  source={{ uri: item.image }} 
+                  style={styles.eventImageBackground}
+                  imageStyle={styles.eventBackgroundImage}
+                >
+                  <LinearGradient
+                    colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.7)']}
+                    style={styles.eventGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                  >
+                    <View style={styles.eventDateBadge}>
+                      <Text style={styles.eventDateMonth}>
+                        {item.date.split(' ')[1].substring(0, 3)}
+                      </Text>
+                      <Text style={styles.eventDateDay}>
+                        {item.date.split(' ')[0]}
+                      </Text>
+                    </View>
+                    
+                    {/* Кнопка удаления события */}
+                    <TouchableOpacity 
+                      style={styles.deleteEventButton}
+                      onPress={(e) => handleDeleteButtonPress(e, item.id, item.name)}
+                    >
+                      <Trash2 size={16} color="#FFFFFF" />
+                    </TouchableOpacity>
+                    
+                    <View style={styles.eventContent}>
+                      <Text style={styles.eventName}>{item.name}</Text>
+                      <View style={styles.eventDetailRow}>
+                        <Calendar size={14} color="#FFFFFF" />
+                        <Text style={styles.eventDetail}>{item.date}</Text>
+                      </View>
+                      <View style={styles.eventDetailRow}>
+                        <Text style={styles.daysLeftText}>
+                          {item.daysLeft === 0 
+                            ? "Сегодня!" 
+                            : `Осталось ${item.daysLeft} ${item.daysLeft === 1 ? 'день' : 
+                              item.daysLeft < 5 ? 'дня' : 'дней'}`
+                          }
+                        </Text>
+                      </View>
+                      
+                      <TouchableOpacity 
+                        style={styles.generateButton}
+                        onPress={() => handleGenerateGift(item)}
+                      >
+                        <Text style={styles.generateButtonText}>Найти подарок</Text>
+                        <Gift size={14} color="#FFFFFF" style={styles.buttonIcon} />
+                      </TouchableOpacity>
+                    </View>
+                  </LinearGradient>
+                </ImageBackground>
+              </TouchableOpacity>
+            ))}
+            
+            {/* Кнопка добавления события */}
+            <TouchableOpacity
+              style={styles.addEventCard}
+              activeOpacity={0.9}
+              onPress={() => setIsCreateEventModalVisible(true)}
+            >
+              <LinearGradient
+                colors={['#64B5F6', '#2196F3']}
+                style={styles.addEventCardGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+              >
+                <View style={styles.addEventContent}>
+                  <View style={styles.addEventIconContainer}>
+                    <Plus size={32} color="#FFFFFF" />
+                  </View>
+                  <Text style={styles.addEventText}>{t('events.addEvent')}</Text>
+                  <Text style={styles.addEventSubtext}>{t('events.addEventSubtext')}</Text>
+                </View>
+              </LinearGradient>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+
+        {/* Идеи для особых случаев */}
+        <View style={styles.specialCasesSection}>
+          <Text style={styles.sectionTitle}>Идеи для особых случаев</Text>
+          
+          <View style={styles.specialCasesGrid}>
+            <TouchableOpacity 
+              style={styles.specialCaseCard}
+              onPress={() => router.push({
+                pathname: '/gift-assistant',
+                params: { occasion: 'День рождения' }
+              })}
+            >
+              <Image 
+                source={{ uri: 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=500' }} 
+                style={styles.specialCaseImage}
+              />
+              <Text style={styles.specialCaseTitle}>День рождения</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.specialCaseCard}
+              onPress={() => router.push({
+                pathname: '/gift-assistant',
+                params: { occasion: 'Юбилей' }
+              })}
+            >
+              <Image 
+                source={{ uri: 'https://images.unsplash.com/photo-1465310477141-6fb93167a273?w=500' }} 
+                style={styles.specialCaseImage}
+              />
+              <Text style={styles.specialCaseTitle}>Юбилей</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.specialCaseCard}
+              onPress={() => router.push({
+                pathname: '/gift-assistant',
+                params: { occasion: 'Свадьба' }
+              })}
+            >
+              <Image 
+                source={{ uri: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=500' }} 
+                style={styles.specialCaseImage}
+              />
+              <Text style={styles.specialCaseTitle}>Свадьба</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.specialCaseCard}
+              onPress={() => router.push({
+                pathname: '/gift-assistant',
+                params: { occasion: 'Новоселье' }
+              })}
+            >
+              <Image 
+                source={{ uri: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=500' }} 
+                style={styles.specialCaseImage}
+              />
+              <Text style={styles.specialCaseTitle}>Новоселье</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </ScrollView>
+
+      {/* Модальное окно для создания события */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isCreateEventModalVisible}
+        onRequestClose={() => setIsCreateEventModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{t('events.createEventTitle')}</Text>
+              <TouchableOpacity 
+                onPress={() => setIsCreateEventModalVisible(false)}
+                style={styles.closeButton}
+              >
+                <X size={24} color={COLORS.gray600} />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.modalBody}>
+              <Text style={styles.inputLabel}>{t('events.eventName')}</Text>
+              <TextInput
+                style={[styles.input, validationErrors.name ? styles.inputError : null]}
+                value={newEventName}
+                onChangeText={setNewEventName}
+                placeholder={t('events.eventNamePlaceholder')}
+                placeholderTextColor={COLORS.gray400}
+              />
+              {validationErrors.name && (
+                <Text style={styles.errorText}>{validationErrors.name}</Text>
+              )}
+              
+              <Text style={styles.inputLabel}>{t('events.eventDate')}</Text>
+              <TextInput
+                style={[styles.input, validationErrors.date ? styles.inputError : null]}
+                value={newEventDate}
+                onChangeText={setNewEventDate}
+                placeholder={t('events.eventDatePlaceholder')}
+                placeholderTextColor={COLORS.gray400}
+              />
+              {validationErrors.date && (
+                <Text style={styles.errorText}>{validationErrors.date}</Text>
+              )}
+              
+              <Text style={styles.inputHelp}>{t('events.eventDateHelp')}</Text>
+              
+              <Text style={styles.inputLabel}>{t('events.eventImage')}</Text>
+              <TextInput
+                style={styles.input}
+                value={newEventImage}
+                onChangeText={setNewEventImage}
+                placeholder="https://..."
+                placeholderTextColor={COLORS.gray400}
+              />
+            </View>
+            
+            <View style={styles.modalFooter}>
+              <TouchableOpacity 
+                style={styles.cancelButton}
+                onPress={() => setIsCreateEventModalVisible(false)}
+              >
+                <Text style={styles.cancelButtonText}>{t('events.cancel')}</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.saveButton}
+                onPress={handleAddEvent}
+              >
+                <Text style={styles.saveButtonText}>{t('events.save')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Всегда показываем тень для панели навигации */}
       <TabBarShadow />
@@ -770,5 +1222,382 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FF0844',
     marginRight: 5,
+  },
+  upcomingSection: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  holidaysList: {
+    paddingBottom: 10,
+  },
+  holidayCard: {
+    marginBottom: 16,
+    borderRadius: RADIUS.lg,
+    overflow: 'hidden',
+    ...SHADOWS.medium,
+  },
+  holidayGradient: {
+    flexDirection: 'row',
+    borderRadius: RADIUS.lg,
+    overflow: 'hidden',
+  },
+  holidayImage: {
+    width: 100,
+    height: 130,
+  },
+  holidayContent: {
+    flex: 1,
+    padding: 15,
+    justifyContent: 'space-between',
+  },
+  holidayTextContainer: {
+    flex: 1,
+  },
+  holidayName: {
+    fontSize: FONTS.sizes.lg,
+    fontWeight: FONTS.weights.bold as any,
+    color: COLORS.white,
+    marginBottom: 5,
+  },
+  dateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  holidayDate: {
+    fontSize: FONTS.sizes.sm,
+    color: COLORS.white,
+    marginLeft: 6,
+  },
+  generateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: RADIUS.xs,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginTop: 10,
+  },
+  generateButtonText: {
+    fontSize: FONTS.sizes.sm,
+    fontWeight: FONTS.weights.bold as any,
+    color: COLORS.white,
+  },
+  buttonIcon: {
+    marginLeft: 6,
+  },
+  aiAssistantSection: {
+    paddingHorizontal: 20,
+    paddingTop: 15,
+    paddingBottom: 5,
+  },
+  aiCard: {
+    borderRadius: RADIUS.lg,
+    overflow: 'hidden',
+    flexDirection: 'row',
+    ...SHADOWS.medium,
+  },
+  aiCardContent: {
+    flex: 1,
+    padding: 15,
+    justifyContent: 'space-between',
+  },
+  aiCardTitle: {
+    fontSize: FONTS.sizes.lg,
+    fontWeight: FONTS.weights.bold as any,
+    color: COLORS.white,
+    marginBottom: 5,
+  },
+  aiCardDescription: {
+    fontSize: FONTS.sizes.sm,
+    color: COLORS.white,
+    marginBottom: 15,
+  },
+  aiButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: RADIUS.xs,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  aiButtonText: {
+    fontSize: FONTS.sizes.sm,
+    fontWeight: FONTS.weights.bold as any,
+    color: COLORS.white,
+  },
+  aiCardImage: {
+    width: 100,
+    height: 130,
+  },
+  specialCasesSection: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  specialCasesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  specialCaseCard: {
+    width: '48%',
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.lg,
+    overflow: 'hidden',
+    marginBottom: 15,
+    ...SHADOWS.small,
+  },
+  specialCaseImage: {
+    width: '100%',
+    height: 120,
+  },
+  specialCaseTitle: {
+    fontSize: FONTS.sizes.md,
+    fontWeight: FONTS.weights.medium as any,
+    color: COLORS.gray800,
+    textAlign: 'center',
+    paddingVertical: 10,
+  },
+  eventsScrollView: {
+    marginTop: SPACING.sm,
+  },
+  eventsScrollContent: {
+    paddingHorizontal: SPACING.md,
+    paddingBottom: SPACING.sm,
+  },
+  eventCard: {
+    width: 300,
+    height: 200,
+    marginRight: SPACING.lg,
+    borderRadius: RADIUS.lg,
+    overflow: 'hidden',
+    ...SHADOWS.medium,
+  },
+  eventImageBackground: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'flex-end',
+  },
+  eventBackgroundImage: {
+    borderRadius: RADIUS.lg,
+  },
+  eventGradient: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+    justifyContent: 'space-between',
+    padding: SPACING.md,
+  },
+  eventDateBadge: {
+    position: 'absolute',
+    top: SPACING.md,
+    right: SPACING.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: RADIUS.sm,
+    padding: SPACING.xs,
+    alignItems: 'center',
+    minWidth: 50,
+    zIndex: 10,
+  },
+  eventDateMonth: {
+    fontSize: FONTS.sizes.xs,
+    fontWeight: FONTS.weights.semibold as any,
+    color: COLORS.valentinePink,
+    textTransform: 'uppercase',
+  },
+  eventDateDay: {
+    fontSize: FONTS.sizes.lg,
+    fontWeight: FONTS.weights.bold as any,
+    color: COLORS.gray800,
+  },
+  eventContent: {
+    marginTop: 'auto',
+  },
+  eventName: {
+    fontSize: FONTS.sizes.lg,
+    fontWeight: FONTS.weights.bold as any,
+    color: COLORS.white,
+    marginBottom: SPACING.xs,
+  },
+  eventDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.xs,
+  },
+  eventDetail: {
+    fontSize: FONTS.sizes.sm,
+    color: COLORS.white,
+    marginLeft: SPACING.xs,
+  },
+  daysLeftText: {
+    fontSize: FONTS.sizes.sm,
+    color: COLORS.white,
+    backgroundColor: 'rgba(255, 51, 102, 0.6)',
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 2,
+    borderRadius: RADIUS.xs,
+    overflow: 'hidden',
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.md,
+  },
+  createEventButton: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.valentinePink,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: RADIUS.sm,
+    alignItems: 'center',
+  },
+  createEventButtonText: {
+    color: COLORS.white,
+    fontSize: FONTS.sizes.sm,
+    fontWeight: FONTS.weights.medium as any,
+    marginLeft: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '90%',
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    ...SHADOWS.medium,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+    paddingBottom: SPACING.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.gray200,
+  },
+  modalTitle: {
+    fontSize: FONTS.sizes.lg,
+    fontWeight: FONTS.weights.bold as any,
+    color: COLORS.gray800,
+  },
+  closeButton: {
+    padding: 4,
+  },
+  modalBody: {
+    marginBottom: SPACING.md,
+  },
+  inputLabel: {
+    fontSize: FONTS.sizes.sm,
+    fontWeight: FONTS.weights.medium as any,
+    color: COLORS.gray700,
+    marginBottom: 6,
+  },
+  input: {
+    backgroundColor: COLORS.gray100,
+    borderRadius: RADIUS.sm,
+    padding: SPACING.sm,
+    fontSize: FONTS.sizes.md,
+    color: COLORS.gray800,
+    marginBottom: SPACING.sm,
+    borderWidth: 1,
+    borderColor: COLORS.gray200,
+  },
+  inputError: {
+    borderColor: COLORS.error,
+  },
+  errorText: {
+    color: COLORS.error,
+    fontSize: FONTS.sizes.xs,
+    marginTop: -SPACING.xs,
+    marginBottom: SPACING.sm,
+  },
+  inputHelp: {
+    fontSize: FONTS.sizes.xs,
+    color: COLORS.gray500,
+    marginBottom: SPACING.md,
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: SPACING.sm,
+  },
+  cancelButton: {
+    padding: SPACING.sm,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    borderColor: COLORS.gray300,
+  },
+  cancelButtonText: {
+    fontSize: FONTS.sizes.sm,
+    color: COLORS.gray700,
+    fontWeight: FONTS.weights.medium as any,
+  },
+  saveButton: {
+    backgroundColor: COLORS.valentinePink,
+    padding: SPACING.sm,
+    borderRadius: RADIUS.sm,
+  },
+  saveButtonText: {
+    fontSize: FONTS.sizes.sm,
+    color: COLORS.white,
+    fontWeight: FONTS.weights.bold as any,
+  },
+  addEventCard: {
+    width: 250,
+    height: 200,
+    marginRight: SPACING.lg,
+    borderRadius: RADIUS.lg,
+    overflow: 'hidden',
+    ...SHADOWS.medium,
+  },
+  addEventCardGradient: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING.md,
+  },
+  addEventContent: {
+    alignItems: 'center',
+  },
+  addEventIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+  },
+  addEventText: {
+    fontSize: FONTS.sizes.md,
+    fontWeight: FONTS.weights.bold as any,
+    color: COLORS.white,
+    textAlign: 'center',
+    marginBottom: SPACING.xs,
+  },
+  addEventSubtext: {
+    fontSize: FONTS.sizes.sm,
+    color: 'rgba(255,255,255,0.8)',
+    textAlign: 'center',
+  },
+  deleteEventButton: {
+    position: 'absolute',
+    top: SPACING.md,
+    left: SPACING.md,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 51, 102, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
   },
 });

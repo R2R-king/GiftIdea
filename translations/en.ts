@@ -40,6 +40,35 @@ const translations = {
     date: {
       ongoing: 'Ongoing',
     },
+    createButton: 'Create',
+    addEvent: 'Add New Event',
+    addEventSubtext: 'Don\'t miss an important date',
+    createEventTitle: 'Create New Event',
+    eventName: 'Event Name',
+    eventNamePlaceholder: 'Example: Mom\'s Birthday',
+    eventDate: 'Event Date',
+    eventDatePlaceholder: 'Example: 14 February',
+    eventDateHelp: 'Format: date and month name, for example "14 February"',
+    eventImage: 'Image URL (optional)',
+    customEvent: 'My Event',
+    cancel: 'Cancel',
+    save: 'Save',
+    delete: {
+      title: 'Delete Event',
+      message: 'Are you sure you want to delete the event "{name}"?',
+      confirm: 'Delete',
+      cancel: 'Cancel',
+      cannotDelete: 'Cannot Delete',
+      cannotDeleteMessage: 'Standard events cannot be deleted',
+      ok: 'OK'
+    },
+    errors: {
+      nameRequired: 'Please enter an event name',
+      dateRequired: 'Please enter an event date',
+      dateFormat: 'Invalid date format. Use the format "14 February"',
+      dateMonthInvalid: 'Invalid month name',
+      dateDayInvalid: 'Invalid day number',
+    },
   },
   partners: {
     categories: {

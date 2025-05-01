@@ -20,9 +20,23 @@ export default function TabLayout() {
         animation={focused ? 'pulse' : undefined}
         iterationCount={focused ? 'infinite' : 1}
         duration={1500}
-        style={styles.iconContainer}
+        style={[
+          styles.iconContainer,
+          focused && styles.focusedIconContainer
+        ]}
       >
-        <Icon color={color} size={24} />
+        <Icon 
+          color={color} 
+          size={focused ? 26 : 22} 
+          strokeWidth={focused ? 2.5 : 2}
+        />
+        {focused && (
+          <Animatable.View 
+            animation="fadeIn" 
+            duration={300} 
+            style={styles.activeIndicator} 
+          />
+        )}
       </Animatable.View>
     );
   };
@@ -37,40 +51,48 @@ export default function TabLayout() {
           bottom: 20,
           left: 20,
           right: 20,
-          height: 70,
-          borderRadius: 35,
-          paddingBottom: 10,
-          paddingHorizontal: 20,
+          height: 80,
+          borderRadius: 40,
+          paddingBottom: Platform.OS === 'ios' ? 16 : 12,
+          paddingTop: 12,
+          paddingHorizontal: 16,
           backgroundColor: 'white',
           borderTopWidth: 0,
-          elevation: 10,
+          elevation: 15,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 10 },
-          shadowOpacity: 0.15,
-          shadowRadius: 20,
+          shadowOpacity: 0.2,
+          shadowRadius: 25,
           overflow: 'hidden',
         },
         tabBarBackground: () => (
           <View style={styles.tabBarBackground}>
             <LinearGradient
-              colors={['rgba(255, 8, 68, 0.08)', 'rgba(255, 8, 68, 0.02)']}
+              colors={['rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 1)']}
               style={StyleSheet.absoluteFill}
               start={{ x: 0, y: 0 }}
               end={{ x: 0, y: 1 }}
             />
+            <LinearGradient
+              colors={['rgba(255, 8, 68, 0.12)', 'rgba(255, 8, 68, 0.03)']}
+              style={[StyleSheet.absoluteFill, styles.gradientOverlay]}
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 1 }}
+            />
           </View>
         ),
         tabBarItemStyle: {
-          marginTop: 8,
+          marginVertical: 8,
           borderRadius: 16,
+          height: 50,
         },
         tabBarLabelStyle: {
           fontSize: 12,
-          fontWeight: '500',
-          marginTop: Platform.OS === 'ios' ? -1 : 1,
+          fontWeight: '600',
+          marginTop: Platform.OS === 'ios' ? 0 : 2,
         },
         headerShown: false,
-        tabBarHideOnKeyboard: false,
+        tabBarHideOnKeyboard: true,
       }}
     >
       <Tabs.Screen
@@ -126,10 +148,29 @@ const styles = StyleSheet.create({
   iconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    height: 24,
+    height: 40,
+    width: 40,
+    borderRadius: 20,
+  },
+  focusedIconContainer: {
+    backgroundColor: 'rgba(255, 8, 68, 0.1)',
+    transform: [{ scale: 1.05 }],
+  },
+  activeIndicator: {
+    position: 'absolute',
+    bottom: -2,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#FF0844',
   },
   tabBarBackground: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'white',
+    overflow: 'hidden',
+  },
+  gradientOverlay: {
+    opacity: 0.5,
+    borderRadius: 40,
   },
 });
