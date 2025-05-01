@@ -8,7 +8,7 @@ export default function LoginScreen() {
 
   const handleLogin = () => {
     // TODO: Implement actual login logic
-    router.replace('/(tabs)');
+    router.replace('/(tabs)/profile');
   };
 
   return (

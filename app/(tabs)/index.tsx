@@ -26,6 +26,9 @@ import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import ThematicCollections from '@/components/ThematicCollections';
+import PersonalizedRecommendations from '@/components/PersonalizedRecommendations';
+
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 60) / 2;
 
@@ -589,266 +592,253 @@ export default function FeedScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Фоновые элементы */}
-      <LinearGradient
-        colors={[COLORS.valentineBackground, COLORS.valentineLightBackground]}
-        style={styles.backgroundGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      />
-      
-      <StatusBar style="light" />
-      
-      {/* Заголовок */}
-      <LinearGradient
-        colors={[COLORS.valentinePink, COLORS.valentineLightPink]}
-        style={styles.header}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
+      <StatusBar style="auto" />
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
       >
-        <View style={styles.headerContent}>
-          {showGreeting && (
-            <>
-              <Text style={styles.headerTitle}>{t('feed.greeting').replace('%s', 'Алексей')}</Text>
-              <Text style={styles.headerSubtitle}>{t('feed.findGifts')}</Text>
-            </>
-          )}
-          
-          <Pressable
-            style={[styles.searchBar, !showGreeting && styles.searchBarNoGreeting]}
-            onPress={() => {
-              searchInputRef.current?.focus();
-              setIsSearchFocused(true);
-            }}
-          >
-            <Search size={20} color={COLORS.gray500} />
-            <TextInput
-              ref={searchInputRef}
-              placeholder={t('feed.searchPlaceholder')}
-              placeholderTextColor={COLORS.gray500}
-              style={styles.searchInput}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              onFocus={() => setIsSearchFocused(true)}
-              onBlur={() => {
-                if (searchQuery.length === 0) {
-                  setIsSearchFocused(false);
-                }
-              }}
-            />
-            {searchQuery ? (
-              <Pressable onPress={() => {
-                setSearchQuery('');
-                setIsSearchFocused(false);
-              }}>
-                <X size={20} color={COLORS.gray500} />
-              </Pressable>
-            ) : null}
-          </Pressable>
-        </View>
-      </LinearGradient>
-
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* ИИ ассистент подарков - перемещен наверх */}
-        <View style={styles.aiAssistantSection}>
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          bounces={false}
+        >
+          {/* Фоновые элементы */}
           <LinearGradient
-            colors={['#6A11CB', '#2575FC'] as [string, string]}
-            style={styles.aiCard}
+            colors={[COLORS.valentineBackground, COLORS.valentineLightBackground]}
+            style={styles.backgroundGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
+          />
+          
+          {/* Заголовок */}
+          <LinearGradient
+            colors={[COLORS.valentinePink, COLORS.valentineLightPink]}
+            style={styles.header}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
           >
-            <View style={styles.aiCardContent}>
-              <View>
-                <Text style={styles.aiCardTitle}>ИИ-ассистент подарков</Text>
-                <Text style={styles.aiCardDescription}>
-                  Не знаете что подарить? Наш ИИ-ассистент поможет выбрать идеальный подарок для любого случая
-                </Text>
-              </View>
+            <View style={styles.headerContent}>
+              {showGreeting && (
+                <>
+                  <Text style={styles.headerTitle}>{t('feed.greeting').replace('%s', 'Алексей')}</Text>
+                  <Text style={styles.headerSubtitle}>{t('feed.findGifts')}</Text>
+                </>
+              )}
               
-              <TouchableOpacity 
-                style={styles.aiButton}
-                onPress={() => router.push('/gift-assistant')}
+              <Pressable
+                style={[styles.searchBar, !showGreeting && styles.searchBarNoGreeting]}
+                onPress={() => {
+                  searchInputRef.current?.focus();
+                  setIsSearchFocused(true);
+                }}
               >
-                <Text style={styles.aiButtonText}>Подобрать подарок</Text>
-                <ArrowRight size={18} color="#FFFFFF" style={styles.buttonIcon} />
-              </TouchableOpacity>
+                <Search size={20} color={COLORS.gray500} />
+                <TextInput
+                  ref={searchInputRef}
+                  placeholder={t('feed.searchPlaceholder')}
+                  placeholderTextColor={COLORS.gray500}
+                  style={styles.searchInput}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  onFocus={() => setIsSearchFocused(true)}
+                  onBlur={() => {
+                    if (searchQuery.length === 0) {
+                      setIsSearchFocused(false);
+                    }
+                  }}
+                />
+                {searchQuery ? (
+                  <Pressable onPress={() => {
+                    setSearchQuery('');
+                    setIsSearchFocused(false);
+                  }}>
+                    <X size={20} color={COLORS.gray500} />
+                  </Pressable>
+                ) : null}
+              </Pressable>
+            </View>
+          </LinearGradient>
+
+          {/* Ближайшие праздники */}
+          <View style={styles.upcomingSection}>
+            <View style={styles.sectionTitleRow}>
+              <Text style={styles.sectionTitle}>Ближайшие мероприятия</Text>
             </View>
             
-            <Image 
-              source={{ uri: 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=500' }} 
-              style={styles.aiCardImage}
-            />
-          </LinearGradient>
-        </View>
-
-        {/* Ближайшие праздники */}
-        <View style={styles.upcomingSection}>
-          <View style={styles.sectionTitleRow}>
-            <Text style={styles.sectionTitle}>Ближайшие мероприятия</Text>
-          </View>
-          
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.eventsScrollView}
-            contentContainerStyle={styles.eventsScrollContent}
-          >
-            {upcomingHolidays.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={styles.eventCard}
-                activeOpacity={0.95}
-                onPress={() => handleHolidayPress(item)}
-              >
-                <ImageBackground 
-                  source={{ uri: item.image }} 
-                  style={styles.eventImageBackground}
-                  imageStyle={styles.eventBackgroundImage}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.eventsScrollView}
+              contentContainerStyle={styles.eventsScrollContent}
+            >
+              {upcomingHolidays.map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.eventCard}
+                  activeOpacity={0.95}
+                  onPress={() => handleHolidayPress(item)}
                 >
-                  <LinearGradient
-                    colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.7)']}
-                    style={styles.eventGradient}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 0, y: 1 }}
+                  <ImageBackground 
+                    source={{ uri: item.image }} 
+                    style={styles.eventImageBackground}
+                    imageStyle={styles.eventBackgroundImage}
                   >
-                    <View style={styles.eventDateBadge}>
-                      <Text style={styles.eventDateMonth}>
-                        {item.date.split(' ')[1].substring(0, 3)}
-                      </Text>
-                      <Text style={styles.eventDateDay}>
-                        {item.date.split(' ')[0]}
-                      </Text>
-                    </View>
-                    
-                    {/* Кнопка удаления события */}
-                    <TouchableOpacity 
-                      style={styles.deleteEventButton}
-                      onPress={(e) => handleDeleteButtonPress(e, item.id, item.name)}
+                    <LinearGradient
+                      colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.7)']}
+                      style={styles.eventGradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 0, y: 1 }}
                     >
-                      <Trash2 size={16} color="#FFFFFF" />
-                    </TouchableOpacity>
-                    
-                    <View style={styles.eventContent}>
-                      <Text style={styles.eventName}>{item.name}</Text>
-                      <View style={styles.eventDetailRow}>
-                        <Calendar size={14} color="#FFFFFF" />
-                        <Text style={styles.eventDetail}>{item.date}</Text>
-                      </View>
-                      <View style={styles.eventDetailRow}>
-                        <Text style={styles.daysLeftText}>
-                          {item.daysLeft === 0 
-                            ? "Сегодня!" 
-                            : `Осталось ${item.daysLeft} ${item.daysLeft === 1 ? 'день' : 
-                              item.daysLeft < 5 ? 'дня' : 'дней'}`
-                          }
+                      <View style={styles.eventDateBadge}>
+                        <Text style={styles.eventDateMonth}>
+                          {item.date.split(' ')[1].substring(0, 3)}
+                        </Text>
+                        <Text style={styles.eventDateDay}>
+                          {item.date.split(' ')[0]}
                         </Text>
                       </View>
                       
+                      {/* Кнопка удаления события */}
                       <TouchableOpacity 
-                        style={styles.generateButton}
-                        onPress={() => handleGenerateGift(item)}
+                        style={styles.deleteEventButton}
+                        onPress={(e) => handleDeleteButtonPress(e, item.id, item.name)}
                       >
-                        <Text style={styles.generateButtonText}>Найти подарок</Text>
-                        <Gift size={14} color="#FFFFFF" style={styles.buttonIcon} />
+                        <Trash2 size={16} color="#FFFFFF" />
                       </TouchableOpacity>
-                    </View>
-                  </LinearGradient>
-                </ImageBackground>
-              </TouchableOpacity>
-            ))}
-            
-            {/* Кнопка добавления события */}
-            <TouchableOpacity
-              style={styles.addEventCard}
-              activeOpacity={0.9}
-              onPress={() => setIsCreateEventModalVisible(true)}
-            >
-              <LinearGradient
-                colors={['#64B5F6', '#2196F3']}
-                style={styles.addEventCardGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
+                      
+                      <View style={styles.eventContent}>
+                        <Text style={styles.eventName}>{item.name}</Text>
+                        <View style={styles.eventDetailRow}>
+                          <Calendar size={14} color="#FFFFFF" />
+                          <Text style={styles.eventDetail}>{item.date}</Text>
+                        </View>
+                        <View style={styles.eventDetailRow}>
+                          <Text style={styles.daysLeftText}>
+                            {item.daysLeft === 0 
+                              ? "Сегодня!" 
+                              : `Осталось ${item.daysLeft} ${item.daysLeft === 1 ? 'день' : 
+                                item.daysLeft < 5 ? 'дня' : 'дней'}`
+                            }
+                          </Text>
+                        </View>
+                        
+                        <TouchableOpacity 
+                          style={styles.generateButton}
+                          onPress={() => handleGenerateGift(item)}
+                        >
+                          <Text style={styles.generateButtonText}>Найти подарок</Text>
+                          <Gift size={14} color="#FFFFFF" style={styles.buttonIcon} />
+                        </TouchableOpacity>
+                      </View>
+                    </LinearGradient>
+                  </ImageBackground>
+                </TouchableOpacity>
+              ))}
+              
+              {/* Кнопка добавления события */}
+              <TouchableOpacity
+                style={styles.addEventCard}
+                activeOpacity={0.9}
+                onPress={() => setIsCreateEventModalVisible(true)}
               >
-                <View style={styles.addEventContent}>
-                  <View style={styles.addEventIconContainer}>
-                    <Plus size={32} color="#FFFFFF" />
+                <LinearGradient
+                  colors={['#64B5F6', '#2196F3']}
+                  style={styles.addEventCardGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                >
+                  <View style={styles.addEventContent}>
+                    <View style={styles.addEventIconContainer}>
+                      <Plus size={32} color="#FFFFFF" />
+                    </View>
+                    <Text style={styles.addEventText}>{t('events.addEvent')}</Text>
+                    <Text style={styles.addEventSubtext}>{t('events.addEventSubtext')}</Text>
                   </View>
-                  <Text style={styles.addEventText}>{t('events.addEvent')}</Text>
-                  <Text style={styles.addEventSubtext}>{t('events.addEventSubtext')}</Text>
-                </View>
-              </LinearGradient>
-            </TouchableOpacity>
-          </ScrollView>
-        </View>
-
-        {/* Идеи для особых случаев */}
-        <View style={styles.specialCasesSection}>
-          <Text style={styles.sectionTitle}>Идеи для особых случаев</Text>
-          
-          <View style={styles.specialCasesGrid}>
-            <TouchableOpacity 
-              style={styles.specialCaseCard}
-              onPress={() => router.push({
-                pathname: '/gift-assistant',
-                params: { occasion: 'День рождения' }
-              })}
-            >
-              <Image 
-                source={{ uri: 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=500' }} 
-                style={styles.specialCaseImage}
-              />
-              <Text style={styles.specialCaseTitle}>День рождения</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.specialCaseCard}
-              onPress={() => router.push({
-                pathname: '/gift-assistant',
-                params: { occasion: 'Юбилей' }
-              })}
-            >
-              <Image 
-                source={{ uri: 'https://images.unsplash.com/photo-1465310477141-6fb93167a273?w=500' }} 
-                style={styles.specialCaseImage}
-              />
-              <Text style={styles.specialCaseTitle}>Юбилей</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.specialCaseCard}
-              onPress={() => router.push({
-                pathname: '/gift-assistant',
-                params: { occasion: 'Свадьба' }
-              })}
-            >
-              <Image 
-                source={{ uri: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=500' }} 
-                style={styles.specialCaseImage}
-              />
-              <Text style={styles.specialCaseTitle}>Свадьба</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.specialCaseCard}
-              onPress={() => router.push({
-                pathname: '/gift-assistant',
-                params: { occasion: 'Новоселье' }
-              })}
-            >
-              <Image 
-                source={{ uri: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=500' }} 
-                style={styles.specialCaseImage}
-              />
-              <Text style={styles.specialCaseTitle}>Новоселье</Text>
-            </TouchableOpacity>
+                </LinearGradient>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
-        </View>
-      </ScrollView>
 
+          {/* Тематические коллекции */}
+          <ThematicCollections 
+            onCollectionPress={(collectionId, collectionName) => {
+              console.log(`Main screen handling collection press: ${collectionId} - ${collectionName}`);
+              router.navigate({
+                pathname: '/(tabs)/catalog',
+                params: { collection: collectionId, name: collectionName }
+              });
+            }}
+          />
+
+          {/* Персонализированные рекомендации */}
+          <PersonalizedRecommendations />
+          
+          {/* Идеи для особых случаев */}
+          <View style={styles.specialCasesSection}>
+            <Text style={styles.sectionTitle}>Идеи для особых случаев</Text>
+            
+            <View style={styles.specialCasesGrid}>
+              <TouchableOpacity 
+                style={styles.specialCaseCard}
+                onPress={() => router.push({
+                  pathname: '/gift-assistant',
+                  params: { occasion: 'День рождения' }
+                })}
+              >
+                <Image 
+                  source={{ uri: 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=500' }} 
+                  style={styles.specialCaseImage}
+                />
+                <Text style={styles.specialCaseTitle}>День рождения</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.specialCaseCard}
+                onPress={() => router.push({
+                  pathname: '/gift-assistant',
+                  params: { occasion: 'Юбилей' }
+                })}
+              >
+                <Image 
+                  source={{ uri: 'https://images.unsplash.com/photo-1465310477141-6fb93167a273?w=500' }} 
+                  style={styles.specialCaseImage}
+                />
+                <Text style={styles.specialCaseTitle}>Юбилей</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.specialCaseCard}
+                onPress={() => router.push({
+                  pathname: '/gift-assistant',
+                  params: { occasion: 'Свадьба' }
+                })}
+              >
+                <Image 
+                  source={{ uri: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=500' }} 
+                  style={styles.specialCaseImage}
+                />
+                <Text style={styles.specialCaseTitle}>Свадьба</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.specialCaseCard}
+                onPress={() => router.push({
+                  pathname: '/gift-assistant',
+                  params: { occasion: 'Новоселье' }
+                })}
+              >
+                <Image 
+                  source={{ uri: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=500' }} 
+                  style={styles.specialCaseImage}
+                />
+                <Text style={styles.specialCaseTitle}>Новоселье</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+      
       {/* Модальное окно для создания события */}
       <Modal
         animationType="slide"

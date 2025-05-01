@@ -23,10 +23,14 @@ import {
   ChevronRight,
   Settings,
   Gift,
+  Map,
+  Award,
+  CalendarClock
 } from 'lucide-react-native';
 import { useAppLocalization } from '@/components/LocalizationWrapper';
 import { LinearGradient } from 'expo-linear-gradient';
 import TabBarShadow from '@/components/TabBarShadow';
+import ThemeToggle from '@/components/ThemeToggle';
 import { router } from 'expo-router';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
 
@@ -55,6 +59,33 @@ export default function ProfileScreen() {
     router.replace('/login');
   };
 
+  const handleMenuOptionPress = (id: string) => {
+    switch (id) {
+      case 'loyalty':
+        router.push('/loyalty-program');
+        break;
+      case 'map':
+        router.push('/map-gift-finder');
+        break;
+      case 'reminders':
+        // Показываем компонент ReminderManager внутри профиля
+        // Это можно реализовать с помощью модального окна
+        break;
+      case 'logout':
+        handleLogout();
+        break;
+      case 'favorites':
+        router.push('/(tabs)/favorites');
+        break;
+      case 'orders':
+        // Пока не реализовано
+        break;
+      default:
+        // Для остальных пунктов меню
+        break;
+    }
+  };
+
   // Опции меню в личном кабинете
   const menuOptions: MenuOption[] = [
     {
@@ -73,6 +104,21 @@ export default function ProfileScreen() {
       title: t('profile.favorites'),
       icon: Heart,
       count: 12,
+    },
+    {
+      id: 'loyalty',
+      title: t('profile.loyalty'),
+      icon: Award,
+    },
+    {
+      id: 'map',
+      title: t('profile.mapSearch'),
+      icon: Map,
+    },
+    {
+      id: 'reminders',
+      title: t('profile.reminders'),
+      icon: CalendarClock,
     },
     {
       id: 'notifications',
@@ -215,7 +261,7 @@ export default function ProfileScreen() {
                 styles.menuItem,
                 option.isDanger && styles.dangerMenuItem,
               ]}
-              onPress={option.id === 'logout' ? handleLogout : undefined}
+              onPress={() => handleMenuOptionPress(option.id)}
             >
               <View style={styles.menuLeft}>
                 <View style={[
@@ -258,6 +304,7 @@ export default function ProfileScreen() {
         
         {/* Информация о приложении */}
         <View style={styles.appInfoSection}>
+          <ThemeToggle />
           <Text style={styles.appVersion}>{t('profile.version')} 1.0.0</Text>
           <View style={styles.footerLinks}>
             <TouchableOpacity>
@@ -539,6 +586,7 @@ const styles = StyleSheet.create({
   appVersion: {
     fontSize: FONTS.sizes.xs,
     color: '#94A3B8',
+    marginTop: SPACING.md,
     marginBottom: SPACING.sm,
   },
   footerLinks: {

@@ -65,6 +65,24 @@ export default function RootLayout() {
               animationDuration: 400,
             }} 
           />
+          <Stack.Screen 
+            name="map-gift-finder" 
+            options={{ 
+              headerShown: false, 
+              presentation: 'modal',
+              animation: 'slide_from_bottom',
+              animationDuration: 300,
+            }} 
+          />
+          <Stack.Screen 
+            name="loyalty-program" 
+            options={{ 
+              headerShown: false, 
+              presentation: 'modal',
+              animation: 'slide_from_bottom',
+              animationDuration: 300,
+            }} 
+          />
         </Stack>
         <StatusBar style="auto" />
       </LocalizationWrapper>

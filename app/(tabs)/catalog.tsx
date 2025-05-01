@@ -10,16 +10,19 @@ import {
   StatusBar,
   Platform,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { Heart, ShoppingBag, MapPin, Star } from 'lucide-react-native';
 import { useAppLocalization } from '@/components/LocalizationWrapper';
 import { LinearGradient } from 'expo-linear-gradient';
 import TabBarShadow from '@/components/TabBarShadow';
 import Filters from '@/components/Filters';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useCart } from '@/hooks/useCart';
+import BudgetRangeFilter from '@/components/BudgetRangeFilter';
+import MapGiftFinder from '@/components/MapGiftFinder';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - SPACING.lg * 3) / 2;
@@ -42,6 +45,13 @@ export default function CatalogScreen() {
   const { t, localizedData } = useAppLocalization();
   const { favoriteItems, toggleFavorite } = useFavorites();
   const { addItem } = useCart();
+  const params = useLocalSearchParams();
+  
+  // Get collection parameter from URL
+  const { collection, name } = params;
+  
+  console.log('Catalog Screen Params:', params);
+  
   const [activeFilters, setActiveFilters] = useState({
     occasion: '',
     budget: '',
@@ -57,6 +67,30 @@ export default function CatalogScreen() {
       isFavorite: false
     }))
   );
+
+  // Apply collection filters when component mounts or collection param changes
+  useEffect(() => {
+    if (collection) {
+      console.log(`Applying filter for collection: ${collection}`);
+      
+      // Map collection IDs to filter types
+      const filterMap: Record<string, Partial<typeof activeFilters>> = {
+        'holidays': { occasion: 'holiday' },
+        'hobbies': { type: 'hobby' },
+        'age-groups': { type: 'age' },
+        'budget': { budget: 'medium' }
+      };
+      
+      const newFilters = filterMap[collection as string];
+      
+      if (newFilters) {
+        setActiveFilters(prev => ({
+          ...prev,
+          ...newFilters
+        }));
+      }
+    }
+  }, [collection]);
 
   // Update local product state to match favorites in Redux
   useEffect(() => {
@@ -130,66 +164,6 @@ export default function CatalogScreen() {
     }
   };
 
-  const renderProduct = ({ item, index }: { item: Product; index: number }) => {
-    // Determine if the item should be rendered on the left or right
-    const isOdd = index % 2 === 1;
-    
-    return (
-      <TouchableOpacity
-        style={[
-          styles.productCard,
-          {
-            marginLeft: isOdd ? SPACING.sm : 0,
-            marginRight: isOdd ? 0 : SPACING.sm
-          }
-        ]}
-        onPress={() => navigateToProductDetails(item)}
-        activeOpacity={0.95}
-      >
-        <View style={styles.imageContainer}>
-          <Image source={{ uri: item.image }} style={styles.productImage} />
-          <TouchableOpacity 
-            style={styles.favoriteButton}
-            onPress={() => handleToggleFavorite(item.id)}
-          >
-            <Heart 
-              size={18} 
-              color={COLORS.white} 
-              fill={item.isFavorite ? COLORS.primary : 'transparent'} 
-            />
-          </TouchableOpacity>
-          
-          <View style={styles.locationBadge}>
-            <MapPin size={12} color={COLORS.gray500} />
-            <Text style={styles.locationText}>
-              {item.location === 'nearby' ? t('filters.locations.nearby') : t('filters.locations.delivery')}
-            </Text>
-          </View>
-        </View>
-        
-        <View style={styles.productInfo}>
-          <View style={styles.ratingContainer}>
-            <Star size={12} color={COLORS.warning} fill={COLORS.warning} />
-            <Text style={styles.ratingText}>{item.rating.toFixed(1)}</Text>
-          </View>
-          
-          <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
-          <Text style={styles.productSubtitle} numberOfLines={1}>{item.subtitle}</Text>
-          
-          <View style={styles.productFooter}>
-            <Text style={styles.productPrice}>{item.price}</Text>
-            <TouchableOpacity 
-              style={styles.addButton}
-              onPress={(event) => handleAddToCart(item, event)}
-            >
-              <ShoppingBag size={16} color={COLORS.white} />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.valentinePink} />
@@ -213,24 +187,98 @@ export default function CatalogScreen() {
         <Text style={styles.headerSubtitle}>{t('catalog.subtitle')}</Text>
       </LinearGradient>
 
-      {/* Фильтры */}
-      <Filters onApplyFilters={handleApplyFilters} />
-
-      {/* Список товаров */}
-      <FlatList
-        data={filteredProducts}
-        renderItem={renderProduct}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.productList}
-        numColumns={2}
-        columnWrapperStyle={styles.columnWrapper}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>{t('catalog.noProducts')}</Text>
+      <View style={styles.scrollContainer}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Фильтры */}
+          <View style={styles.filtersContainer}>
+            <BudgetRangeFilter 
+              minPrice={0} 
+              maxPrice={50000} 
+              onRangeChange={(min, max) => {
+                // Логика фильтрации по цене
+              }}
+            />
           </View>
-        }
-      />
+
+          {/* Карта магазинов */}
+          <View style={styles.mapSection}>
+            <MapGiftFinder />
+          </View>
+
+          {/* Список товаров - теперь не FlatList, а обычная View с товарами */}
+          <View style={styles.productGrid}>
+            {filteredProducts.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>{t('catalog.noProducts')}</Text>
+              </View>
+            ) : (
+              <View style={styles.productsContainer}>
+                {filteredProducts.map((item, index) => {
+                  const isOdd = index % 2 === 1;
+                  return (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={[
+                        styles.productCard,
+                        {
+                          marginLeft: isOdd ? SPACING.sm : 0,
+                          marginRight: isOdd ? 0 : SPACING.sm
+                        }
+                      ]}
+                      onPress={() => navigateToProductDetails(item)}
+                      activeOpacity={0.95}
+                    >
+                      <View style={styles.imageContainer}>
+                        <Image source={{ uri: item.image }} style={styles.productImage} />
+                        <TouchableOpacity 
+                          style={styles.favoriteButton}
+                          onPress={() => handleToggleFavorite(item.id)}
+                        >
+                          <Heart 
+                            size={18} 
+                            color={COLORS.white} 
+                            fill={item.isFavorite ? COLORS.primary : 'transparent'} 
+                          />
+                        </TouchableOpacity>
+                        
+                        <View style={styles.locationBadge}>
+                          <MapPin size={12} color={COLORS.gray500} />
+                          <Text style={styles.locationText}>
+                            {item.location === 'nearby' ? t('filters.locations.nearby') : t('filters.locations.delivery')}
+                          </Text>
+                        </View>
+                      </View>
+                      
+                      <View style={styles.productInfo}>
+                        <View style={styles.ratingContainer}>
+                          <Star size={12} color={COLORS.warning} fill={COLORS.warning} />
+                          <Text style={styles.ratingText}>{item.rating.toFixed(1)}</Text>
+                        </View>
+                        
+                        <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
+                        <Text style={styles.productSubtitle} numberOfLines={1}>{item.subtitle}</Text>
+                        
+                        <View style={styles.productFooter}>
+                          <Text style={styles.productPrice}>{item.price}</Text>
+                          <TouchableOpacity 
+                            style={styles.addButton}
+                            onPress={(event) => handleAddToCart(item, event)}
+                          >
+                            <ShoppingBag size={16} color={COLORS.white} />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      </View>
 
       <TabBarShadow />
     </View>
@@ -268,19 +316,27 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     opacity: 0.9,
   },
-  productList: {
+  scrollContainer: {
+    flex: 1,
+  },
+  scrollContent: {
     padding: SPACING.lg,
     paddingBottom: 100,
   },
-  columnWrapper: {
+  productGrid: {
+    marginTop: SPACING.md,
+  },
+  productsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: SPACING.md,
   },
   productCard: {
     width: CARD_WIDTH,
     backgroundColor: COLORS.white,
     borderRadius: RADIUS.lg,
     overflow: 'hidden',
+    marginBottom: SPACING.md,
     ...SHADOWS.small,
   },
   imageContainer: {
@@ -372,5 +428,11 @@ const styles = StyleSheet.create({
     fontSize: FONTS.sizes.md,
     color: COLORS.gray500,
     textAlign: 'center',
-  }
+  },
+  filtersContainer: {
+    padding: SPACING.lg,
+  },
+  mapSection: {
+    padding: SPACING.lg,
+  },
 });
