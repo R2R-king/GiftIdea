@@ -5,6 +5,7 @@ import { View, StyleSheet, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Animatable from 'react-native-animatable';
 import React from 'react';
+import { COLORS } from '@/constants/theme';
 
 export default function TabLayout() {
   const { t } = useAppLocalization();
@@ -44,8 +45,8 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#FF0844',
-        tabBarInactiveTintColor: '#94A3B8',
+        tabBarActiveTintColor: COLORS.primary,
+        tabBarInactiveTintColor: COLORS.gray400,
         tabBarStyle: {
           position: 'absolute',
           bottom: 20,
@@ -74,7 +75,7 @@ export default function TabLayout() {
               end={{ x: 0, y: 1 }}
             />
             <LinearGradient
-              colors={['rgba(255, 8, 68, 0.12)', 'rgba(255, 8, 68, 0.03)']}
+              colors={[`${COLORS.primary}10`, `${COLORS.primary}05`]}
               style={[StyleSheet.absoluteFill, styles.gradientOverlay]}
               start={{ x: 0.5, y: 0 }}
               end={{ x: 0.5, y: 1 }}
@@ -153,7 +154,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   focusedIconContainer: {
-    backgroundColor: 'rgba(255, 8, 68, 0.1)',
+    backgroundColor: `${COLORS.primary}15`,
     transform: [{ scale: 1.05 }],
   },
   activeIndicator: {
@@ -162,7 +163,7 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#FF0844',
+    backgroundColor: COLORS.primary,
   },
   tabBarBackground: {
     ...StyleSheet.absoluteFillObject,

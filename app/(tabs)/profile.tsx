@@ -166,7 +166,7 @@ export default function ProfileScreen() {
             colors={[COLORS.primary, COLORS.primaryLight]}
             style={styles.profileHeaderBackground}
             start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
+            end={{ x: 1, y: 1 }}
           />
           
           <View style={styles.profileImageContainer}>
@@ -175,7 +175,7 @@ export default function ProfileScreen() {
               style={styles.profileImage}
             />
             <TouchableOpacity style={styles.editButton} activeOpacity={0.8}>
-              <User size={14} color="#FFFFFF" />
+              <Edit size={14} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
           
@@ -333,100 +333,65 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
   },
   backgroundGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    ...StyleSheet.absoluteFillObject,
   },
   scrollContent: {
     paddingBottom: 100,
   },
   profileHeader: {
-    alignItems: 'center',
-    paddingTop: Platform.OS === 'ios' ? 90 : 70,
-    paddingBottom: 20,
     position: 'relative',
-    marginBottom: 30,
+    alignItems: 'center',
+    paddingTop: Platform.OS === 'ios' ? 60 : StatusBar.currentHeight! + 20,
+    paddingBottom: 30,
   },
   profileHeaderBackground: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 220,
-    borderBottomLeftRadius: RADIUS.xl,
-    borderBottomRightRadius: RADIUS.xl,
+    ...StyleSheet.absoluteFillObject,
+    height: 180,
   },
   profileImageContainer: {
     position: 'relative',
-    marginBottom: 10,
-    zIndex: 1,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 5,
+    marginBottom: 15,
   },
   profileImage: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    borderWidth: 3,
-    borderColor: '#FFFFFF',
+    borderWidth: 4,
+    borderColor: COLORS.white,
   },
   editButton: {
     position: 'absolute',
     bottom: 0,
-    right: 3,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    right: 0,
     backgroundColor: COLORS.primary,
+    borderRadius: 15,
+    width: 30,
+    height: 30,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#FFFFFF',
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 3,
+    borderColor: COLORS.white,
   },
   profileName: {
-    fontSize: FONTS.sizes.xl,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 2,
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: COLORS.white,
+    marginBottom: 4,
   },
   profileEmail: {
-    fontSize: FONTS.sizes.sm,
-    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 16,
+    color: COLORS.white,
+    opacity: 0.8,
     marginBottom: 15,
   },
   editProfileButton: {
     paddingVertical: 8,
     paddingHorizontal: 20,
-    borderRadius: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    borderRadius: 20,
   },
   editProfileText: {
-    fontSize: 14,
-    color: '#FFFFFF',
+    color: COLORS.white,
     fontWeight: '500',
   },
   ordersSection: {
@@ -437,17 +402,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: SPACING.md,
+    marginBottom: 15,
+    paddingHorizontal: SPACING.lg,
+    marginTop: 20,
   },
   sectionTitle: {
-    fontSize: FONTS.sizes.lg,
+    fontSize: 18,
     fontWeight: '600',
     color: COLORS.gray800,
   },
   seeAllText: {
-    fontSize: FONTS.sizes.sm,
+    fontSize: 14,
     color: COLORS.primary,
-    fontWeight: '500',
   },
   orderCard: {
     backgroundColor: COLORS.white,

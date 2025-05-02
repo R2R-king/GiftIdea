@@ -115,11 +115,11 @@ export default function GiftPromoScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.giftBackground} />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.primaryBackground} />
       <Stack.Screen options={{ headerShown: false }} />
       
       <LinearGradient
-        colors={['#E1F5FE', '#E8F5E9', '#FFF8E1']}
+        colors={[COLORS.primaryBackground, COLORS.valentineLightBackground, COLORS.white]}
         style={styles.gradient}
       >
         {/* Анимированные сердечки */}

@@ -3,17 +3,17 @@
  */
 
 export const COLORS = {
-  // Primary Colors
-  primary: '#6C63FF',
-  primaryLight: '#8A84FF',
-  primaryDark: '#5A52E0',
-  primaryBackground: '#F5F8FF',
+  // Primary Colors (Soft Pink)
+  primary: '#FF6B9D',
+  primaryLight: '#FF8CB3',
+  primaryDark: '#E55A87',
+  primaryBackground: '#FFF5F8',
   
-  // Secondary Colors
-  secondary: '#FF6B6B',
-  secondaryLight: '#FF8E8E',
-  secondaryDark: '#FF4949',
-  secondaryBackground: '#FFF0F0',
+  // Secondary Colors (Complementary)
+  secondary: '#6C63FF',
+  secondaryLight: '#8A84FF',
+  secondaryDark: '#5A52E0',
+  secondaryBackground: '#F5F8FF',
   
   // Accent Colors
   accent: '#00D2D3',
@@ -52,7 +52,7 @@ export const COLORS = {
   transparent: 'transparent',
   
   // Gift background
-  giftBackground: '#F5F8FF',
+  giftBackground: '#FFF5F8',
 }
 
 export const FONTS = {

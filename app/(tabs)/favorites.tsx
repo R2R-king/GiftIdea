@@ -86,7 +86,7 @@ export default function FavoritesScreen() {
     <View style={styles.container}>
       {/* Фоновые элементы */}
       <LinearGradient
-        colors={[COLORS.valentineBackground, COLORS.valentineLightBackground]}
+        colors={[COLORS.primaryBackground, COLORS.white]}
         style={styles.backgroundGradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -94,7 +94,7 @@ export default function FavoritesScreen() {
       
       {/* Заголовок */}
       <LinearGradient
-        colors={[COLORS.valentinePink, COLORS.valentineLightPink]}
+        colors={[COLORS.primary, COLORS.primaryLight]}
         style={styles.header}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     borderBottomLeftRadius: RADIUS.xl,
     borderBottomRightRadius: RADIUS.xl,
-    ...SHADOWS.pink,
+    ...SHADOWS.purple,
   },
   headerTitle: {
     fontSize: FONTS.sizes.xxxl,
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
   favoritePrice: {
     fontSize: FONTS.sizes.lg,
     fontWeight: '700',
-    color: COLORS.valentinePink,
+    color: COLORS.primary,
   },
   favoriteActions: {
     flexDirection: 'row',
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.gray100,
   },
   addButton: {
-    backgroundColor: COLORS.valentinePink,
+    backgroundColor: COLORS.primary,
   },
   emptyContainer: {
     flex: 1,
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   browseButton: {
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.xl,
-    backgroundColor: COLORS.valentinePink,
+    backgroundColor: COLORS.primary,
     borderRadius: RADIUS.md,
   },
   browseButtonText: {

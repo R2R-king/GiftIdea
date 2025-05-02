@@ -244,8 +244,8 @@ export default function CartScreen() {
               >
                 <Heart 
                   size={18} 
-                  color={COLORS.valentinePink} 
-                  fill={isFavorite(item.id) ? COLORS.valentinePink : 'transparent'}
+                  color={COLORS.primary} 
+                  fill={isFavorite(item.id) ? COLORS.primary : 'transparent'}
                 />
               </TouchableOpacity>
               <TouchableOpacity 
@@ -283,7 +283,7 @@ export default function CartScreen() {
       <View style={styles.container}>
         {/* Фоновые элементы */}
         <LinearGradient
-          colors={[COLORS.valentineBackground, COLORS.valentineLightBackground]}
+          colors={[COLORS.primaryBackground, COLORS.white]}
           style={styles.backgroundGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -293,7 +293,7 @@ export default function CartScreen() {
         
         {/* Заголовок */}
         <LinearGradient
-          colors={[COLORS.valentinePink, COLORS.valentineLightPink]}
+          colors={[COLORS.primary, COLORS.primaryLight]}
           style={styles.header}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
@@ -324,8 +324,8 @@ export default function CartScreen() {
                   <Text style={styles.sectionTitle}>{t('cart.shippingOptionsTitle')}</Text>
                   
                   <TouchableOpacity style={styles.deliveryOption}>
-                    <View style={[styles.deliveryIconContainer, { backgroundColor: COLORS.valentineLightPink }]}>
-                      <Truck size={20} color={COLORS.valentinePink} />
+                    <View style={[styles.deliveryIconContainer, { backgroundColor: COLORS.primaryLight }]}>
+                      <Truck size={20} color={COLORS.primary} />
                     </View>
                     <View style={styles.deliveryDetails}>
                       <Text style={styles.deliveryTitle}>{t('cart.standardDelivery')}</Text>
@@ -335,8 +335,8 @@ export default function CartScreen() {
                   </TouchableOpacity>
                   
                   <TouchableOpacity style={[styles.deliveryOption, styles.selectedDelivery]}>
-                    <View style={[styles.deliveryIconContainer, { backgroundColor: COLORS.valentineLightPink }]}>
-                      <CalendarClock size={20} color={COLORS.valentinePink} />
+                    <View style={[styles.deliveryIconContainer, { backgroundColor: COLORS.primaryLight }]}>
+                      <CalendarClock size={20} color={COLORS.primary} />
                     </View>
                     <View style={styles.deliveryDetails}>
                       <Text style={styles.deliveryTitle}>{t('cart.expressDelivery')}</Text>
@@ -346,8 +346,8 @@ export default function CartScreen() {
                   </TouchableOpacity>
                   
                   <TouchableOpacity style={styles.deliveryOption}>
-                    <View style={[styles.deliveryIconContainer, { backgroundColor: COLORS.valentineLightPink }]}>
-                      <Package size={20} color={COLORS.valentinePink} />
+                    <View style={[styles.deliveryIconContainer, { backgroundColor: COLORS.primaryLight }]}>
+                      <Package size={20} color={COLORS.primary} />
                     </View>
                     <View style={styles.deliveryDetails}>
                       <Text style={styles.deliveryTitle}>{t('cart.pickupDelivery')}</Text>
@@ -372,7 +372,7 @@ export default function CartScreen() {
                   
                   <View style={styles.summaryRow}>
                     <Text style={styles.summaryLabel}>{t('cart.discountLabel')}</Text>
-                    <Text style={[styles.summaryValue, { color: COLORS.valentinePink }]}>-{formatPrice(discount)}</Text>
+                    <Text style={[styles.summaryValue, { color: COLORS.primary }]}>-{formatPrice(discount)}</Text>
                   </View>
                   
                   <View style={[styles.summaryRow, styles.totalRow]}>
@@ -401,7 +401,7 @@ export default function CartScreen() {
               style={styles.backToShoppingButton}
               onPress={navigateToCatalog}
             >
-              <ChevronLeft size={20} color={COLORS.valentinePink} />
+              <ChevronLeft size={20} color={COLORS.primary} />
               <Text style={styles.backToShoppingText}>{t('cart.backToShopping')}</Text>
             </TouchableOpacity>
 
@@ -424,7 +424,7 @@ export default function CartScreen() {
 const styles = StyleSheet.create({
   safeAreaContainer: {
     flex: 1,
-    backgroundColor: COLORS.valentineBackground,
+    backgroundColor: COLORS.primaryBackground,
   },
   container: {
     flex: 1,
@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     borderBottomLeftRadius: RADIUS.xl,
     borderBottomRightRadius: RADIUS.xl,
-    ...SHADOWS.pink,
+    ...SHADOWS.purple,
   },
   headerTitle: {
     fontSize: FONTS.sizes.xxxl,
@@ -489,7 +489,7 @@ const styles = StyleSheet.create({
   itemPrice: {
     fontSize: FONTS.sizes.lg,
     fontWeight: '700',
-    color: COLORS.valentinePink,
+    color: COLORS.primary,
     marginBottom: SPACING.sm,
   },
   itemActions: {
@@ -533,7 +533,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: RADIUS.full,
-    backgroundColor: COLORS.valentineLightPink,
+    backgroundColor: COLORS.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -572,8 +572,8 @@ const styles = StyleSheet.create({
     padding: SPACING.sm,
   },
   selectedDelivery: {
-    borderColor: COLORS.valentinePink,
-    backgroundColor: COLORS.valentineLightBackground,
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primaryLight,
   },
   deliveryIconContainer: {
     width: 40,
@@ -634,7 +634,7 @@ const styles = StyleSheet.create({
   totalValue: {
     fontSize: FONTS.sizes.xl,
     fontWeight: '700',
-    color: COLORS.valentinePink,
+    color: COLORS.primary,
   },
   bottomButtonsContainer: {
     position: 'absolute',
@@ -656,26 +656,26 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.md,
     borderWidth: 1,
-    borderColor: COLORS.valentinePink,
+    borderColor: COLORS.primary,
     borderRadius: RADIUS.full,
     marginRight: SPACING.sm,
   },
   backToShoppingText: {
     fontSize: FONTS.sizes.sm,
     fontWeight: '600',
-    color: COLORS.valentinePink,
+    color: COLORS.primary,
     marginLeft: SPACING.xs,
   },
   checkoutButton: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: COLORS.valentinePink,
+    backgroundColor: COLORS.primary,
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.md,
     borderRadius: RADIUS.full,
     justifyContent: 'center',
     alignItems: 'center',
-    ...SHADOWS.pink,
+    ...SHADOWS.purple,
   },
   checkoutButtonText: {
     fontSize: FONTS.sizes.md,
@@ -690,10 +690,10 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: COLORS.valentinePink,
+    backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    ...SHADOWS.pink,
+    ...SHADOWS.purple,
     zIndex: 10,
   },
   scrollTopButtonContent: {
@@ -723,7 +723,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xl,
   },
   browseButton: {
-    backgroundColor: COLORS.valentinePink,
+    backgroundColor: COLORS.primary,
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.xl,
     borderRadius: RADIUS.lg,

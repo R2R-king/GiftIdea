@@ -27,6 +27,162 @@ import MapGiftFinder from '@/components/MapGiftFinder';
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - SPACING.lg * 3) / 2;
 
+// Define styles first to avoid linter errors
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+  },
+  backgroundGradient: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  header: {
+    paddingTop: Platform.OS === 'ios' ? 50 : StatusBar.currentHeight! + 10,
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: SPACING.md,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: COLORS.gray900,
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 20,
+    color: COLORS.gray700,
+    marginBottom: SPACING.lg,
+  },
+  categoryTabs: {
+    marginBottom: SPACING.md,
+  },
+  categoryTabsContent: {
+    paddingRight: SPACING.lg,
+  },
+  categoryTab: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginRight: 10,
+    borderRadius: 16,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  categoryTabActive: {
+    borderBottomColor: COLORS.primary,
+  },
+  categoryTabText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: COLORS.gray500,
+  },
+  categoryTabTextActive: {
+    color: COLORS.gray900,
+    fontWeight: '600',
+  },
+  searchBarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.gray100,
+    borderRadius: 20,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 10,
+    marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.lg,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: COLORS.gray800,
+    marginLeft: SPACING.sm,
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: SPACING.lg,
+    marginBottom: SPACING.md,
+  },
+  productsGrid: {
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: 100, // To account for the tab bar
+  },
+  productCard: {
+    width: CARD_WIDTH,
+    marginBottom: SPACING.lg,
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.lg,
+    overflow: 'hidden',
+    ...SHADOWS.small,
+  },
+  productImageContainer: {
+    width: CARD_WIDTH,
+    height: CARD_WIDTH,
+    borderRadius: RADIUS.lg,
+    overflow: 'hidden',
+  },
+  productImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  productInfo: {
+    padding: SPACING.sm,
+  },
+  productName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.gray900,
+    marginBottom: 4,
+  },
+  productSubtitle: {
+    fontSize: 14,
+    color: COLORS.gray600,
+    marginBottom: 8,
+  },
+  productPrice: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.primary,
+  },
+  favoriteButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 15,
+    padding: 6,
+  },
+  addToCartButton: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    backgroundColor: COLORS.primary,
+    borderRadius: 15,
+    padding: 6,
+  },
+  scrollContainer: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 100,
+  },
+  productGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.lg,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING.lg,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: COLORS.gray600,
+    textAlign: 'center',
+    marginBottom: SPACING.md,
+  },
+});
+
 interface Product {
   id: string;
   name: string;
@@ -164,6 +320,38 @@ export default function CatalogScreen() {
     }
   };
 
+  // Update the product item rendering
+  const renderProductItem = ({ item }: { item: Product }) => (
+    <TouchableOpacity 
+      style={styles.productCard}
+      onPress={() => navigateToProductDetails(item)}
+      activeOpacity={0.7}
+    >
+      <View style={styles.productImageContainer}>
+        <Image 
+          source={{ uri: item.image }} 
+          style={styles.productImage}
+        />
+        <TouchableOpacity 
+          style={styles.favoriteButton}
+          onPress={() => handleToggleFavorite(item.id)}
+        >
+          <Heart 
+            size={18} 
+            color={item.isFavorite ? COLORS.secondary : COLORS.gray600} 
+            fill={item.isFavorite ? COLORS.secondary : 'transparent'} 
+          />
+        </TouchableOpacity>
+      </View>
+      
+      <View style={styles.productInfo}>
+        <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
+        <Text style={styles.productSubtitle} numberOfLines={1}>{item.subtitle}</Text>
+        <Text style={styles.productPrice}>$ {item.price}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
@@ -205,238 +393,27 @@ export default function CatalogScreen() {
           </TouchableOpacity>
         </ScrollView>
       </View>
-
-      <View style={styles.scrollContainer}>
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
+      
+      {/* Product grid */}
+      {filteredProducts.length > 0 ? (
+        <FlatList
+          data={filteredProducts}
+          renderItem={renderProductItem}
+          keyExtractor={(item) => item.id}
+          numColumns={2}
+          columnWrapperStyle={{ justifyContent: 'space-between' }}
+          contentContainerStyle={styles.productsGrid}
           showsVerticalScrollIndicator={false}
-        >
-          {/* Product grid */}
-          <View style={styles.productGrid}>
-            {filteredProducts.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>{t('catalog.noProducts')}</Text>
-              </View>
-            ) : (
-              <View style={styles.productsContainer}>
-                {filteredProducts.map((item, index) => {
-                  const isOdd = index % 2 === 1;
-                  return (
-                    <TouchableOpacity
-                      key={item.id}
-                      style={[
-                        styles.productCard,
-                        {
-                          marginLeft: isOdd ? SPACING.sm : 0,
-                          marginRight: isOdd ? 0 : SPACING.sm
-                        }
-                      ]}
-                      onPress={() => navigateToProductDetails(item)}
-                      activeOpacity={0.95}
-                    >
-                      <View style={styles.imageContainer}>
-                        <Image source={{ uri: item.image }} style={styles.productImage} />
-                        <TouchableOpacity 
-                          style={styles.favoriteButton}
-                          onPress={() => handleToggleFavorite(item.id)}
-                        >
-                          <Heart 
-                            size={18} 
-                            color={COLORS.white} 
-                            fill={item.isFavorite ? COLORS.secondary : 'transparent'} 
-                          />
-                        </TouchableOpacity>
-                      </View>
-                      
-                      <View style={styles.productInfo}>
-                        <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
-                        <Text style={styles.productSubtitle} numberOfLines={1}>{item.subtitle}</Text>
-                        
-                        <View style={styles.productFooter}>
-                          <Text style={styles.productPrice}>${item.price.replace(/\s+₽/g, '')}</Text>
-                        </View>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            )}
-          </View>
-          
-          {/* "See more" button at the bottom */}
-          <TouchableOpacity style={styles.seeMoreButton}>
-            <Text style={styles.seeMoreText}>see more</Text>
-            <View style={styles.seeMoreArrow}>
-              <ChevronRight size={16} color={COLORS.primary} />
-            </View>
-          </TouchableOpacity>
-        </ScrollView>
-      </View>
-
+        />
+      ) : (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>
+            {t('catalog.noProductsFound')}
+          </Text>
+        </View>
+      )}
+      
       <TabBarShadow />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.white,
-  },
-  backgroundGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  header: {
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingHorizontal: SPACING.lg,
-    backgroundColor: COLORS.white,
-  },
-  headerTitle: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: COLORS.gray800,
-    marginBottom: 4,
-  },
-  headerSubtitle: {
-    fontSize: FONTS.sizes.xl,
-    color: COLORS.gray700,
-    marginBottom: SPACING.md,
-  },
-  categoryTabs: {
-    marginTop: SPACING.sm,
-    marginBottom: SPACING.md,
-  },
-  categoryTabsContent: {
-    paddingRight: SPACING.md,
-  },
-  categoryTab: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    marginRight: SPACING.sm,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  categoryTabActive: {
-    borderBottomColor: COLORS.primary,
-  },
-  categoryTabText: {
-    fontSize: FONTS.sizes.md,
-    color: COLORS.gray500,
-  },
-  categoryTabTextActive: {
-    color: COLORS.primary,
-    fontWeight: '600',
-  },
-  scrollContainer: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: SPACING.lg,
-    paddingBottom: 100,
-  },
-  productGrid: {
-    marginTop: SPACING.md,
-  },
-  productsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  productCard: {
-    width: CARD_WIDTH,
-    backgroundColor: COLORS.white,
-    borderRadius: RADIUS.lg,
-    overflow: 'hidden',
-    marginBottom: SPACING.md,
-    ...SHADOWS.small,
-  },
-  imageContainer: {
-    position: 'relative',
-    height: 140,
-    width: '100%',
-  },
-  productImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  favoriteButton: {
-    position: 'absolute',
-    top: SPACING.sm,
-    right: SPACING.sm,
-    width: 32,
-    height: 32,
-    borderRadius: RADIUS.full,
-    backgroundColor: 'rgba(0, 0, 0, 0.25)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  productInfo: {
-    padding: SPACING.md,
-  },
-  productName: {
-    fontSize: FONTS.sizes.md,
-    fontWeight: '600',
-    color: COLORS.gray800,
-    marginBottom: 6,
-    height: 44,
-  },
-  productSubtitle: {
-    fontSize: FONTS.sizes.xs,
-    color: COLORS.gray500,
-    marginBottom: SPACING.sm,
-  },
-  productFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  productPrice: {
-    fontSize: FONTS.sizes.lg,
-    fontWeight: '700',
-    color: COLORS.primary,
-  },
-  addButton: {
-    width: 34,
-    height: 34,
-    borderRadius: RADIUS.full,
-    backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: SPACING.xxl,
-  },
-  emptyText: {
-    fontSize: FONTS.sizes.md,
-    color: COLORS.gray500,
-    textAlign: 'center',
-  },
-  filtersContainer: {
-    padding: SPACING.lg,
-  },
-  mapSection: {
-    padding: SPACING.lg,
-  },
-  seeMoreButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: SPACING.md,
-    alignSelf: 'flex-end',
-  },
-  seeMoreText: {
-    fontSize: FONTS.sizes.md,
-    color: COLORS.primary,
-    fontWeight: '500',
-  },
-  seeMoreArrow: {
-    marginLeft: 4,
-  },
-});

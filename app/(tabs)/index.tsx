@@ -677,15 +677,6 @@ export default function FeedScreen() {
                       start={{ x: 0, y: 0 }}
                       end={{ x: 0, y: 1 }}
                     >
-                      <View style={styles.newEventDateBadge}>
-                        <Text style={styles.eventDateMonth}>
-                          {item.date.split(' ')[1].substring(0, 3)}
-                        </Text>
-                        <Text style={styles.eventDateDay}>
-                          {item.date.split(' ')[0]}
-                        </Text>
-                      </View>
-                      
                       {/* Кнопка удаления события */}
                       <TouchableOpacity 
                         style={styles.deleteEventButton}
@@ -1073,28 +1064,6 @@ const styles = StyleSheet.create({
     height: '100%',
     justifyContent: 'space-between',
     padding: 15,
-  },
-  newEventDateBadge: {
-    position: 'absolute',
-    top: 15,
-    right: 15,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 10,
-    padding: 8,
-    alignItems: 'center',
-    minWidth: 50,
-    ...SHADOWS.small,
-  },
-  eventDateMonth: {
-    fontSize: FONTS.sizes.xs,
-    fontWeight: FONTS.weights.semibold as any,
-    color: COLORS.valentinePink,
-    textTransform: 'uppercase',
-  },
-  eventDateDay: {
-    fontSize: FONTS.sizes.lg,
-    fontWeight: FONTS.weights.bold as any,
-    color: COLORS.gray800,
   },
   eventContent: {
     marginTop: 'auto',
