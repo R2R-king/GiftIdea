@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Stack, router } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
+import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { Provider } from 'react-redux';
 import { store } from '@/store';
@@ -8,13 +8,20 @@ import { LocalizationWrapper } from '@/components/LocalizationWrapper';
 import * as SplashScreen from 'expo-splash-screen';
 import 'react-native-reanimated';
 import 'react-native-gesture-handler';
-import { Platform } from 'react-native';
+import { Platform, StatusBar } from 'react-native';
 
 // Предотвращаем скрытие сплэш экрана
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   useFrameworkReady();
+
+  useEffect(() => {
+    // Configure status bar to be transparent
+    StatusBar.setBarStyle('dark-content', true);
+    StatusBar.setBackgroundColor('transparent', true);
+    StatusBar.setTranslucent(true);
+  }, []);
 
   useEffect(() => {
     // После загрузки приложения, переходим на промо-экран
@@ -35,6 +42,7 @@ export default function RootLayout() {
   return (
     <Provider store={store}>
       <LocalizationWrapper>
+        <ExpoStatusBar style="dark" translucent backgroundColor="transparent" />
         <Stack 
           screenOptions={{
             headerShown: false,
@@ -54,6 +62,17 @@ export default function RootLayout() {
               animation: 'fade', 
               animationDuration: 200 
             }} 
+          />
+          {/* Keeping the drawer navigation in the project but not actively using it */}
+          {/* The drawer navigation will remain accessible for future reference */}
+          <Stack.Screen 
+            name="(drawer)" 
+            options={{ 
+              headerShown: false, 
+              animation: 'fade', 
+              animationDuration: 200 
+            }} 
+            redirect={true}
           />
           <Stack.Screen name="gift-promo" options={{ headerShown: false, gestureEnabled: false }} />
           <Stack.Screen 
@@ -84,7 +103,6 @@ export default function RootLayout() {
             }} 
           />
         </Stack>
-        <StatusBar style="auto" />
       </LocalizationWrapper>
     </Provider>
   );

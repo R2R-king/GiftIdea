@@ -12,7 +12,7 @@ import {
   Alert,
   ScrollView,
 } from 'react-native';
-import { Heart, ShoppingBag, MapPin, Star } from 'lucide-react-native';
+import { Heart, ShoppingBag, MapPin, Star, ChevronRight } from 'lucide-react-native';
 import { useAppLocalization } from '@/components/LocalizationWrapper';
 import { LinearGradient } from 'expo-linear-gradient';
 import TabBarShadow from '@/components/TabBarShadow';
@@ -166,49 +166,52 @@ export default function CatalogScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.valentinePink} />
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
       
       {/* Фоновые элементы */}
       <LinearGradient
-        colors={[COLORS.valentineBackground, COLORS.valentineLightBackground]}
+        colors={[COLORS.primaryBackground, COLORS.white]}
         style={styles.backgroundGradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       />
       
       {/* Заголовок */}
-      <LinearGradient
-        colors={[COLORS.valentinePink, COLORS.valentineLightPink]}
-        style={styles.header}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-      >
-        <Text style={styles.headerTitle}>{t('catalog.title')}</Text>
-        <Text style={styles.headerSubtitle}>{t('catalog.subtitle')}</Text>
-      </LinearGradient>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Fabulous</Text>
+        <Text style={styles.headerSubtitle}>gifts for everyone</Text>
+        
+        {/* Category tabs */}
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          style={styles.categoryTabs}
+          contentContainerStyle={styles.categoryTabsContent}
+        >
+          <TouchableOpacity 
+            style={[styles.categoryTab, styles.categoryTabActive]}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.categoryTabText, styles.categoryTabTextActive]}>Flower</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.categoryTab} activeOpacity={0.7}>
+            <Text style={styles.categoryTabText}>Cake</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.categoryTab} activeOpacity={0.7}>
+            <Text style={styles.categoryTabText}>Cards</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.categoryTab} activeOpacity={0.7}>
+            <Text style={styles.categoryTabText}>Toys</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
 
       <View style={styles.scrollContainer}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Фильтры */}
-          <View style={styles.filtersContainer}>
-            <BudgetRangeFilter 
-              minPrice={0} 
-              maxPrice={50000} 
-              onRangeChange={(min, max) => {
-                // Логика фильтрации по цене
-              }}
-            />
-          </View>
-
-          {/* Карта магазинов */}
-          <View style={styles.mapSection}>
-            <MapGiftFinder />
-          </View>
-
-          {/* Список товаров - теперь не FlatList, а обычная View с товарами */}
+          {/* Product grid */}
           <View style={styles.productGrid}>
             {filteredProducts.length === 0 ? (
               <View style={styles.emptyContainer}>
@@ -240,35 +243,17 @@ export default function CatalogScreen() {
                           <Heart 
                             size={18} 
                             color={COLORS.white} 
-                            fill={item.isFavorite ? COLORS.primary : 'transparent'} 
+                            fill={item.isFavorite ? COLORS.secondary : 'transparent'} 
                           />
                         </TouchableOpacity>
-                        
-                        <View style={styles.locationBadge}>
-                          <MapPin size={12} color={COLORS.gray500} />
-                          <Text style={styles.locationText}>
-                            {item.location === 'nearby' ? t('filters.locations.nearby') : t('filters.locations.delivery')}
-                          </Text>
-                        </View>
                       </View>
                       
                       <View style={styles.productInfo}>
-                        <View style={styles.ratingContainer}>
-                          <Star size={12} color={COLORS.warning} fill={COLORS.warning} />
-                          <Text style={styles.ratingText}>{item.rating.toFixed(1)}</Text>
-                        </View>
-                        
-                        <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
+                        <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
                         <Text style={styles.productSubtitle} numberOfLines={1}>{item.subtitle}</Text>
                         
                         <View style={styles.productFooter}>
-                          <Text style={styles.productPrice}>{item.price}</Text>
-                          <TouchableOpacity 
-                            style={styles.addButton}
-                            onPress={(event) => handleAddToCart(item, event)}
-                          >
-                            <ShoppingBag size={16} color={COLORS.white} />
-                          </TouchableOpacity>
+                          <Text style={styles.productPrice}>${item.price.replace(/\s+₽/g, '')}</Text>
                         </View>
                       </View>
                     </TouchableOpacity>
@@ -277,6 +262,14 @@ export default function CatalogScreen() {
               </View>
             )}
           </View>
+          
+          {/* "See more" button at the bottom */}
+          <TouchableOpacity style={styles.seeMoreButton}>
+            <Text style={styles.seeMoreText}>see more</Text>
+            <View style={styles.seeMoreArrow}>
+              <ChevronRight size={16} color={COLORS.primary} />
+            </View>
+          </TouchableOpacity>
         </ScrollView>
       </View>
 
@@ -299,22 +292,44 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingBottom: 20,
     paddingHorizontal: SPACING.lg,
-    borderBottomLeftRadius: RADIUS.xl,
-    borderBottomRightRadius: RADIUS.xl,
-    ...SHADOWS.pink,
+    backgroundColor: COLORS.white,
   },
   headerTitle: {
-    fontSize: FONTS.sizes.xxxl,
+    fontSize: 32,
     fontWeight: '700',
-    color: COLORS.white,
-    marginBottom: SPACING.xs,
+    color: COLORS.gray800,
+    marginBottom: 4,
   },
   headerSubtitle: {
+    fontSize: FONTS.sizes.xl,
+    color: COLORS.gray700,
+    marginBottom: SPACING.md,
+  },
+  categoryTabs: {
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  categoryTabsContent: {
+    paddingRight: SPACING.md,
+  },
+  categoryTab: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    marginRight: SPACING.sm,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  categoryTabActive: {
+    borderBottomColor: COLORS.primary,
+  },
+  categoryTabText: {
     fontSize: FONTS.sizes.md,
-    color: COLORS.white,
-    opacity: 0.9,
+    color: COLORS.gray500,
+  },
+  categoryTabTextActive: {
+    color: COLORS.primary,
+    fontWeight: '600',
   },
   scrollContainer: {
     flex: 1,
@@ -356,45 +371,19 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: RADIUS.full,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: 'rgba(0, 0, 0, 0.25)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  locationBadge: {
-    position: 'absolute',
-    bottom: SPACING.sm,
-    left: SPACING.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.white,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 4,
-    borderRadius: RADIUS.sm,
-  },
-  locationText: {
-    fontSize: FONTS.sizes.xs,
-    color: COLORS.gray500,
-    marginLeft: 2,
-  },
   productInfo: {
     padding: SPACING.md,
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  ratingText: {
-    fontSize: FONTS.sizes.xs,
-    color: COLORS.gray700,
-    marginLeft: 4,
-    fontWeight: '500',
   },
   productName: {
     fontSize: FONTS.sizes.md,
     fontWeight: '600',
     color: COLORS.gray800,
-    marginBottom: 2,
+    marginBottom: 6,
+    height: 44,
   },
   productSubtitle: {
     fontSize: FONTS.sizes.xs,
@@ -409,13 +398,13 @@ const styles = StyleSheet.create({
   productPrice: {
     fontSize: FONTS.sizes.lg,
     fontWeight: '700',
-    color: COLORS.valentinePink,
+    color: COLORS.primary,
   },
   addButton: {
     width: 34,
     height: 34,
     borderRadius: RADIUS.full,
-    backgroundColor: COLORS.valentinePink,
+    backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -434,5 +423,20 @@ const styles = StyleSheet.create({
   },
   mapSection: {
     padding: SPACING.lg,
+  },
+  seeMoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: SPACING.md,
+    alignSelf: 'flex-end',
+  },
+  seeMoreText: {
+    fontSize: FONTS.sizes.md,
+    color: COLORS.primary,
+    fontWeight: '500',
+  },
+  seeMoreArrow: {
+    marginLeft: 4,
   },
 });

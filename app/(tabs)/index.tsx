@@ -16,14 +16,14 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Modal,
-  Button as NativeButton
+  Button as NativeButton,
+  StatusBar
 } from 'react-native';
 import { useAppLocalization } from '@/components/LocalizationWrapper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Calendar, MapPin, ArrowUpRight, Search, Filter, Heart, Gift, Star, ShoppingCart, X, ArrowRight, Plus, Trash2 } from 'lucide-react-native';
 import TabBarShadow from '@/components/TabBarShadow';
 import { router } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ThematicCollections from '@/components/ThematicCollections';
@@ -31,6 +31,21 @@ import PersonalizedRecommendations from '@/components/PersonalizedRecommendation
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 60) / 2;
+
+// Обновляем цветовую палитру для нового дизайна
+const THEME = {
+  primary: '#6C63FF',
+  primaryLight: '#8A84FF',
+  secondary: '#FF6B6B',
+  secondaryLight: '#FF8E8E',
+  background: '#F5F8FF',
+  cardBg: '#FFFFFF',
+  text: '#333333',
+  textLight: '#666666',
+  accent: '#00D2D3',
+  gradientStart: '#6C63FF',
+  gradientEnd: '#5A52E0',
+};
 
 // Иконки категорий из интернета
 const categoryIcons = {
@@ -259,10 +274,7 @@ export default function FeedScreen() {
   });
   const [upcomingHolidays, setUpcomingHolidays] = useState<HolidayEvent[]>(getInitialHolidays);
   const [forceUpdate, setForceUpdate] = useState(0);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-  const searchInputRef = useRef<TextInput>(null);
   const [showGreeting, setShowGreeting] = useState(true);
   const [isCreateEventModalVisible, setIsCreateEventModalVisible] = useState(false);
   const [newEventName, setNewEventName] = useState('');
@@ -272,6 +284,34 @@ export default function FeedScreen() {
     name?: string;
     date?: string;
   }>({});
+  const [customEvents, setCustomEvents] = useState<HolidayEvent[]>([]);
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const [eventToDelete, setEventToDelete] = useState<{id: string, name: string} | null>(null);
+
+  // Set StatusBar configuration when component mounts
+  useEffect(() => {
+    // Make sure the status bar has transparent background
+    StatusBar.setBackgroundColor('transparent', true);
+    StatusBar.setTranslucent(true);
+    
+    // Clean up when component unmounts
+    return () => {
+      // Reset to default if needed when leaving this screen
+      StatusBar.setBackgroundColor('transparent', true);
+    };
+  }, []);
+
+  // Функция для получения приветствия в зависимости от времени суток
+  const getGreetingByTime = (): string => {
+    const hours = new Date().getHours();
+    if (hours >= 5 && hours < 12) {
+      return `Доброе утро, %s`;
+    } else if (hours >= 12 && hours < 18) {
+      return `Добрый день, %s`;
+    } else {
+      return `Добрый вечер, %s`;
+    }
+  };
 
   // Загрузка пользовательских событий при запуске
   useEffect(() => {
@@ -374,15 +414,6 @@ export default function FeedScreen() {
   // Популярные события
   const popularEvents = events.slice(1);
 
-  // Эффект для скрытия приветствия через 5 секунд
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowGreeting(false);
-    }, 5000);
-    
-    return () => clearTimeout(timer);
-  }, []);
-
   // Эффект для отслеживания появления и скрытия клавиатуры
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
@@ -395,10 +426,6 @@ export default function FeedScreen() {
       'keyboardDidHide',
       () => {
         setIsKeyboardVisible(false);
-        // Если текстовое поле пустое, сбрасываем фокус поиска
-        if (searchQuery.length === 0) {
-          setIsSearchFocused(false);
-        }
       }
     );
 
@@ -407,7 +434,7 @@ export default function FeedScreen() {
       keyboardDidShowListener.remove();
       keyboardDidHideListener.remove();
     };
-  }, [searchQuery]);
+  }, []);
 
   // Эффект для отслеживания изменений в списке событий
   useEffect(() => {
@@ -586,84 +613,44 @@ export default function FeedScreen() {
   // Предотвращаем всплытие события при нажатии на кнопку удаления
   const handleDeleteButtonPress = (e: any, eventId: string, eventName: string) => {
     e.stopPropagation();
-    e.preventDefault();
-    handleDeleteEvent(eventId, eventName);
+    setEventToDelete({id: eventId, name: eventName});
+    setIsDeleteModalVisible(true);
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="auto" />
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+    <View style={{ flex: 1, backgroundColor: THEME.background }}>
+      <StatusBar 
+        barStyle="dark-content" 
+        backgroundColor="transparent" 
+        translucent={true}
+        hidden={false}
+      />
+      
+      <KeyboardAvoidingView
         style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
       >
         <ScrollView 
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          bounces={false}
+          bounces={true}
         >
-          {/* Фоновые элементы */}
-          <LinearGradient
-            colors={[COLORS.valentineBackground, COLORS.valentineLightBackground]}
-            style={styles.backgroundGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          />
-          
-          {/* Заголовок */}
-          <LinearGradient
-            colors={[COLORS.valentinePink, COLORS.valentineLightPink]}
-            style={styles.header}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-          >
-            <View style={styles.headerContent}>
-              {showGreeting && (
-                <>
-                  <Text style={styles.headerTitle}>{t('feed.greeting').replace('%s', 'Алексей')}</Text>
-                  <Text style={styles.headerSubtitle}>{t('feed.findGifts')}</Text>
-                </>
-              )}
-              
-              <Pressable
-                style={[styles.searchBar, !showGreeting && styles.searchBarNoGreeting]}
-                onPress={() => {
-                  searchInputRef.current?.focus();
-                  setIsSearchFocused(true);
-                }}
-              >
-                <Search size={20} color={COLORS.gray500} />
-                <TextInput
-                  ref={searchInputRef}
-                  placeholder={t('feed.searchPlaceholder')}
-                  placeholderTextColor={COLORS.gray500}
-                  style={styles.searchInput}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  onFocus={() => setIsSearchFocused(true)}
-                  onBlur={() => {
-                    if (searchQuery.length === 0) {
-                      setIsSearchFocused(false);
-                    }
-                  }}
-                />
-                {searchQuery ? (
-                  <Pressable onPress={() => {
-                    setSearchQuery('');
-                    setIsSearchFocused(false);
-                  }}>
-                    <X size={20} color={COLORS.gray500} />
-                  </Pressable>
-                ) : null}
-              </Pressable>
+          {/* Обновленный заголовок с динамическим приветствием */}
+          {showGreeting && (
+            <View style={styles.newHeader}>
+              <Text style={styles.newHeaderTitle}>
+                {getGreetingByTime().replace('%s', 'Алексей')}
+              </Text>
+              <Text style={styles.newHeaderSubtitle}>{t('feed.findGifts')}</Text>
             </View>
-          </LinearGradient>
+          )}
 
-          {/* Ближайшие праздники */}
-          <View style={styles.upcomingSection}>
+          {/* Ближайшие праздники - обновленный дизайн */}
+          <View style={[styles.newSection, styles.eventsSectionFix]}>
             <View style={styles.sectionTitleRow}>
-              <Text style={styles.sectionTitle}>Ближайшие мероприятия</Text>
+              <Text style={styles.newSectionTitle}>Ближайшие мероприятия</Text>
             </View>
             
             <ScrollView
@@ -675,22 +662,22 @@ export default function FeedScreen() {
               {upcomingHolidays.map((item) => (
                 <TouchableOpacity
                   key={item.id}
-                  style={styles.eventCard}
+                  style={styles.newEventCard}
                   activeOpacity={0.95}
                   onPress={() => handleHolidayPress(item)}
                 >
                   <ImageBackground 
                     source={{ uri: item.image }} 
                     style={styles.eventImageBackground}
-                    imageStyle={styles.eventBackgroundImage}
+                    imageStyle={styles.newEventBackgroundImage}
                   >
                     <LinearGradient
-                      colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.7)']}
+                      colors={['rgba(0,0,0,0.05)', 'rgba(0,0,0,0.6)']}
                       style={styles.eventGradient}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 0, y: 1 }}
                     >
-                      <View style={styles.eventDateBadge}>
+                      <View style={styles.newEventDateBadge}>
                         <Text style={styles.eventDateMonth}>
                           {item.date.split(' ')[1].substring(0, 3)}
                         </Text>
@@ -708,13 +695,13 @@ export default function FeedScreen() {
                       </TouchableOpacity>
                       
                       <View style={styles.eventContent}>
-                        <Text style={styles.eventName}>{item.name}</Text>
+                        <Text style={styles.newEventName}>{item.name}</Text>
                         <View style={styles.eventDetailRow}>
                           <Calendar size={14} color="#FFFFFF" />
                           <Text style={styles.eventDetail}>{item.date}</Text>
                         </View>
                         <View style={styles.eventDetailRow}>
-                          <Text style={styles.daysLeftText}>
+                          <Text style={styles.newDaysLeftText}>
                             {item.daysLeft === 0 
                               ? "Сегодня!" 
                               : `Осталось ${item.daysLeft} ${item.daysLeft === 1 ? 'день' : 
@@ -724,10 +711,10 @@ export default function FeedScreen() {
                         </View>
                         
                         <TouchableOpacity 
-                          style={styles.generateButton}
+                          style={styles.newGenerateButton}
                           onPress={() => handleGenerateGift(item)}
                         >
-                          <Text style={styles.generateButtonText}>Найти подарок</Text>
+                          <Text style={styles.newGenerateButtonText}>Найти подарок</Text>
                           <Gift size={14} color="#FFFFFF" style={styles.buttonIcon} />
                         </TouchableOpacity>
                       </View>
@@ -736,20 +723,20 @@ export default function FeedScreen() {
                 </TouchableOpacity>
               ))}
               
-              {/* Кнопка добавления события */}
+              {/* Кнопка добавления события - обновленный дизайн */}
               <TouchableOpacity
-                style={styles.addEventCard}
+                style={styles.newAddEventCard}
                 activeOpacity={0.9}
                 onPress={() => setIsCreateEventModalVisible(true)}
               >
                 <LinearGradient
-                  colors={['#64B5F6', '#2196F3']}
+                  colors={[THEME.primary, THEME.gradientEnd]}
                   style={styles.addEventCardGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 0, y: 1 }}
                 >
                   <View style={styles.addEventContent}>
-                    <View style={styles.addEventIconContainer}>
+                    <View style={styles.newAddEventIconContainer}>
                       <Plus size={32} color="#FFFFFF" />
                     </View>
                     <Text style={styles.addEventText}>{t('events.addEvent')}</Text>
@@ -774,13 +761,13 @@ export default function FeedScreen() {
           {/* Персонализированные рекомендации */}
           <PersonalizedRecommendations />
           
-          {/* Идеи для особых случаев */}
-          <View style={styles.specialCasesSection}>
-            <Text style={styles.sectionTitle}>Идеи для особых случаев</Text>
+          {/* Идеи для особых случаев - обновленный дизайн */}
+          <View style={styles.newSpecialCasesSection}>
+            <Text style={styles.newSectionTitle}>Идеи для особых случаев</Text>
             
-            <View style={styles.specialCasesGrid}>
+            <View style={styles.newSpecialCasesGrid}>
               <TouchableOpacity 
-                style={styles.specialCaseCard}
+                style={styles.newSpecialCaseCard}
                 onPress={() => router.push({
                   pathname: '/gift-assistant',
                   params: { occasion: 'День рождения' }
@@ -790,11 +777,14 @@ export default function FeedScreen() {
                   source={{ uri: 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=500' }} 
                   style={styles.specialCaseImage}
                 />
-                <Text style={styles.specialCaseTitle}>День рождения</Text>
+                <View style={styles.newSpecialCaseContent}>
+                  <Text style={styles.newSpecialCaseTitle}>День рождения</Text>
+                  <ArrowRight size={16} color={THEME.primary} />
+                </View>
               </TouchableOpacity>
               
               <TouchableOpacity 
-                style={styles.specialCaseCard}
+                style={styles.newSpecialCaseCard}
                 onPress={() => router.push({
                   pathname: '/gift-assistant',
                   params: { occasion: 'Юбилей' }
@@ -804,11 +794,14 @@ export default function FeedScreen() {
                   source={{ uri: 'https://images.unsplash.com/photo-1465310477141-6fb93167a273?w=500' }} 
                   style={styles.specialCaseImage}
                 />
-                <Text style={styles.specialCaseTitle}>Юбилей</Text>
+                <View style={styles.newSpecialCaseContent}>
+                  <Text style={styles.newSpecialCaseTitle}>Юбилей</Text>
+                  <ArrowRight size={16} color={THEME.primary} />
+                </View>
               </TouchableOpacity>
               
               <TouchableOpacity 
-                style={styles.specialCaseCard}
+                style={styles.newSpecialCaseCard}
                 onPress={() => router.push({
                   pathname: '/gift-assistant',
                   params: { occasion: 'Свадьба' }
@@ -818,11 +811,14 @@ export default function FeedScreen() {
                   source={{ uri: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=500' }} 
                   style={styles.specialCaseImage}
                 />
-                <Text style={styles.specialCaseTitle}>Свадьба</Text>
+                <View style={styles.newSpecialCaseContent}>
+                  <Text style={styles.newSpecialCaseTitle}>Свадьба</Text>
+                  <ArrowRight size={16} color={THEME.primary} />
+                </View>
               </TouchableOpacity>
               
               <TouchableOpacity 
-                style={styles.specialCaseCard}
+                style={styles.newSpecialCaseCard}
                 onPress={() => router.push({
                   pathname: '/gift-assistant',
                   params: { occasion: 'Новоселье' }
@@ -832,7 +828,10 @@ export default function FeedScreen() {
                   source={{ uri: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=500' }} 
                   style={styles.specialCaseImage}
                 />
-                <Text style={styles.specialCaseTitle}>Новоселье</Text>
+                <View style={styles.newSpecialCaseContent}>
+                  <Text style={styles.newSpecialCaseTitle}>Новоселье</Text>
+                  <ArrowRight size={16} color={THEME.primary} />
+                </View>
               </TouchableOpacity>
             </View>
           </View>
@@ -913,8 +912,89 @@ export default function FeedScreen() {
           </View>
         </View>
       </Modal>
-
-      {/* Всегда показываем тень для панели навигации */}
+      
+      {/* Модальное окно подтверждения удаления */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={isDeleteModalVisible}
+        onRequestClose={() => setIsDeleteModalVisible(false)}
+      >
+        <View style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: 'rgba(0,0,0,0.5)',
+        }}>
+          <View style={{
+            width: '80%',
+            backgroundColor: 'white',
+            borderRadius: 10,
+            padding: 20,
+            alignItems: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 3.84,
+            elevation: 5
+          }}>
+            <Text style={{
+              fontSize: 18,
+              fontWeight: 'bold',
+              marginBottom: 15,
+              textAlign: 'center'
+            }}>
+              Удалить событие?
+            </Text>
+            <Text style={{
+              fontSize: 16,
+              marginBottom: 20,
+              textAlign: 'center'
+            }}>
+              {eventToDelete ? `Вы уверены, что хотите удалить "${eventToDelete.name}"?` : ''}
+            </Text>
+            <View style={{
+              flexDirection: 'row',
+              justifyContent: 'space-around',
+              width: '100%'
+            }}>
+              <TouchableOpacity
+                style={{
+                  backgroundColor: '#F0F0F0',
+                  paddingVertical: 10,
+                  paddingHorizontal: 20,
+                  borderRadius: 5,
+                  marginRight: 10
+                }}
+                onPress={() => {
+                  setIsDeleteModalVisible(false);
+                  setEventToDelete(null);
+                }}
+              >
+                <Text style={{ color: '#333', fontWeight: '600' }}>Отмена</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{
+                  backgroundColor: '#FF6B6B',
+                  paddingVertical: 10,
+                  paddingHorizontal: 20,
+                  borderRadius: 5
+                }}
+                onPress={() => {
+                  if (eventToDelete) {
+                    handleDeleteEvent(eventToDelete.id, eventToDelete.name);
+                  }
+                  setIsDeleteModalVisible(false);
+                  setEventToDelete(null);
+                }}
+              >
+                <Text style={{ color: 'white', fontWeight: '600' }}>Удалить</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      
       <TabBarShadow />
     </View>
   );
@@ -925,443 +1005,58 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.white,
   },
-  backgroundGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  header: {
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingBottom: 20,
-    borderBottomLeftRadius: RADIUS.xl,
-    borderBottomRightRadius: RADIUS.xl,
-    ...SHADOWS.pink,
-  },
-  headerContent: {
-    paddingHorizontal: SPACING.lg,
-  },
-  headerTitle: {
-    fontSize: FONTS.sizes.xl,
-    fontWeight: '700',
-    color: COLORS.white,
-    marginBottom: SPACING.xs,
-    paddingRight: SPACING.lg,
-    flexShrink: 1,
-  },
-  headerSubtitle: {
-    fontSize: FONTS.sizes.md,
-    color: COLORS.white,
-    opacity: 0.9,
-    marginBottom: SPACING.lg,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.white,
-    borderRadius: RADIUS.full,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    marginBottom: SPACING.sm,
-  },
-  searchBarNoGreeting: {
-    marginTop: SPACING.lg,
-    marginBottom: SPACING.md,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: SPACING.sm,
-    fontSize: FONTS.sizes.md,
-    color: COLORS.gray800,
-  },
-  backgroundContainer: {
-    display: 'none',
-  },
-  pinkBackground: {
-    display: 'none',
-  },
-  contentContainer: {
-    display: 'none',
-  },
-  welcomeContainer: {
-    display: 'none',
-  },
-  welcomeText: {
-    display: 'none',
-  },
-  subtitleText: {
-    display: 'none',
-  },
-  avatarContainer: {
-    display: 'none',
-  },
-  avatar: {
-    display: 'none',
-  },
-  searchContainer: {
-    display: 'none',
-  },
   scrollContent: {
-    paddingHorizontal: SPACING.lg,
-    paddingBottom: 100,
+    paddingBottom: 80,
+    backgroundColor: THEME.background,
   },
-  specialsSection: {
-    marginTop: SPACING.lg,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-  },
-  sectionTitle: {
-    fontSize: FONTS.sizes.lg,
-    fontWeight: '600',
-    color: COLORS.gray800,
-  },
-  seeAllText: {
-    fontSize: FONTS.sizes.sm,
-    color: COLORS.valentinePink,
-    fontWeight: '500',
-  },
-  specialsScrollContent: {
-    paddingRight: SPACING.lg,
-  },
-  specialCard: {
-    width: width - 60,
-    height: 140,
-    borderRadius: 20,
-    marginRight: 15,
-    padding: 20,
-    flexDirection: 'row',
-    overflow: 'hidden',
-  },
-  specialCardContent: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  specialCardTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 5,
-  },
-  specialCardDescription: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginBottom: 15,
-  },
-  viewButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 25,
-    alignSelf: 'flex-start',
-  },
-  viewButtonText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  specialCardImage: {
-    width: 100,
-    height: 100,
-    resizeMode: 'contain',
-  },
-  categoriesSection: {
-    marginTop: 30,
-    paddingHorizontal: 20,
-  },
-  categoriesScrollContent: {
-    paddingTop: 15,
-  },
-  categoryButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 50,
-    backgroundColor: '#F8F9FA',
-    marginRight: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  activeCategoryButton: {
-    backgroundColor: '#FF0844',
-  },
-  categoryIcon: {
-    width: 24,
-    height: 24,
-    marginRight: 8,
-  },
-  categoryText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#1E293B',
-  },
-  activeCategoryText: {
-    color: '#FFFFFF',
-  },
-  productsSection: {
-    marginTop: 30,
-  },
-  productsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    paddingHorizontal: 0,
-  },
-  productCard: {
-    width: '48%',
-    marginBottom: 16,
-    borderRadius: 15,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 15,
-    elevation: 2,
-    overflow: 'hidden',
-  },
-  productImageContainer: {
-    height: 150,
-    width: '100%',
-    position: 'relative',
-  },
-  productImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  favoriteButton: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  productInfo: {
-    padding: 12,
-  },
-  productName: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#1E293B',
-    marginBottom: 8,
-  },
-  productMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  productPrice: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#FF0844',
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  ratingText: {
-    fontSize: 12,
-    color: '#1E293B',
-    marginLeft: 4,
-  },
-  ideasSection: {
-    marginTop: 20,
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  ideasContainer: {
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 8, 68, 0.1)',
-  },
-  ideasContent: {
-    alignItems: 'center',
-  },
-  ideasTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1E293B',
-    marginTop: 15,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  ideasDescription: {
-    fontSize: 14,
-    color: '#64748B',
-    textAlign: 'center',
-    marginBottom: 15,
-  },
-  ideasButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 8, 68, 0.08)',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 25,
-  },
-  ideasButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FF0844',
-    marginRight: 5,
-  },
-  upcomingSection: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-  },
-  holidaysList: {
+  newHeader: {
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
     paddingBottom: 10,
+    paddingLeft: 50,
+    paddingRight: 20,
+    backgroundColor: THEME.background,
+    marginBottom: 10,
   },
-  holidayCard: {
-    marginBottom: 16,
-    borderRadius: RADIUS.lg,
-    overflow: 'hidden',
-    ...SHADOWS.medium,
+  newHeaderTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: THEME.text,
+    marginBottom: 2,
   },
-  holidayGradient: {
+  newHeaderSubtitle: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: THEME.textLight,
+    marginBottom: 5,
+  },
+  newSection: {
+    marginVertical: 20,
+  },
+  sectionTitleRow: {
     flexDirection: 'row',
-    borderRadius: RADIUS.lg,
-    overflow: 'hidden',
-  },
-  holidayImage: {
-    width: 100,
-    height: 130,
-  },
-  holidayContent: {
-    flex: 1,
-    padding: 15,
     justifyContent: 'space-between',
-  },
-  holidayTextContainer: {
-    flex: 1,
-  },
-  holidayName: {
-    fontSize: FONTS.sizes.lg,
-    fontWeight: FONTS.weights.bold as any,
-    color: COLORS.white,
-    marginBottom: 5,
-  },
-  dateContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 5,
-  },
-  holidayDate: {
-    fontSize: FONTS.sizes.sm,
-    color: COLORS.white,
-    marginLeft: 6,
-  },
-  generateButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: RADIUS.xs,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    marginTop: 10,
-  },
-  generateButtonText: {
-    fontSize: FONTS.sizes.sm,
-    fontWeight: FONTS.weights.bold as any,
-    color: COLORS.white,
-  },
-  buttonIcon: {
-    marginLeft: 6,
-  },
-  aiAssistantSection: {
     paddingHorizontal: 20,
-    paddingTop: 15,
-    paddingBottom: 5,
-  },
-  aiCard: {
-    borderRadius: RADIUS.lg,
-    overflow: 'hidden',
-    flexDirection: 'row',
-    ...SHADOWS.medium,
-  },
-  aiCardContent: {
-    flex: 1,
-    padding: 15,
-    justifyContent: 'space-between',
-  },
-  aiCardTitle: {
-    fontSize: FONTS.sizes.lg,
-    fontWeight: FONTS.weights.bold as any,
-    color: COLORS.white,
-    marginBottom: 5,
-  },
-  aiCardDescription: {
-    fontSize: FONTS.sizes.sm,
-    color: COLORS.white,
     marginBottom: 15,
   },
-  aiButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: RADIUS.xs,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  aiButtonText: {
-    fontSize: FONTS.sizes.sm,
-    fontWeight: FONTS.weights.bold as any,
-    color: COLORS.white,
-  },
-  aiCardImage: {
-    width: 100,
-    height: 130,
-  },
-  specialCasesSection: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-  },
-  specialCasesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  specialCaseCard: {
-    width: '48%',
-    backgroundColor: COLORS.white,
-    borderRadius: RADIUS.lg,
-    overflow: 'hidden',
-    marginBottom: 15,
-    ...SHADOWS.small,
-  },
-  specialCaseImage: {
-    width: '100%',
-    height: 120,
-  },
-  specialCaseTitle: {
-    fontSize: FONTS.sizes.md,
-    fontWeight: FONTS.weights.medium as any,
-    color: COLORS.gray800,
-    textAlign: 'center',
-    paddingVertical: 10,
+  newSectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: THEME.text,
   },
   eventsScrollView: {
-    marginTop: SPACING.sm,
+    marginTop: 10,
   },
   eventsScrollContent: {
-    paddingHorizontal: SPACING.md,
-    paddingBottom: SPACING.sm,
+    paddingLeft: 20,
+    paddingRight: 5,
+    paddingBottom: 10,
   },
-  eventCard: {
-    width: 300,
-    height: 200,
-    marginRight: SPACING.lg,
-    borderRadius: RADIUS.lg,
+  newEventCard: {
+    width: 280,
+    height: 180,
+    marginRight: 15,
+    borderRadius: 16,
     overflow: 'hidden',
     ...SHADOWS.medium,
   },
@@ -1370,26 +1065,25 @@ const styles = StyleSheet.create({
     height: '100%',
     justifyContent: 'flex-end',
   },
-  eventBackgroundImage: {
-    borderRadius: RADIUS.lg,
+  newEventBackgroundImage: {
+    borderRadius: 16,
   },
   eventGradient: {
     width: '100%',
     height: '100%',
-    position: 'absolute',
     justifyContent: 'space-between',
-    padding: SPACING.md,
+    padding: 15,
   },
-  eventDateBadge: {
+  newEventDateBadge: {
     position: 'absolute',
-    top: SPACING.md,
-    right: SPACING.md,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: RADIUS.sm,
-    padding: SPACING.xs,
+    top: 15,
+    right: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 10,
+    padding: 8,
     alignItems: 'center',
     minWidth: 50,
-    zIndex: 10,
+    ...SHADOWS.small,
   },
   eventDateMonth: {
     fontSize: FONTS.sizes.xs,
@@ -1405,50 +1099,133 @@ const styles = StyleSheet.create({
   eventContent: {
     marginTop: 'auto',
   },
-  eventName: {
-    fontSize: FONTS.sizes.lg,
-    fontWeight: FONTS.weights.bold as any,
-    color: COLORS.white,
-    marginBottom: SPACING.xs,
+  newEventName: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   eventDetailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: SPACING.xs,
+    marginBottom: 5,
   },
   eventDetail: {
     fontSize: FONTS.sizes.sm,
     color: COLORS.white,
-    marginLeft: SPACING.xs,
+    marginLeft: 6,
   },
-  daysLeftText: {
-    fontSize: FONTS.sizes.sm,
-    color: COLORS.white,
-    backgroundColor: 'rgba(255, 51, 102, 0.6)',
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 2,
-    borderRadius: RADIUS.xs,
+  newDaysLeftText: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    backgroundColor: THEME.secondary,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 6,
     overflow: 'hidden',
+    fontWeight: '600',
   },
-  sectionTitleRow: {
+  newGenerateButton: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: SPACING.md,
-  },
-  createEventButton: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.valentinePink,
+    justifyContent: 'center',
+    backgroundColor: THEME.primary,
+    borderRadius: 8,
+    paddingVertical: 8,
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: RADIUS.sm,
+    marginTop: 12,
+  },
+  newGenerateButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  newAddEventCard: {
+    width: 240,
+    height: 180,
+    marginRight: 20,
+    borderRadius: 16,
+    overflow: 'hidden',
+    ...SHADOWS.medium,
+  },
+  addEventCardGradient: {
+    width: '100%',
+    height: '100%',
+    padding: 15,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  createEventButtonText: {
-    color: COLORS.white,
-    fontSize: FONTS.sizes.sm,
-    fontWeight: FONTS.weights.medium as any,
-    marginLeft: 4,
+  newAddEventIconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  addEventContent: {
+    alignItems: 'center',
+  },
+  addEventText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 5,
+  },
+  addEventSubtext: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+    textAlign: 'center',
+  },
+  newSpecialCasesSection: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    marginBottom: 20,
+  },
+  newSpecialCasesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginTop: 15,
+  },
+  newSpecialCaseCard: {
+    width: '48%',
+    backgroundColor: THEME.cardBg,
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 15,
+    ...SHADOWS.small,
+  },
+  specialCaseImage: {
+    width: '100%',
+    height: 110,
+  },
+  newSpecialCaseContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  newSpecialCaseTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: THEME.text,
+  },
+  buttonIcon: {
+    marginLeft: 6,
+  },
+  deleteEventButton: {
+    position: 'absolute',
+    top: 15,
+    left: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 20,
+    padding: 8,
   },
   modalOverlay: {
     flex: 1,
@@ -1539,55 +1316,8 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontWeight: FONTS.weights.bold as any,
   },
-  addEventCard: {
-    width: 250,
-    height: 200,
-    marginRight: SPACING.lg,
-    borderRadius: RADIUS.lg,
-    overflow: 'hidden',
-    ...SHADOWS.medium,
-  },
-  addEventCardGradient: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: SPACING.md,
-  },
-  addEventContent: {
-    alignItems: 'center',
-  },
-  addEventIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-  },
-  addEventText: {
-    fontSize: FONTS.sizes.md,
-    fontWeight: FONTS.weights.bold as any,
-    color: COLORS.white,
-    textAlign: 'center',
-    marginBottom: SPACING.xs,
-  },
-  addEventSubtext: {
-    fontSize: FONTS.sizes.sm,
-    color: 'rgba(255,255,255,0.8)',
-    textAlign: 'center',
-  },
-  deleteEventButton: {
-    position: 'absolute',
-    top: SPACING.md,
-    left: SPACING.md,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 51, 102, 0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
+  eventsSectionFix: {
+    marginTop: Platform.OS === 'ios' ? 15 : 20,
+    paddingTop: 10,
   },
 });

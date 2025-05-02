@@ -25,7 +25,10 @@ import {
   Gift,
   Map,
   Award,
-  CalendarClock
+  CalendarClock,
+  Plus,
+  Edit,
+  Trash2,
 } from 'lucide-react-native';
 import { useAppLocalization } from '@/components/LocalizationWrapper';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -142,7 +145,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
       
       {/* Фоновые элементы */}
       <LinearGradient
@@ -179,72 +182,74 @@ export default function ProfileScreen() {
           <Text style={styles.profileName}>Sophie Anderson</Text>
           <Text style={styles.profileEmail}>sophie.a@example.com</Text>
           
-          <View style={styles.memberStatusBadge}>
-            <Gift size={14} color={COLORS.white} />
-            <Text style={styles.memberStatusText}>{t('profile.premiumMember')}</Text>
-          </View>
-          
           <TouchableOpacity style={styles.editProfileButton} activeOpacity={0.7}>
             <Text style={styles.editProfileText}>{t('profile.editProfile')}</Text>
           </TouchableOpacity>
         </View>
         
-        {/* Valentine's Day Offers */}
-        <View style={styles.offerSection}>
-          <LinearGradient
-            colors={[COLORS.primary, COLORS.primaryDark]}
-            style={styles.offerCard}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View style={styles.offerContent}>
-              <View style={styles.offerTextContainer}>
-                <Text style={styles.offerTitle}>{t('profile.valentineOffer')}</Text>
-                <Text style={styles.offerDescription}>{t('profile.offerDescription')}</Text>
-              </View>
-              <View style={styles.discountContainer}>
-                <Text style={styles.offerDiscount}>30%</Text>
+        {/* Recent Orders */}
+        <View style={styles.ordersSection}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>{t('profile.recentOrders')}</Text>
+            <TouchableOpacity>
+              <Text style={styles.seeAllText}>{t('profile.seeAll')}</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.orderCard}>
+            <View style={styles.orderHeader}>
+              <Text style={styles.orderNumber}>Order #2305</Text>
+              <View style={styles.statusBadge}>
+                <Text style={styles.statusText}>Delivered</Text>
               </View>
             </View>
-          </LinearGradient>
+            
+            <View style={styles.orderDetails}>
+              <View style={styles.orderItem}>
+                <Image 
+                  source={{ uri: 'https://images.unsplash.com/photo-1520006403909-838d6b92c22e?w=500' }}
+                  style={styles.orderItemImage} 
+                />
+                <View style={styles.orderItemInfo}>
+                  <Text style={styles.orderItemName}>Pink Roses Bouquet</Text>
+                  <Text style={styles.orderItemPrice}>$39.00</Text>
+                </View>
+              </View>
+            </View>
+            
+            <TouchableOpacity style={styles.reorderButton}>
+              <Text style={styles.reorderButtonText}>{t('profile.reorder')}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
         
-        {/* Language Switcher */}
-        <View style={styles.languageSection}>
-          <View style={styles.languageSwitcher}>
-            <Text style={styles.languageTitle}>{t('profile.language')}</Text>
-            <View style={styles.languageOptions}>
-              <TouchableOpacity
-                style={[
-                  styles.languageOption,
-                  locale === 'en' && styles.activeLanguage,
-                ]}
-                onPress={() => setLocale('en')}
-              >
-                <Text
-                  style={[
-                    styles.languageText,
-                    locale === 'en' && styles.activeLanguageText,
-                  ]}
-                >
-                  English
-                </Text>
+        {/* Saved Addresses */}
+        <View style={styles.addressesSection}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>{t('profile.savedAddresses')}</Text>
+            <TouchableOpacity>
+              <Plus size={20} color={COLORS.primary} />
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.addressCard}>
+            <View style={styles.addressHeader}>
+              <View style={styles.addressIconContainer}>
+                <MapPin size={18} color={COLORS.primary} />
+              </View>
+              <View>
+                <Text style={styles.addressType}>{t('profile.home')}</Text>
+                <Text style={styles.addressText}>123 Main Street, Apartment 4B</Text>
+                <Text style={styles.addressText}>New York, NY 10001</Text>
+              </View>
+            </View>
+            
+            <View style={styles.addressActions}>
+              <TouchableOpacity style={styles.addressActionButton}>
+                <Edit size={16} color={COLORS.gray600} />
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.languageOption,
-                  locale === 'ru' && styles.activeLanguage,
-                ]}
-                onPress={() => setLocale('ru')}
-              >
-                <Text
-                  style={[
-                    styles.languageText,
-                    locale === 'ru' && styles.activeLanguageText,
-                  ]}
-                >
-                  Русский
-                </Text>
+              <TouchableOpacity style={styles.addressActionButton}>
+                <Trash2 size={16} color={COLORS.gray600} />
               </TouchableOpacity>
             </View>
           </View>
@@ -252,31 +257,22 @@ export default function ProfileScreen() {
         
         {/* Опции меню */}
         <View style={styles.menuSection}>
-          <Text style={styles.menuSectionTitle}>{t('profile.account')}</Text>
+          <Text style={styles.sectionTitle}>{t('profile.account')}</Text>
           
-          {menuOptions.map((option) => (
+          {menuOptions.slice(0, 6).map((option) => (
             <TouchableOpacity
               key={option.id}
-              style={[
-                styles.menuItem,
-                option.isDanger && styles.dangerMenuItem,
-              ]}
+              style={styles.menuItem}
               onPress={() => handleMenuOptionPress(option.id)}
             >
               <View style={styles.menuLeft}>
-                <View style={[
-                  styles.menuIconContainer, 
-                  option.isDanger && styles.dangerIconContainer
-                ]}>
+                <View style={styles.menuIconContainer}>
                   <option.icon
                     size={20}
-                    color={option.isDanger ? COLORS.error : COLORS.primary}
+                    color={COLORS.primary}
                   />
                 </View>
-                <Text style={[
-                  styles.menuItemTitle,
-                  option.isDanger && styles.dangerText
-                ]}>{option.title}</Text>
+                <Text style={styles.menuItemTitle}>{option.title}</Text>
               </View>
               
               <View style={styles.menuRight}>
@@ -294,17 +290,25 @@ export default function ProfileScreen() {
                     thumbColor={option.isEnabled ? COLORS.primary : COLORS.gray200}
                     ios_backgroundColor={COLORS.gray300}
                   />
-                ) : option.id !== 'logout' ? (
+                ) : (
                   <ChevronRight size={20} color={COLORS.gray500} />
-                ) : null}
+                )}
               </View>
             </TouchableOpacity>
           ))}
         </View>
         
+        {/* Logout Button */}
+        <TouchableOpacity 
+          style={styles.logoutButton}
+          onPress={() => handleMenuOptionPress('logout')}
+        >
+          <LogOut size={20} color={COLORS.primary} style={styles.logoutIcon} />
+          <Text style={styles.logoutText}>{t('profile.logout')}</Text>
+        </TouchableOpacity>
+        
         {/* Информация о приложении */}
         <View style={styles.appInfoSection}>
-          <ThemeToggle />
           <Text style={styles.appVersion}>{t('profile.version')} 1.0.0</Text>
           <View style={styles.footerLinks}>
             <TouchableOpacity>
@@ -343,14 +347,14 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 90 : 70,
     paddingBottom: 20,
     position: 'relative',
-    marginBottom: 70,
+    marginBottom: 30,
   },
   profileHeaderBackground: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: 240,
+    height: 220,
     borderBottomLeftRadius: RADIUS.xl,
     borderBottomRightRadius: RADIUS.xl,
   },
@@ -404,22 +408,7 @@ const styles = StyleSheet.create({
   profileEmail: {
     fontSize: FONTS.sizes.sm,
     color: 'rgba(255, 255, 255, 0.8)',
-    marginBottom: 10,
-  },
-  memberStatusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 4,
-    borderRadius: RADIUS.full,
-    marginBottom: SPACING.sm,
-  },
-  memberStatusText: {
-    fontSize: FONTS.sizes.xs,
-    color: COLORS.white,
-    marginLeft: 4,
-    fontWeight: '500',
+    marginBottom: 15,
   },
   editProfileButton: {
     paddingVertical: 8,
@@ -440,104 +429,156 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '500',
   },
-  offerSection: {
+  ordersSection: {
     paddingHorizontal: SPACING.lg,
-    marginBottom: SPACING.md,
-  },
-  offerCard: {
-    borderRadius: RADIUS.lg,
-    padding: SPACING.md,
-    ...SHADOWS.medium,
     marginBottom: SPACING.lg,
   },
-  offerContent: {
+  sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  offerTextContainer: {
-    flex: 1,
-    paddingRight: 10,
-  },
-  discountContainer: {
-    justifyContent: 'center', 
-    alignItems: 'flex-end',
-  },
-  offerTitle: {
-    fontSize: FONTS.sizes.md,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 4,
-    flexWrap: 'wrap',
-    width: '100%',
-  },
-  offerDescription: {
-    fontSize: FONTS.sizes.xs,
-    color: 'rgba(255, 255, 255, 0.8)',
-    width: '100%',
-    flexWrap: 'wrap',
-  },
-  offerDiscount: {
-    fontSize: 36,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    textAlign: 'right',
-  },
-  languageSection: {
-    marginHorizontal: SPACING.lg,
     marginBottom: SPACING.md,
   },
-  languageSwitcher: {
-    padding: SPACING.md,
-  },
-  languageTitle: {
-    fontSize: FONTS.sizes.md,
+  sectionTitle: {
+    fontSize: FONTS.sizes.lg,
     fontWeight: '600',
-    color: '#1E293B',
+    color: COLORS.gray800,
+  },
+  seeAllText: {
+    fontSize: FONTS.sizes.sm,
+    color: COLORS.primary,
+    fontWeight: '500',
+  },
+  orderCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    ...SHADOWS.small,
+    marginBottom: SPACING.md,
+  },
+  orderHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: SPACING.sm,
   },
-  languageOptions: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
+  orderNumber: {
+    fontSize: FONTS.sizes.md,
+    fontWeight: '600',
+    color: COLORS.gray800,
   },
-  languageOption: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
+  statusBadge: {
+    backgroundColor: COLORS.success + '20',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
     borderRadius: RADIUS.sm,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-    backgroundColor: '#FFFFFF',
   },
-  activeLanguage: {
-    backgroundColor: '#FF0844',
-    borderColor: '#FF0844',
-  },
-  languageText: {
-    fontSize: FONTS.sizes.sm,
-    color: '#1E293B',
-  },
-  activeLanguageText: {
-    color: '#FFFFFF',
+  statusText: {
+    fontSize: FONTS.sizes.xs,
+    color: COLORS.success,
     fontWeight: '500',
+  },
+  orderDetails: {
+    marginBottom: SPACING.sm,
+  },
+  orderItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.xs,
+  },
+  orderItemImage: {
+    width: 60,
+    height: 60,
+    borderRadius: RADIUS.md,
+    marginRight: SPACING.sm,
+  },
+  orderItemInfo: {
+    flex: 1,
+  },
+  orderItemName: {
+    fontSize: FONTS.sizes.md,
+    fontWeight: '500',
+    color: COLORS.gray700,
+    marginBottom: 4,
+  },
+  orderItemPrice: {
+    fontSize: FONTS.sizes.sm,
+    color: COLORS.primary,
+    fontWeight: '600',
+  },
+  reorderButton: {
+    alignSelf: 'flex-end',
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.primary + '15',
+  },
+  reorderButtonText: {
+    fontSize: FONTS.sizes.sm,
+    color: COLORS.primary,
+    fontWeight: '600',
+  },
+  addressesSection: {
+    paddingHorizontal: SPACING.lg,
+    marginBottom: SPACING.lg,
+  },
+  addressCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    ...SHADOWS.small,
+    marginBottom: SPACING.md,
+  },
+  addressHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: SPACING.sm,
+  },
+  addressIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: RADIUS.sm,
+    backgroundColor: COLORS.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: SPACING.sm,
+  },
+  addressType: {
+    fontSize: FONTS.sizes.md,
+    fontWeight: '600',
+    color: COLORS.gray800,
+    marginBottom: 2,
+  },
+  addressText: {
+    fontSize: FONTS.sizes.sm,
+    color: COLORS.gray600,
+    marginBottom: 2,
+  },
+  addressActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  addressActionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: RADIUS.sm,
+    backgroundColor: COLORS.gray100,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: SPACING.sm,
   },
   menuSection: {
     paddingHorizontal: SPACING.lg,
-    marginBottom: SPACING.md,
-  },
-  menuSectionTitle: {
-    fontSize: FONTS.sizes.md,
-    fontWeight: 'bold',
-    color: '#1E293B',
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.lg,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: SPACING.md,
-  },
-  dangerMenuItem: {
-    backgroundColor: '#FFFFFF',
+    marginBottom: 2,
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.md,
   },
   menuLeft: {
     flexDirection: 'row',
@@ -547,46 +588,58 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: RADIUS.md,
-    backgroundColor: 'rgba(255, 51, 102, 0.1)',
+    backgroundColor: COLORS.primary + '10',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: SPACING.sm,
   },
-  dangerIconContainer: {
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-  },
   menuItemTitle: {
     fontSize: FONTS.sizes.md,
-    color: '#1E293B',
-  },
-  dangerText: {
-    color: '#FF0844',
+    color: COLORS.gray800,
   },
   menuRight: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   countBadge: {
-    backgroundColor: '#FF0844',
+    backgroundColor: COLORS.primary,
     borderRadius: RADIUS.full,
     paddingHorizontal: 8,
     paddingVertical: 2,
     marginRight: SPACING.sm,
   },
   countText: {
-    color: '#FFFFFF',
+    color: COLORS.white,
     fontSize: FONTS.sizes.xs,
+    fontWeight: '600',
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.lg,
+    paddingVertical: SPACING.md,
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.md,
+    ...SHADOWS.small,
+  },
+  logoutIcon: {
+    marginRight: SPACING.sm,
+  },
+  logoutText: {
+    fontSize: FONTS.sizes.md,
+    color: COLORS.primary,
     fontWeight: '600',
   },
   appInfoSection: {
     alignItems: 'center',
-    marginTop: SPACING.xl,
+    marginTop: SPACING.md,
     paddingBottom: SPACING.xl,
   },
   appVersion: {
     fontSize: FONTS.sizes.xs,
-    color: '#94A3B8',
-    marginTop: SPACING.md,
+    color: COLORS.gray400,
     marginBottom: SPACING.sm,
   },
   footerLinks: {
@@ -595,12 +648,12 @@ const styles = StyleSheet.create({
   },
   footerLink: {
     fontSize: FONTS.sizes.xs,
-    color: '#64748B',
+    color: COLORS.gray500,
     textDecorationLine: 'underline',
   },
   footerDivider: {
     fontSize: FONTS.sizes.xs,
-    color: '#94A3B8',
+    color: COLORS.gray400,
     marginHorizontal: SPACING.sm,
   },
 });

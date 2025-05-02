@@ -19,10 +19,10 @@ const { width, height } = Dimensions.get('window');
 
 // Создаем собственный массив цветов для сердечек
 const HEART_COLORS = [
-  COLORS.giftYellow,    // Светло-оранжевый
-  COLORS.giftPink,      // Светло-розовый
-  COLORS.giftBlue,      // Светло-голубой
-  COLORS.giftTeal,      // Мятный
+  COLORS.secondary,       // Pink
+  COLORS.primary,         // Purple
+  COLORS.accent,          // Teal
+  COLORS.info,            // Blue
 ];
 
 // Создаем кастомные анимации
@@ -61,6 +61,7 @@ Animatable.initializeRegistryWithDefinitions({
 
 export default function GiftPromoScreen() {
   const handleStartPlanning = () => {
+    // Navigate to tabs navigation directly instead of drawer
     router.replace('/(tabs)');
   };
 
@@ -281,7 +282,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 40,
     borderRadius: 30,
-    ...SHADOWS.yellow,
+    ...SHADOWS.purple,
     width: width * 0.9,
     maxWidth: 350,
     alignItems: 'center',

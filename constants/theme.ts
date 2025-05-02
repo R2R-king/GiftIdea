@@ -4,27 +4,27 @@
 
 export const COLORS = {
   // Primary Colors
-  primary: '#FF3366',
-  primaryLight: '#FF6699',
-  primaryDark: '#CC2952',
-  primaryBackground: '#FFF0F5',
+  primary: '#6C63FF',
+  primaryLight: '#8A84FF',
+  primaryDark: '#5A52E0',
+  primaryBackground: '#F5F8FF',
   
   // Secondary Colors
-  secondary: '#8A2BE2',
-  secondaryLight: '#A45EE5',
-  secondaryDark: '#6A1FB0',
-  secondaryBackground: '#F5F0FF',
+  secondary: '#FF6B6B',
+  secondaryLight: '#FF8E8E',
+  secondaryDark: '#FF4949',
+  secondaryBackground: '#FFF0F0',
   
   // Accent Colors
-  accent: '#00BFFF',
-  accentLight: '#66D9FF',
-  accentDark: '#0099CC',
+  accent: '#00D2D3',
+  accentLight: '#66E7E8',
+  accentDark: '#00A9AA',
   
   // Valentine's Theme Colors
-  valentinePink: '#FF3366',
-  valentineLightPink: '#FF6B98',
-  valentineRed: '#E91E63',
-  valentineDarkRed: '#C2185B',
+  valentinePink: '#FF6B6B',
+  valentineLightPink: '#FF8E8E',
+  valentineRed: '#FF4949',
+  valentineDarkRed: '#E53935',
   valentineBackground: '#FFF5F8',
   valentineLightBackground: '#FFF9FB',
   
@@ -50,6 +50,9 @@ export const COLORS = {
   
   // Transparency
   transparent: 'transparent',
+  
+  // Gift background
+  giftBackground: '#F5F8FF',
 }
 
 export const FONTS = {
@@ -70,6 +73,10 @@ export const FONTS = {
     bold: '700' as const,
     extrabold: '800' as const,
   },
+  family: {
+    primary: undefined, // Use system default
+    heading: undefined, // Use system default
+  }
 }
 
 export const SPACING = {
@@ -113,8 +120,8 @@ export const SHADOWS = {
     shadowRadius: 16,
     elevation: 8,
   },
-  pink: {
-    shadowColor: COLORS.valentinePink,
+  purple: {
+    shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 12,
