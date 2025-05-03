@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Animatable from 'react-native-animatable';
 import React from 'react';
 import { COLORS } from '@/constants/theme';
+import { FontAwesome, MaterialIcons } from "@expo/vector-icons";
 
 export default function TabLayout() {
   const { t } = useAppLocalization();
@@ -139,6 +140,13 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <AnimatedTabIcon focused={focused} Icon={User} color={color} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="gift-promo"
+        options={{
+          title: "Gift Promo",
+          tabBarIcon: ({ color }) => <MaterialIcons name="card-giftcard" size={24} color={color} />,
         }}
       />
     </Tabs>
