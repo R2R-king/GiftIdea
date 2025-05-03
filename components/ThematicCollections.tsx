@@ -96,7 +96,11 @@ export const ThematicCollections = ({
               <Text style={[styles.collectionTitle, isDark && styles.darkText]}>
                 {collection.title}
               </Text>
-              <Text style={[styles.description, isDark && styles.darkText]} numberOfLines={2}>
+              <Text 
+                selectable={false}
+                numberOfLines={2}
+                style={[styles.description, isDark && styles.darkTextSecondary]}
+              >
                 {collection.description}
               </Text>
               <Text style={[styles.itemCount, isDark && styles.darkText]}>
@@ -156,6 +160,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     marginBottom: 8,
+    borderWidth: 0,
+    borderColor: 'transparent',
+    backgroundColor: 'transparent',
+    textShadowColor: 'transparent',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 0,
+    textDecorationLine: 'none',
+    textDecorationColor: 'transparent',
+    textDecorationStyle: 'solid',
   },
   itemCount: {
     fontSize: 12,
@@ -163,6 +176,9 @@ const styles = StyleSheet.create({
   },
   darkText: {
     color: '#e0e0e0',
+  },
+  darkTextSecondary: {
+    color: '#a0a0a0',
   },
 });
 

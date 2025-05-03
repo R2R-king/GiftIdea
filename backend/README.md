@@ -1,72 +1,84 @@
 # GiftIdea Backend
 
-Простой backend на Spring Boot для приложения GiftIdea.
+Бэкенд для приложения GiftIdea, предоставляющий API для генерации изображений с помощью GigaChat API.
 
-## Требования
+## Установка
 
-- Java 17 или выше
-- Maven
+1. Установите зависимости:
 
-## Запуск приложения
+```bash
+npm install
+```
 
-1. Клонируйте репозиторий
-2. Перейдите в папку проекта:
-   ```
-   cd backend
-   ```
-3. Запустите приложение с помощью Maven:
-   ```
-   mvn spring-boot:run
-   ```
-   
-Приложение будет доступно по адресу: http://localhost:8080
+2. Создайте файл `.env` на основе `.env.example`:
 
-## Доступ к H2 консоли
+```bash
+# Порт для запуска сервера
+PORT=4000
 
-H2 консоль доступна по адресу: http://localhost:8080/h2-console
+# Ключ GigaChat API (замените на свой реальный ключ)
+GIGACHAT_API_KEY=ваш_gigachat_api_key
+```
 
-Параметры подключения:
-- JDBC URL: `jdbc:h2:mem:giftideadb`
-- Username: `sa`
-- Password: `password`
+## Запуск сервера
+
+Для разработки (с автоматической перезагрузкой):
+
+```bash
+npm run dev
+```
+
+Для продакшена:
+
+```bash
+npm start
+```
 
 ## API Endpoints
 
-### Products API
+### Проверка работоспособности
 
-- `GET /api/products` - получить все товары
-- `GET /api/products/{id}` - получить товар по ID
-- `GET /api/products/category/{category}` - получить товары по категории
-- `GET /api/products/search?keyword=value` - поиск товаров
-- `POST /api/products` - создать новый товар
-- `PUT /api/products/{id}` - обновить товар
-- `DELETE /api/products/{id}` - удалить товар
+```
+GET /health
+```
 
-### Cart API
+### Статус API
 
-- `GET /api/cart/{userId}` - получить корзину пользователя
-- `POST /api/cart/{userId}/add` - добавить товар в корзину
-- `PUT /api/cart/item/{cartItemId}` - обновить количество товара в корзине
-- `DELETE /api/cart/item/{cartItemId}` - удалить товар из корзины
-- `DELETE /api/cart/{userId}/clear` - очистить корзину пользователя
+```
+GET /api/status
+```
 
-## Примеры запросов
+### Статус GigaChat API
 
-### Добавление товара в корзину
+```
+GET /api/gigachat/status
+```
+
+### Генерация изображения
+
+```
+POST /api/generate-image
+```
+
+Тело запроса:
 
 ```json
-POST /api/cart/user123/add
 {
-  "productId": 1,
-  "quantity": 2
+  "eventName": "Новый год",
+  "prompt": "Нарисуй красивую иллюстрацию для события \"Новый год\". Изображение должно быть ярким, красочным и подходить для мобильного приложения."
 }
 ```
 
-### Обновление количества товара в корзине
+Ответ:
 
 ```json
-PUT /api/cart/item/1
 {
-  "quantity": 3
+  "imageData": "base64_encoded_image_data",
+  "eventName": "Новый год"
 }
-``` 
+```
+
+## Требования
+
+- Node.js 14+
+- Ключ доступа к GigaChat API 
