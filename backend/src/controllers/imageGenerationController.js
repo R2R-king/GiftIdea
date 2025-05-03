@@ -5,7 +5,10 @@ const path = require('path');
 
 // Конфигурация API
 const GIGACHAT_API_URL = process.env.GIGACHAT_API_URL || 'https://gigachat.devices.sberbank.ru/api/v1';
+const AUTH_API_URL = process.env.AUTH_API_URL || 'https://ngw.devices.sberbank.ru:9443/api/v2';
 const GIGACHAT_API_KEY = process.env.GIGACHAT_API_KEY || 'MWMzMzgzYjctZGU4Zi00YmE1LTk4ZTktOWIyY2EzMDIxNDllOjRlNDU0YWY2LWQxNGEtNGRjNi1hYWU5LTdmNzJhYWM1ZTc0MQ==';
+// Добавляем параметр, который позволит обойти проверку SSL-сертификата (только для разработки)
+const DISABLE_SSL_VERIFICATION = process.env.DISABLE_SSL_VERIFICATION === 'true' || true;
 
 // Проверяем наличие API-ключа
 const isApiKeySet = GIGACHAT_API_KEY && GIGACHAT_API_KEY !== 'demo_key' && GIGACHAT_API_KEY !== 'your_gigachat_api_key_here';
@@ -103,20 +106,34 @@ exports.generateImage = async (req, res) => {
  */
 async function getAuthToken() {
   try {
+    // Создаем уникальный идентификатор запроса в формате uuid4
+    const uuid = require('uuid');
+    const requestId = uuid.v4();
+    
+    // Настройки для запроса с отключением проверки SSL-сертификата (только для разработки)
+    const httpsAgent = DISABLE_SSL_VERIFICATION ? 
+      new (require('https').Agent)({ rejectUnauthorized: false }) : 
+      undefined;
+    
     const response = await axios.post(
-      `${GIGACHAT_API_URL}/oauth/token`,
-      {},
+      `${AUTH_API_URL}/oauth`,
+      'scope=GIGACHAT_API_PERS', // Form-urlencoded данные согласно документации
       {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${GIGACHAT_API_KEY}`
-        }
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json',
+          'RqUID': requestId,
+          'Authorization': `Basic ${GIGACHAT_API_KEY}` // Базовая аутентификация
+        },
+        httpsAgent // Агент для отключения проверки SSL
       }
     );
 
+    console.log('Токен успешно получен');
     return response.data.access_token;
   } catch (error) {
-    console.error('Ошибка при получении токена авторизации:', error.response?.data || error.message);
+    console.error('Ошибка при получении токена авторизации:', 
+      error.response?.data || error.message);
     throw new Error('Не удалось получить токен авторизации для GigaChat API');
   }
 }
@@ -129,6 +146,11 @@ async function getAuthToken() {
  */
 async function generateImageViaGigaChat(prompt, authToken) {
   try {
+    // Настройки для запроса с отключением проверки SSL-сертификата (только для разработки)
+    const httpsAgent = DISABLE_SSL_VERIFICATION ? 
+      new (require('https').Agent)({ rejectUnauthorized: false }) : 
+      undefined;
+      
     const response = await axios.post(
       `${GIGACHAT_API_URL}/chat/completions`,
       {
@@ -150,7 +172,8 @@ async function generateImageViaGigaChat(prompt, authToken) {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           'Authorization': `Bearer ${authToken}`
-        }
+        },
+        httpsAgent // Агент для отключения проверки SSL
       }
     );
 
@@ -180,6 +203,11 @@ async function generateImageViaGigaChat(prompt, authToken) {
  */
 async function downloadImage(imageId, authToken) {
   try {
+    // Настройки для запроса с отключением проверки SSL-сертификата (только для разработки)
+    const httpsAgent = DISABLE_SSL_VERIFICATION ? 
+      new (require('https').Agent)({ rejectUnauthorized: false }) : 
+      undefined;
+      
     const response = await axios.get(
       `${GIGACHAT_API_URL}/files/${imageId}/content`,
       {
@@ -187,7 +215,8 @@ async function downloadImage(imageId, authToken) {
           'Authorization': `Bearer ${authToken}`,
           'Accept': 'application/jpg'
         },
-        responseType: 'arraybuffer'
+        responseType: 'arraybuffer',
+        httpsAgent // Агент для отключения проверки SSL
       }
     );
 

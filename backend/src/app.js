@@ -3,6 +3,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
 const imageRoutes = require('./routes/imageRoutes');
+const gigachatRoutes = require('./routes/gigachat');
 
 // Загружаем переменные окружения из .env файла
 dotenv.config();
@@ -55,6 +56,7 @@ app.get('/api/gigachat/test', (req, res) => {
 
 // Маршруты API
 app.use('/api', imageRoutes);
+app.use('/api/gigachat', gigachatRoutes);
 
 // Обработка ошибок
 app.use((err, req, res, next) => {
