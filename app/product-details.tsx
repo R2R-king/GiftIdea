@@ -10,13 +10,19 @@ import {
   Dimensions,
   StatusBar,
   Alert,
+  Modal,
+  FlatList,
+  TextInput,
+  ActivityIndicator,
+  Share,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ChevronLeft, Heart, ShoppingBag } from 'lucide-react-native';
+import { ChevronLeft, Heart, ShoppingBag, Gift, Plus, Check, X } from 'lucide-react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useAppLocalization } from '@/components/LocalizationWrapper';
 import { useCart } from '@/hooks/useCart';
+import { useWishlists, WishlistItem } from '@/hooks/useWishlists';
 
 const { width, height } = Dimensions.get('window');
 
@@ -32,11 +38,25 @@ export default function ProductDetailScreen() {
   const { isFavorite, toggleFavorite } = useFavorites();
   const { localizedData } = useAppLocalization();
   const { addItem, isInCart } = useCart();
+  const { 
+    wishlists, 
+    isItemInAnyWishlist, 
+    addItemToWishlist, 
+    getWishlistsForItem,
+    createWishlist 
+  } = useWishlists();
+  
   const [selectedVolume, setSelectedVolume] = useState('150 мл');
   const [price, setPrice] = useState('3 800 ₽');
+  const [wishlistModalVisible, setWishlistModalVisible] = useState(false);
+  const [createWishlistModalVisible, setCreateWishlistModalVisible] = useState(false);
+  const [newWishlistName, setNewWishlistName] = useState('');
   
   // Найти продукт по ID из локализованных данных
   const product = localizedData.products.find(p => p.id === productId) || localizedData.products[0];
+  
+  // Проверяем, находится ли товар в любом вишлисте
+  const isInWishlist = isItemInAnyWishlist(product.id);
   
   // Обновить цену при изменении продукта
   useEffect(() => {
@@ -91,6 +111,143 @@ export default function ProductDetailScreen() {
     handleAddToCart();
     // Переходим на страницу корзины
     router.push('/(tabs)/cart');
+  };
+
+  // Функция для добавления товара в вишлист
+  const handleAddToWishlist = (wishlistId: string) => {
+    // Создаем объект с данными о товаре для вишлиста
+    const wishlistItem: WishlistItem = {
+      id: Date.now().toString(),
+      productId: product.id,
+      name: product.name,
+      price: price,
+      image: product.image
+    };
+    
+    // Добавляем товар в вишлист
+    addItemToWishlist(wishlistId, wishlistItem);
+    
+    // Закрываем модальное окно
+    setWishlistModalVisible(false);
+    
+    // Показываем сообщение об успехе
+    Alert.alert('Товар добавлен в вишлист', '', [{ text: 'OK' }], { cancelable: true });
+  };
+  
+  // Функция для создания нового вишлиста и добавления товара в него
+  const handleCreateWishlistWithItem = () => {
+    // Открываем модальное окно для создания нового вишлиста
+    setCreateWishlistModalVisible(true);
+  };
+  
+  // Функция для подтверждения создания вишлиста
+  const handleConfirmCreateWishlist = () => {
+    if (newWishlistName && newWishlistName.trim()) {
+      // Создаем новый вишлист
+      const newWishlist = createWishlist(newWishlistName);
+      
+      // Добавляем товар в новый вишлист
+      const wishlistItem: WishlistItem = {
+        id: Date.now().toString(),
+        productId: product.id,
+        name: product.name,
+        price: price,
+        image: product.image
+      };
+      
+      addItemToWishlist(newWishlist.id, wishlistItem);
+      
+      // Закрываем модальные окна
+      setCreateWishlistModalVisible(false);
+      setWishlistModalVisible(false);
+      
+      // Очищаем поле ввода
+      setNewWishlistName('');
+      
+      // Показываем сообщение об успехе
+      Alert.alert(
+        'Вишлист создан',
+        `Товар добавлен в вишлист "${newWishlistName.trim()}"`,
+        [{ text: 'OK' }],
+        { cancelable: true }
+      );
+    }
+  };
+  
+  // Отображение модального окна с выбором вишлиста
+  const renderWishlistModal = () => {
+    return (
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={wishlistModalVisible}
+        onRequestClose={() => setWishlistModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Добавить в вишлист</Text>
+              <TouchableOpacity
+                onPress={() => setWishlistModalVisible(false)}
+                style={styles.closeButton}
+              >
+                <Text style={{ fontSize: 24, color: '#64748B' }}>×</Text>
+              </TouchableOpacity>
+            </View>
+            
+            {wishlists.length > 0 ? (
+              <FlatList
+                data={wishlists}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => {
+                  const isItemInThisWishlist = item.items.some(
+                    wishlistItem => wishlistItem.productId === product.id
+                  );
+                  
+                  return (
+                    <TouchableOpacity
+                      style={styles.wishlistItem}
+                      onPress={() => {
+                        if (!isItemInThisWishlist) {
+                          handleAddToWishlist(item.id);
+                        } else {
+                          Alert.alert('Товар уже в вишлисте', '', [{ text: 'OK' }]);
+                        }
+                      }}
+                    >
+                      <View style={styles.wishlistItemInfo}>
+                        <Text style={styles.wishlistItemName}>{item.name}</Text>
+                        <Text style={styles.wishlistItemCount}>
+                          {item.items.length} {item.items.length === 1 ? 'товар' : 
+                            (item.items.length >= 2 && item.items.length <= 4) ? 'товара' : 'товаров'}
+                        </Text>
+                      </View>
+                      
+                      {isItemInThisWishlist ? (
+                        <Check size={20} color="#10B981" />
+                      ) : (
+                        <Plus size={20} color="#6C63FF" />
+                      )}
+                    </TouchableOpacity>
+                  );
+                }}
+              />
+            ) : (
+              <Text style={styles.emptyWishlistText}>
+                У вас пока нет вишлистов
+              </Text>
+            )}
+            
+            <TouchableOpacity
+              style={styles.createWishlistButton}
+              onPress={handleCreateWishlistWithItem}
+            >
+              <Text style={styles.createWishlistText}>Создать новый вишлист</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    );
   };
 
   return (
@@ -232,6 +389,21 @@ export default function ProductDetailScreen() {
       <View style={styles.fixedActionButtonsContainer}>
         <View style={styles.actionButtonsWrapper}>
           <TouchableOpacity 
+            style={styles.wishlistButton}
+            onPress={() => setWishlistModalVisible(true)}
+          >
+            <Gift size={22} color={isInWishlist ? "#6C63FF" : "#64748B"} />
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.addToCartButton}
+            onPress={handleAddToCart}
+          >
+            <ShoppingBag size={22} color="#FFFFFF" />
+            <Text style={styles.addToCartText}>Добавить в корзину</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
             style={styles.buyNowButton}
             onPress={handleBuyNow}
           >
@@ -239,6 +411,65 @@ export default function ProductDetailScreen() {
           </TouchableOpacity>
         </View>
       </View>
+      
+      {/* Модальное окно с выбором вишлиста */}
+      {renderWishlistModal()}
+      
+      {/* Модальное окно для создания нового вишлиста */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={createWishlistModalVisible}
+        onRequestClose={() => setCreateWishlistModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Новый вишлист</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setCreateWishlistModalVisible(false);
+                  setNewWishlistName('');
+                }}
+                style={styles.closeButton}
+              >
+                <X size={24} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+            
+            <Text style={styles.modalSubtitle}>Введите название для нового вишлиста</Text>
+            
+            <TextInput
+              style={styles.input}
+              value={newWishlistName}
+              onChangeText={setNewWishlistName}
+              placeholder="Название вишлиста"
+              placeholderTextColor="#A0AEC0"
+              autoFocus={true}
+            />
+            
+            <View style={styles.modalButtonsRow}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => {
+                  setCreateWishlistModalVisible(false);
+                  setNewWishlistName('');
+                }}
+              >
+                <Text style={styles.cancelButtonText}>Отмена</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.modalButton, styles.confirmButton]}
+                onPress={handleConfirmCreateWishlist}
+                disabled={!newWishlistName.trim()}
+              >
+                <Text style={styles.confirmButtonText}>Создать</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -434,23 +665,154 @@ const styles = StyleSheet.create({
   actionButtonsWrapper: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  wishlistButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F8FAFC',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  addToCartButton: {
+    flex: 1,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#6C63FF',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    paddingHorizontal: 16,
+  },
+  addToCartText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginLeft: 8,
   },
   buyNowButton: {
-    flex: 1,
-    height: 56,
-    borderRadius: 28,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#FF0844',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#FF0844',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    paddingHorizontal: 16,
   },
   buyNowText: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: '600',
     color: '#FFFFFF',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    maxHeight: '70%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1E293B',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  wishlistItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  wishlistItemInfo: {
+    flex: 1,
+  },
+  wishlistItemName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1E293B',
+    marginBottom: 4,
+  },
+  wishlistItemCount: {
+    fontSize: 14,
+    color: '#64748B',
+  },
+  emptyWishlistText: {
+    fontSize: 16,
+    color: '#64748B',
+    textAlign: 'center',
+    marginVertical: 24,
+  },
+  createWishlistButton: {
+    backgroundColor: '#6C63FF',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  createWishlistText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  input: {
+    backgroundColor: '#F8FAFC',
+    padding: 16,
+    borderRadius: 8,
+    marginVertical: 16,
+    fontSize: 16,
+    color: '#1E293B',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  modalSubtitle: {
+    fontSize: 16,
+    color: '#4A5568',
+    marginTop: 8,
+  },
+  modalButtonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16,
+  },
+  modalButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    flex: 1,
+    marginHorizontal: 4,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#EDF2F7',
+  },
+  cancelButtonText: {
+    color: '#4A5568',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  confirmButton: {
+    backgroundColor: '#6C63FF',
+  },
+  confirmButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 16,
   },
 }); 

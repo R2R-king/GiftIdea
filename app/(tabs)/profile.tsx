@@ -83,6 +83,9 @@ export default function ProfileScreen() {
       case 'orders':
         // Пока не реализовано
         break;
+      case 'wishlists':
+        router.push('/wishlist');
+        break;
       default:
         // Для остальных пунктов меню
         break;
@@ -107,6 +110,11 @@ export default function ProfileScreen() {
       title: t('profile.favorites'),
       icon: Heart,
       count: 12,
+    },
+    {
+      id: 'wishlists',
+      title: t('profile.wishlists'),
+      icon: Gift,
     },
     {
       id: 'loyalty',
@@ -142,6 +150,53 @@ export default function ProfileScreen() {
       isDanger: true,
     },
   ];
+
+  const renderMenuItem = (option: MenuOption) => (
+    <TouchableOpacity
+      key={option.id}
+      style={[
+        styles.menuItem,
+        option.isDanger && styles.dangerMenuItem
+      ]}
+      onPress={() => handleMenuOptionPress(option.id)}
+    >
+      <View style={styles.menuItemLeft}>
+        <View style={[
+          styles.menuIconContainer,
+          option.isDanger && styles.dangerIcon
+        ]}>
+          <option.icon size={20} color={option.isDanger ? COLORS.error : COLORS.primary} />
+        </View>
+        <Text style={[
+          styles.menuItemText,
+          option.isDanger && styles.dangerText
+        ]}>
+          {option.title}
+        </Text>
+      </View>
+      
+      <View style={styles.menuItemRight}>
+        {option.count !== undefined && (
+          <View style={styles.badgeContainer}>
+            <Text style={styles.badgeText}>{option.count}</Text>
+          </View>
+        )}
+        
+        {option.hasToggle ? (
+          <Switch
+            value={option.isEnabled}
+            onValueChange={() => {
+              // Toggle logic
+            }}
+            trackColor={{ false: COLORS.gray200, true: `${COLORS.primary}50` }}
+            thumbColor={option.isEnabled ? COLORS.primary : COLORS.gray400}
+          />
+        ) : (
+          <ChevronRight size={20} color={option.isDanger ? COLORS.error : COLORS.gray400} />
+        )}
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
     <View style={styles.container}>
@@ -185,6 +240,11 @@ export default function ProfileScreen() {
           <TouchableOpacity style={styles.editProfileButton} activeOpacity={0.7}>
             <Text style={styles.editProfileText}>{t('profile.editProfile')}</Text>
           </TouchableOpacity>
+        </View>
+        
+        {/* Menu Options */}
+        <View style={styles.menuSection}>
+          {menuOptions.map((option) => renderMenuItem(option))}
         </View>
         
         {/* Recent Orders */}
@@ -253,49 +313,6 @@ export default function ProfileScreen() {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
-        
-        {/* Опции меню */}
-        <View style={styles.menuSection}>
-          <Text style={styles.sectionTitle}>{t('profile.account')}</Text>
-          
-          {menuOptions.slice(0, 6).map((option) => (
-            <TouchableOpacity
-              key={option.id}
-              style={styles.menuItem}
-              onPress={() => handleMenuOptionPress(option.id)}
-            >
-              <View style={styles.menuLeft}>
-                <View style={styles.menuIconContainer}>
-                  <option.icon
-                    size={20}
-                    color={COLORS.primary}
-                  />
-                </View>
-                <Text style={styles.menuItemTitle}>{option.title}</Text>
-              </View>
-              
-              <View style={styles.menuRight}>
-                {option.count && (
-                  <View style={styles.countBadge}>
-                    <Text style={styles.countText}>{option.count}</Text>
-                  </View>
-                )}
-                
-                {option.hasToggle ? (
-                  <Switch
-                    value={option.isEnabled}
-                    onValueChange={() => {}}
-                    trackColor={{ false: COLORS.gray300, true: COLORS.primaryLight }}
-                    thumbColor={option.isEnabled ? COLORS.primary : COLORS.gray200}
-                    ios_backgroundColor={COLORS.gray300}
-                  />
-                ) : (
-                  <ChevronRight size={20} color={COLORS.gray500} />
-                )}
-              </View>
-            </TouchableOpacity>
-          ))}
         </View>
         
         {/* Logout Button */}
@@ -534,19 +551,26 @@ const styles = StyleSheet.create({
     marginLeft: SPACING.sm,
   },
   menuSection: {
-    paddingHorizontal: SPACING.lg,
-    marginBottom: SPACING.lg,
+    paddingHorizontal: SPACING.md,
+    marginVertical: SPACING.md,
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+    marginHorizontal: SPACING.md,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: SPACING.md,
-    marginBottom: 2,
-    backgroundColor: COLORS.white,
-    borderRadius: RADIUS.md,
+    paddingVertical: SPACING.md,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.gray100,
   },
-  menuLeft: {
+  menuItemLeft: {
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -554,27 +578,27 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: RADIUS.md,
-    backgroundColor: COLORS.primary + '10',
-    justifyContent: 'center',
+    backgroundColor: `${COLORS.primary}15`,
     alignItems: 'center',
+    justifyContent: 'center',
     marginRight: SPACING.sm,
   },
-  menuItemTitle: {
+  menuItemText: {
     fontSize: FONTS.sizes.md,
     color: COLORS.gray800,
   },
-  menuRight: {
+  menuItemRight: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  countBadge: {
+  badgeContainer: {
     backgroundColor: COLORS.primary,
     borderRadius: RADIUS.full,
     paddingHorizontal: 8,
     paddingVertical: 2,
     marginRight: SPACING.sm,
   },
-  countText: {
+  badgeText: {
     color: COLORS.white,
     fontSize: FONTS.sizes.xs,
     fontWeight: '600',
@@ -621,5 +645,14 @@ const styles = StyleSheet.create({
     fontSize: FONTS.sizes.xs,
     color: COLORS.gray400,
     marginHorizontal: SPACING.sm,
+  },
+  dangerMenuItem: {
+    backgroundColor: COLORS.error + '10',
+  },
+  dangerIcon: {
+    backgroundColor: COLORS.error + '20',
+  },
+  dangerText: {
+    color: COLORS.error,
   },
 });

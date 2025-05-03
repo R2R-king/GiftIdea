@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Home, Gift, User, ShoppingCart, Heart } from 'lucide-react-native';
+import { Home, Gift, User, ShoppingCart, Heart, List } from 'lucide-react-native';
 import { useAppLocalization } from '@/components/LocalizationWrapper';
 import { View, StyleSheet, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -110,7 +110,7 @@ export default function TabLayout() {
         options={{
           title: t('tabs.shop'),
           tabBarIcon: ({ color, focused }) => (
-            <AnimatedTabIcon focused={focused} Icon={Gift} color={color} />
+            <AnimatedTabIcon focused={focused} Icon={List} color={color} />
           ),
         }}
       />
