@@ -142,13 +142,6 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="gift-promo"
-        options={{
-          title: "Gift Promo",
-          tabBarIcon: ({ color }) => <MaterialIcons name="card-giftcard" size={24} color={color} />,
-        }}
-      />
     </Tabs>
   );
 }

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { View, StyleSheet, Dimensions, Alert, Image } from "react-native";
+import { View, StyleSheet, Dimensions, Alert, Image, TouchableOpacity, Text } from "react-native";
 import { router } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Slider, Slide } from "./gift-promo";
 
@@ -54,13 +55,23 @@ const slides = [
 
 export const assets = slides.map(({ picture }) => picture);
 
-const LiquidSwipeGiftPromo = () => {
+interface LiquidSwipeGiftPromoProps {
+  onFinish?: () => void;
+}
+
+const { height } = Dimensions.get('window');
+
+const LiquidSwipeGiftPromo = ({ onFinish }: LiquidSwipeGiftPromoProps) => {
   const [index, setIndex] = useState(0);
   const prev = slides[index - 1];
   const next = slides[index + 1];
+  const isLastSlide = index === slides.length - 1;
+  const insets = useSafeAreaInsets();
 
   const handleFinish = () => {
-    if (index === slides.length - 1) {
+    if (onFinish) {
+      onFinish();
+    } else {
       try {
         router.replace('/(tabs)');
       } catch (error) {
@@ -81,6 +92,19 @@ const LiquidSwipeGiftPromo = () => {
       >
         <Slide slide={slides[index]!} onFinish={handleFinish} />
       </Slider>
+
+      {isLastSlide && (
+        <TouchableOpacity 
+          style={[
+            styles.fixedButton, 
+            { bottom: Math.max(30, insets.bottom + 10) }
+          ]}
+          onPress={handleFinish}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.buttonText}>НАЧАТЬ</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
@@ -89,6 +113,27 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  fixedButton: {
+    position: 'absolute',
+    left: '10%',
+    right: '10%',
+    backgroundColor: '#FB3A4D',
+    paddingVertical: 16,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 8,
+    zIndex: 1000,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  }
 });
 
 export default LiquidSwipeGiftPromo; 

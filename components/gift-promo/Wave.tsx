@@ -109,21 +109,24 @@ const Wave = ({
       ].join(" "),
     };
   });
+  
+  // Делаем анимацию на весь экран, но с учетом кнопки
+  const fillHeight = HEIGHT;
+  
+  // Контейнер анимации заполняет весь экран
+  const containerStyle = StyleSheet.absoluteFill;
+  
   const maskElement = (
-    <Svg
-      style={[
-        StyleSheet.absoluteFill,
-        {
-          transform: [{ rotateY: side === Side.RIGHT ? "180deg" : "0deg" }],
-        },
-      ]}
-    >
+    <Svg style={[containerStyle, {
+      transform: [{ rotateY: side === Side.RIGHT ? "180deg" : "0deg" }],
+    }]}>
       <AnimatedPath
         fill={Platform.OS === "android" ? children.props.slide.color : "black"}
         animatedProps={animatedProps}
       />
     </Svg>
   );
+  
   const androidStyle = useAnimatedStyle(() => {
     return {
       transform: [
@@ -138,18 +141,20 @@ const Wave = ({
       ],
     };
   });
+  
   if (Platform.OS === "android") {
     return (
-      <View style={StyleSheet.absoluteFill}>
+      <View style={containerStyle}>
         {maskElement}
-        <Animated.View style={[StyleSheet.absoluteFill, androidStyle]}>
+        <Animated.View style={[containerStyle, androidStyle]}>
           {children}
         </Animated.View>
       </View>
     );
   }
+  
   return (
-    <MaskedView style={StyleSheet.absoluteFill} maskElement={maskElement}>
+    <MaskedView style={containerStyle} maskElement={maskElement}>
       {children}
     </MaskedView>
   );
