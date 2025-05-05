@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,7 @@ import {
   Image,
   TouchableOpacity,
   Dimensions,
-  StatusBar,
+  StatusBar as RNStatusBar,
   Platform,
   Alert,
   ScrollView,
@@ -23,6 +23,8 @@ import { useFavorites } from '@/hooks/useFavorites';
 import { useCart } from '@/hooks/useCart';
 import BudgetRangeFilter from '@/components/BudgetRangeFilter';
 import MapGiftFinder from '@/components/MapGiftFinder';
+import { useTheme } from '@/components/ThemeProvider';
+import { StatusBar } from 'expo-status-bar';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - SPACING.lg * 3) / 2;
@@ -37,7 +39,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
   header: {
-    paddingTop: Platform.OS === 'ios' ? 50 : StatusBar.currentHeight! + 10,
+    paddingTop: Platform.OS === 'ios' ? 50 : RNStatusBar.currentHeight! + 10,
     paddingHorizontal: SPACING.lg,
     paddingBottom: SPACING.md,
   },
@@ -202,6 +204,7 @@ export default function CatalogScreen() {
   const { favoriteItems, toggleFavorite } = useFavorites();
   const { addItem } = useCart();
   const params = useLocalSearchParams();
+  const { theme } = useTheme();
   
   // Get collection parameter from URL
   const { collection, name } = params;
@@ -215,6 +218,24 @@ export default function CatalogScreen() {
     location: 'all',
     searchQuery: ''
   });
+
+  // Получение стилей на основе темы
+  const getThemedStyles = useCallback(() => {
+    return {
+      backgroundColor: theme === 'dark' ? '#121212' : COLORS.white,
+      cardBackground: theme === 'dark' ? '#1E1E1E' : COLORS.white,
+      textPrimary: theme === 'dark' ? '#FFFFFF' : COLORS.gray900,
+      textSecondary: theme === 'dark' ? '#FFFFFF' : COLORS.gray700,
+      textTertiary: theme === 'dark' ? '#CCCCCC' : COLORS.gray500,
+      borderColor: theme === 'dark' ? '#333333' : COLORS.gray200,
+      favoriteButtonBg: theme === 'dark' ? 'rgba(30, 30, 30, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+      categoryTabText: theme === 'dark' ? '#CCCCCC' : COLORS.gray500,
+      categoryTabTextActive: theme === 'dark' ? '#FFFFFF' : COLORS.gray900,
+      emptyText: theme === 'dark' ? '#CCCCCC' : COLORS.gray600,
+    };
+  }, [theme]);
+
+  const themedStyles = getThemedStyles();
 
   // Исходный список товаров из локализованных данных
   const [products, setProducts] = useState<Product[]>(() => 
@@ -323,7 +344,7 @@ export default function CatalogScreen() {
   // Update the product item rendering
   const renderProductItem = ({ item }: { item: Product }) => (
     <TouchableOpacity 
-      style={styles.productCard}
+      style={[styles.productCard, {backgroundColor: themedStyles.cardBackground}]}
       onPress={() => navigateToProductDetails(item)}
       activeOpacity={0.7}
     >
@@ -333,7 +354,7 @@ export default function CatalogScreen() {
           style={styles.productImage}
         />
         <TouchableOpacity 
-          style={styles.favoriteButton}
+          style={[styles.favoriteButton, {backgroundColor: themedStyles.favoriteButtonBg}]}
           onPress={() => handleToggleFavorite(item.id)}
         >
           <Heart 
@@ -345,20 +366,20 @@ export default function CatalogScreen() {
       </View>
       
       <View style={styles.productInfo}>
-        <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
-        <Text style={styles.productSubtitle} numberOfLines={1}>{item.subtitle}</Text>
+        <Text style={[styles.productName, {color: themedStyles.textPrimary}]} numberOfLines={1}>{item.name}</Text>
+        <Text style={[styles.productSubtitle, {color: themedStyles.textTertiary}]} numberOfLines={1}>{item.subtitle}</Text>
         <Text style={styles.productPrice}>$ {item.price}</Text>
       </View>
     </TouchableOpacity>
   );
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
+    <View style={[styles.container, {backgroundColor: themedStyles.backgroundColor}]}>
+      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
       
       {/* Фоновые элементы */}
       <LinearGradient
-        colors={[COLORS.primaryBackground, COLORS.white]}
+        colors={[theme === 'dark' ? '#121212' : COLORS.primaryBackground, theme === 'dark' ? '#121212' : COLORS.white]}
         style={styles.backgroundGradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -366,8 +387,8 @@ export default function CatalogScreen() {
       
       {/* Заголовок */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Fabulous</Text>
-        <Text style={styles.headerSubtitle}>gifts for everyone</Text>
+        <Text style={[styles.headerTitle, {color: themedStyles.textPrimary}]}>Fabulous</Text>
+        <Text style={[styles.headerSubtitle, {color: themedStyles.textSecondary}]}>gifts for everyone</Text>
         
         {/* Category tabs */}
         <ScrollView 
@@ -380,16 +401,16 @@ export default function CatalogScreen() {
             style={[styles.categoryTab, styles.categoryTabActive]}
             activeOpacity={0.7}
           >
-            <Text style={[styles.categoryTabText, styles.categoryTabTextActive]}>Flower</Text>
+            <Text style={[styles.categoryTabText, styles.categoryTabTextActive, {color: themedStyles.categoryTabTextActive}]}>Flower</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.categoryTab} activeOpacity={0.7}>
-            <Text style={styles.categoryTabText}>Cake</Text>
+            <Text style={[styles.categoryTabText, {color: themedStyles.categoryTabText}]}>Cake</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.categoryTab} activeOpacity={0.7}>
-            <Text style={styles.categoryTabText}>Cards</Text>
+            <Text style={[styles.categoryTabText, {color: themedStyles.categoryTabText}]}>Cards</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.categoryTab} activeOpacity={0.7}>
-            <Text style={styles.categoryTabText}>Toys</Text>
+            <Text style={[styles.categoryTabText, {color: themedStyles.categoryTabText}]}>Toys</Text>
           </TouchableOpacity>
         </ScrollView>
       </View>
@@ -406,8 +427,8 @@ export default function CatalogScreen() {
           showsVerticalScrollIndicator={false}
         />
       ) : (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>
+        <View style={[styles.emptyContainer, {backgroundColor: themedStyles.backgroundColor}]}>
+          <Text style={[styles.emptyText, {color: themedStyles.emptyText}]}>
             {t('catalog.noProductsFound')}
           </Text>
         </View>

@@ -39,6 +39,7 @@ import { router } from 'expo-router';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
 import { useSelector } from 'react-redux';
 import { store } from '@/store';
+import { useTheme } from '@/components/ThemeProvider';
 
 // Define RootState type based on the store
 type RootState = ReturnType<typeof store.getState>;
@@ -59,6 +60,7 @@ interface MenuOption {
 export default function ProfileScreen() {
   const { t, locale, setLocale } = useAppLocalization();
   const { user } = useSelector((state: RootState) => state.auth);
+  const { colors, theme } = useTheme();
 
   const toggleLanguage = () => {
     setLocale(locale === 'en' ? 'ru' : 'en');
@@ -97,7 +99,7 @@ export default function ProfileScreen() {
         router.push('/secret-santa' as any);
         break;
       case 'settings':
-        // Add navigation to settings if needed
+        router.push('/settings' as any);
         break;
       default:
         // Для остальных пунктов меню
@@ -174,20 +176,38 @@ export default function ProfileScreen() {
       key={option.id}
       style={[
         styles.menuItem,
-        option.isDanger && styles.dangerMenuItem
+        option.isDanger && styles.dangerMenuItem,
+        { 
+          borderBottomColor: theme === 'dark' ? '#333333' : colors.gray100,
+          backgroundColor: theme === 'dark' ? 'transparent' : 'transparent'
+        }
       ]}
       onPress={() => handleMenuOptionPress(option.id)}
     >
       <View style={styles.menuItemLeft}>
         <View style={[
           styles.menuIconContainer,
-          option.isDanger && styles.dangerIcon
+          option.isDanger && styles.dangerIcon,
+          { backgroundColor: option.isDanger ? 
+            (theme === 'dark' ? 'rgba(255, 73, 73, 0.2)' : `${colors.error}20`) : 
+            (theme === 'dark' ? 'rgba(255, 107, 157, 0.15)' : `${colors.primary}15`) 
+          }
         ]}>
-          <option.icon size={20} color={option.isDanger ? COLORS.error : COLORS.primary} />
+          <option.icon 
+            size={20} 
+            color={option.isDanger ? 
+              colors.error : 
+              (theme === 'dark' ? colors.primary : colors.primary)
+            } 
+          />
         </View>
         <Text style={[
           styles.menuItemText,
-          option.isDanger && styles.dangerText
+          option.isDanger && styles.dangerText,
+          { color: option.isDanger ? 
+            colors.error : 
+            (theme === 'dark' ? '#FFFFFF' : colors.gray800) 
+          }
         ]}>
           {option.title}
         </Text>
@@ -195,8 +215,8 @@ export default function ProfileScreen() {
       
       <View style={styles.menuItemRight}>
         {option.count !== undefined && (
-          <View style={styles.badgeContainer}>
-            <Text style={styles.badgeText}>{option.count}</Text>
+          <View style={[styles.badgeContainer, { backgroundColor: colors.primary }]}>
+            <Text style={[styles.badgeText, { color: colors.white }]}>{option.count}</Text>
           </View>
         )}
         
@@ -206,26 +226,26 @@ export default function ProfileScreen() {
             onValueChange={() => {
               // Toggle logic
             }}
-            trackColor={{ false: COLORS.gray200, true: `${COLORS.primary}50` }}
-            thumbColor={option.isEnabled ? COLORS.primary : COLORS.gray400}
+            trackColor={{ false: theme === 'dark' ? '#333333' : colors.gray200, true: `${colors.primary}50` }}
+            thumbColor={option.isEnabled ? colors.primary : theme === 'dark' ? '#666666' : colors.gray400}
           />
         ) : (
-          <ChevronRight size={20} color={option.isDanger ? COLORS.error : COLORS.gray400} />
+          <ChevronRight size={20} color={option.isDanger ? colors.error : theme === 'dark' ? colors.primary : colors.gray400} />
         )}
       </View>
     </TouchableOpacity>
   );
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
+    <View style={[styles.container, { backgroundColor: colors.white }]}>
+      <StatusBar barStyle={theme === 'dark' ? "light-content" : "dark-content"} backgroundColor="transparent" translucent={true} />
       
       {/* Фоновые элементы */}
       <LinearGradient
-        colors={[COLORS.primaryBackground, COLORS.white]}
+        colors={[theme === 'dark' ? colors.primary : colors.primaryBackground, colors.white]}
         style={styles.backgroundGradient}
         start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+        end={{ x: 0, y: 0.3 }}
       />
       
       <ScrollView
@@ -236,7 +256,7 @@ export default function ProfileScreen() {
         <View style={styles.profileHeader}>
           {/* Фон профиля */}
           <LinearGradient
-            colors={[COLORS.primary, COLORS.primaryLight]}
+            colors={[colors.primary, colors.primaryLight]}
             style={styles.profileHeaderBackground}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -256,34 +276,52 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
           
-          <Text style={styles.profileName}>{user?.name || t('profile.guestUser')}</Text>
-          <Text style={styles.profileEmail}>{user?.email || ''}</Text>
+          <Text style={[styles.profileName, {color: theme === 'dark' ? '#FFFFFF' : '#000000'}]}>
+            {user?.name || t('profile.guestUser')}
+          </Text>
+          <Text style={[styles.profileEmail, {color: theme === 'dark' ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.8)'}]}>
+            {user?.email || ''}
+          </Text>
           
         </View>
         
-        {/* Promotional Info Card - Update text color for better visibility */}
-        <View style={styles.promoCard}>
-          <Text style={styles.promoTitle}>{t('profile.valentineOffer')}</Text>
-          <Text style={styles.promoDescription}>{t('profile.offerDescription')}</Text>
+        {/* Promotional Info Card */}
+        <View style={[styles.promoCard, {backgroundColor: theme === 'dark' ? '#222222' : colors.white}]}>
+          <Text style={[styles.promoTitle, {color: theme === 'dark' ? colors.gray800 : '#000000'}]}>
+            {t('profile.valentineOffer')}
+          </Text>
+          <Text style={[styles.promoDescription, {color: theme === 'dark' ? colors.gray600 : '#333333'}]}>
+            {t('profile.offerDescription')}
+          </Text>
         </View>
         
         {/* Menu Options */}
-        <View style={styles.menuSection}>
+        <View style={[
+          styles.menuSection, 
+          {
+            backgroundColor: theme === 'dark' ? '#1E1E1E' : colors.white,
+            shadowColor: theme === 'dark' ? 'rgba(0,0,0,0)' : '#000',
+          }
+        ]}>
           {menuOptions.map((option) => renderMenuItem(option))}
         </View>
         
         {/* Recent Orders */}
         <View style={styles.ordersSection}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{t('profile.recentOrders')}</Text>
+            <Text style={[styles.sectionTitle, {color: theme === 'dark' ? '#FFFFFF' : colors.gray800}]}>
+              {t('profile.recentOrders')}
+            </Text>
             <TouchableOpacity>
-              <Text style={styles.seeAllText}>{t('profile.seeAll')}</Text>
+              <Text style={[styles.seeAllText, {color: theme === 'dark' ? colors.primary : colors.primary}]}>
+                {t('profile.seeAll')}
+              </Text>
             </TouchableOpacity>
           </View>
           
-          <View style={styles.orderCard}>
+          <View style={[styles.orderCard, {backgroundColor: theme === 'dark' ? '#1E1E1E' : colors.white}]}>
             <View style={styles.orderHeader}>
-              <Text style={styles.orderNumber}>Order #2305</Text>
+              <Text style={[styles.orderNumber, {color: theme === 'dark' ? '#FFFFFF' : colors.gray800}]}>Order #2305</Text>
               <View style={styles.statusBadge}>
                 <Text style={styles.statusText}>Delivered</Text>
               </View>
@@ -296,14 +334,23 @@ export default function ProfileScreen() {
                   style={styles.orderItemImage} 
                 />
                 <View style={styles.orderItemInfo}>
-                  <Text style={styles.orderItemName}>Pink Roses Bouquet</Text>
-                  <Text style={styles.orderItemPrice}>$39.00</Text>
+                  <Text style={[styles.orderItemName, {color: theme === 'dark' ? '#FFFFFF' : colors.gray700}]}>
+                    Pink Roses Bouquet
+                  </Text>
+                  <Text style={[styles.orderItemPrice, {color: theme === 'dark' ? colors.primary : colors.primary}]}>
+                    $39.00
+                  </Text>
                 </View>
               </View>
             </View>
             
-            <TouchableOpacity style={styles.reorderButton}>
-              <Text style={styles.reorderButtonText}>{t('profile.reorder')}</Text>
+            <TouchableOpacity style={[
+              styles.reorderButton, 
+              {backgroundColor: theme === 'dark' ? 'rgba(255, 107, 157, 0.15)' : `${colors.primary}15`}
+            ]}>
+              <Text style={[styles.reorderButtonText, {color: colors.primary}]}>
+                {t('profile.reorder')}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -311,30 +358,47 @@ export default function ProfileScreen() {
         {/* Saved Addresses */}
         <View style={styles.addressesSection}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{t('profile.savedAddresses')}</Text>
+            <Text style={[styles.sectionTitle, {color: theme === 'dark' ? '#FFFFFF' : colors.gray800}]}>
+              {t('profile.savedAddresses')}
+            </Text>
             <TouchableOpacity>
-              <Plus size={20} color={COLORS.primary} />
+              <Plus size={20} color={colors.primary} />
             </TouchableOpacity>
           </View>
           
-          <View style={styles.addressCard}>
+          <View style={[styles.addressCard, {backgroundColor: theme === 'dark' ? '#1E1E1E' : colors.white}]}>
             <View style={styles.addressHeader}>
-              <View style={styles.addressIconContainer}>
-                <MapPin size={18} color={COLORS.primary} />
+              <View style={[
+                styles.addressIconContainer, 
+                {backgroundColor: theme === 'dark' ? 'rgba(255, 107, 157, 0.15)' : `${colors.primary}15`}
+              ]}>
+                <MapPin size={18} color={colors.primary} />
               </View>
               <View>
-                <Text style={styles.addressType}>{t('profile.home')}</Text>
-                <Text style={styles.addressText}>123 Main Street, Apartment 4B</Text>
-                <Text style={styles.addressText}>New York, NY 10001</Text>
+                <Text style={[styles.addressType, {color: theme === 'dark' ? '#FFFFFF' : colors.gray800}]}>
+                  {t('profile.home')}
+                </Text>
+                <Text style={[styles.addressText, {color: theme === 'dark' ? '#CCCCCC' : colors.gray600}]}>
+                  123 Main Street, Apartment 4B
+                </Text>
+                <Text style={[styles.addressText, {color: theme === 'dark' ? '#CCCCCC' : colors.gray600}]}>
+                  New York, NY 10001
+                </Text>
               </View>
             </View>
             
             <View style={styles.addressActions}>
-              <TouchableOpacity style={styles.addressActionButton}>
-                <Edit size={16} color={COLORS.gray600} />
+              <TouchableOpacity style={[
+                styles.addressActionButton, 
+                {backgroundColor: theme === 'dark' ? '#333333' : colors.gray100}
+              ]}>
+                <Edit size={16} color={theme === 'dark' ? '#FFFFFF' : colors.gray600} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.addressActionButton}>
-                <Trash2 size={16} color={COLORS.gray600} />
+              <TouchableOpacity style={[
+                styles.addressActionButton, 
+                {backgroundColor: theme === 'dark' ? '#333333' : colors.gray100}
+              ]}>
+                <Trash2 size={16} color={theme === 'dark' ? '#FFFFFF' : colors.gray600} />
               </TouchableOpacity>
             </View>
           </View>
@@ -342,23 +406,34 @@ export default function ProfileScreen() {
         
         {/* Logout Button */}
         <TouchableOpacity 
-          style={styles.logoutButton}
+          style={[
+            styles.logoutButton, 
+            {backgroundColor: theme === 'dark' ? '#1E1E1E' : colors.white}
+          ]}
           onPress={() => handleMenuOptionPress('logout')}
         >
-          <LogOut size={20} color={COLORS.primary} style={styles.logoutIcon} />
-          <Text style={styles.logoutText}>{t('profile.logout')}</Text>
+          <LogOut size={20} color={colors.primary} style={styles.logoutIcon} />
+          <Text style={[styles.logoutText, {color: colors.primary}]}>
+            {t('profile.logout')}
+          </Text>
         </TouchableOpacity>
         
         {/* Информация о приложении */}
         <View style={styles.appInfoSection}>
-          <Text style={styles.appVersion}>{t('profile.version')} 1.0.0</Text>
+          <Text style={[styles.appVersion, {color: theme === 'dark' ? '#999999' : colors.gray400}]}>
+            {t('profile.version')} 1.0.0
+          </Text>
           <View style={styles.footerLinks}>
             <TouchableOpacity>
-              <Text style={styles.footerLink}>{t('profile.privacyPolicy')}</Text>
+              <Text style={[styles.footerLink, {color: theme === 'dark' ? '#CCCCCC' : colors.gray500}]}>
+                {t('profile.privacyPolicy')}
+              </Text>
             </TouchableOpacity>
-            <Text style={styles.footerDivider}>•</Text>
+            <Text style={[styles.footerDivider, {color: theme === 'dark' ? '#999999' : colors.gray400}]}>•</Text>
             <TouchableOpacity>
-              <Text style={styles.footerLink}>{t('profile.termsOfService')}</Text>
+              <Text style={[styles.footerLink, {color: theme === 'dark' ? '#CCCCCC' : colors.gray500}]}>
+                {t('profile.termsOfService')}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>

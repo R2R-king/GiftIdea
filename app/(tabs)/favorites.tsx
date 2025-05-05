@@ -18,6 +18,7 @@ import TabBarShadow from '@/components/TabBarShadow';
 import { router } from 'expo-router';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useTheme } from '@/components/ThemeProvider';
 
 const { width } = Dimensions.get('window');
 
@@ -34,7 +35,24 @@ interface FavoriteItem {
 export default function FavoritesScreen() {
   const { t } = useAppLocalization();
   const { favoriteItems, removeFavorite } = useFavorites();
+  const { theme, colors } = useTheme();
   
+  // Функция для получения стилей на основе темы
+  const getThemedStyles = React.useCallback(() => {
+    return {
+      backgroundColor: theme === 'dark' ? '#121212' : COLORS.white,
+      cardBackground: theme === 'dark' ? '#1E1E1E' : COLORS.white,
+      textPrimary: theme === 'dark' ? '#FFFFFF' : COLORS.gray800,
+      textSecondary: theme === 'dark' ? '#FFFFFF' : COLORS.gray600,
+      textTertiary: theme === 'dark' ? '#CCCCCC' : COLORS.gray500,
+      borderColor: theme === 'dark' ? '#333333' : COLORS.gray200,
+      iconColor: theme === 'dark' ? '#FFFFFF' : COLORS.gray600,
+      emptyStateIconColor: theme === 'dark' ? '#444444' : COLORS.gray300,
+    };
+  }, [theme]);
+
+  const themedStyles = getThemedStyles();
+
   // Функция для перехода к деталям товара
   const navigateToProductDetails = (item: FavoriteItem) => {
     router.push({
@@ -51,7 +69,7 @@ export default function FavoritesScreen() {
 
   const renderFavoriteItem = ({ item }: { item: FavoriteItem }) => (
     <TouchableOpacity
-      style={styles.favoriteItem}
+      style={[styles.favoriteItem, { backgroundColor: themedStyles.cardBackground }]}
       onPress={() => navigateToProductDetails(item)}
       activeOpacity={0.9}
     >
@@ -60,22 +78,22 @@ export default function FavoritesScreen() {
       </View>
       <View style={styles.favoriteContent}>
         <View>
-          <Text style={styles.favoriteName}>{item.name}</Text>
-          <Text style={styles.favoriteSubtitle}>{item.subtitle}</Text>
+          <Text style={[styles.favoriteName, { color: themedStyles.textPrimary }]}>{item.name}</Text>
+          <Text style={[styles.favoriteSubtitle, { color: themedStyles.textTertiary }]}>{item.subtitle}</Text>
           <Text style={styles.favoritePrice}>{item.price}</Text>
         </View>
         <View style={styles.favoriteActions}>
           <TouchableOpacity
-            style={[styles.actionButton, styles.removeButton]}
+            style={[styles.actionButton, styles.removeButton, { backgroundColor: theme === 'dark' ? '#333333' : COLORS.gray100 }]}
             onPress={() => removeFavorite(item.id)}
           >
-            <X size={18} color={COLORS.gray600} />
+            <X size={18} color={themedStyles.iconColor} />
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionButton, styles.addButton]}
             onPress={() => addToCart(item)}
           >
-            <ShoppingBag size={18} color={COLORS.white} />
+            <ShoppingBag size={18} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
       </View>
@@ -83,10 +101,12 @@ export default function FavoritesScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: themedStyles.backgroundColor }]}>
+      <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} />
+      
       {/* Фоновые элементы */}
       <LinearGradient
-        colors={[COLORS.primaryBackground, COLORS.white]}
+        colors={[theme === 'dark' ? '#121212' : COLORS.primaryBackground, theme === 'dark' ? '#121212' : COLORS.white]}
         style={styles.backgroundGradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -112,13 +132,15 @@ export default function FavoritesScreen() {
         data={favoriteItems}
         renderItem={renderFavoriteItem}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.favoritesList}
+        contentContainerStyle={[styles.favoritesList, { backgroundColor: theme === 'dark' ? '#121212' : 'transparent' }]}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Heart size={64} color={COLORS.gray300} />
-            <Text style={styles.emptyTitle}>{t('favorites.empty')}</Text>
-            <Text style={styles.emptySubtitle}>
+          <View style={[styles.emptyContainer, { backgroundColor: theme === 'dark' ? '#121212' : 'transparent' }]}>
+            <Heart size={64} color={themedStyles.emptyStateIconColor} />
+            <Text style={[styles.emptyTitle, { color: themedStyles.textPrimary }]}>
+              {t('favorites.empty')}
+            </Text>
+            <Text style={[styles.emptySubtitle, { color: themedStyles.textSecondary }]}>
               {t('favorites.emptyDesc')}
             </Text>
             <TouchableOpacity

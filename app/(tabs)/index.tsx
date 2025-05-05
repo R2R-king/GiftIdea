@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useEffect } from 'react';
+import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -17,7 +17,7 @@ import {
   KeyboardAvoidingView,
   Modal,
   Button as NativeButton,
-  StatusBar
+  StatusBar as RNStatusBar
 } from 'react-native';
 import { useAppLocalization } from '@/components/LocalizationWrapper';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -29,6 +29,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import ThematicCollections from '@/components/ThematicCollections';
 import PersonalizedRecommendations from '@/components/PersonalizedRecommendations';
 import UpcomingEvents from '@/components/UpcomingEvents';
+import { useTheme } from '@/components/ThemeProvider';
+import { StatusBar } from 'expo-status-bar';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 60) / 2;
@@ -269,6 +271,7 @@ const updateDaysLeft = (event: HolidayEvent): HolidayEvent => {
 export default function FeedScreen() {
   const { t, localizedData } = useAppLocalization();
   const { events } = localizedData;
+  const { theme } = useTheme();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [favorites, setFavorites] = useState<{[key: string]: boolean}>({
     '2': true, // Teddy Bear предустановлен как избранный
@@ -289,16 +292,33 @@ export default function FeedScreen() {
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [eventToDelete, setEventToDelete] = useState<{id: string, name: string} | null>(null);
 
+  // Получение стилей на основе темы
+  const getThemedStyles = useCallback(() => {
+    return {
+      backgroundColor: theme === 'dark' ? '#121212' : THEME.background,
+      cardBackground: theme === 'dark' ? '#1E1E1E' : THEME.cardBg,
+      textPrimary: theme === 'dark' ? '#FFFFFF' : THEME.text,
+      textSecondary: theme === 'dark' ? '#CCCCCC' : THEME.textLight,
+      buttonBackground: theme === 'dark' ? '#333333' : COLORS.white,
+      modalBg: theme === 'dark' ? '#1E1E1E' : COLORS.white,
+      inputBg: theme === 'dark' ? '#333333' : '#F1F5F9',
+      inputText: theme === 'dark' ? '#FFFFFF' : THEME.text,
+      borderColor: theme === 'dark' ? '#333333' : '#E2E8F0',
+    };
+  }, [theme]);
+
+  const themedStyles = getThemedStyles();
+
   // Set StatusBar configuration when component mounts
   useEffect(() => {
     // Make sure the status bar has transparent background
-    StatusBar.setBackgroundColor('transparent', true);
-    StatusBar.setTranslucent(true);
+    RNStatusBar.setBackgroundColor('transparent', true);
+    RNStatusBar.setTranslucent(true);
     
     // Clean up when component unmounts
     return () => {
       // Reset to default if needed when leaving this screen
-      StatusBar.setBackgroundColor('transparent', true);
+      RNStatusBar.setBackgroundColor('transparent', true);
     };
   }, []);
 
@@ -602,7 +622,8 @@ export default function FeedScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: themedStyles.backgroundColor }]}>
+      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
@@ -616,10 +637,12 @@ export default function FeedScreen() {
           {/* Обновленный заголовок с динамическим приветствием */}
           {showGreeting && (
             <View style={styles.newHeader}>
-              <Text style={styles.newHeaderTitle}>
+              <Text style={[styles.newHeaderTitle, { color: themedStyles.textPrimary }]}>
                 {getGreetingByTime().replace('%s', 'Алексей')}
               </Text>
-              <Text style={styles.newHeaderSubtitle}>{t('feed.findGifts')}</Text>
+              <Text style={[styles.newHeaderSubtitle, { color: themedStyles.textSecondary }]}>
+                {t('feed.findGifts')}
+              </Text>
             </View>
           )}
 
@@ -650,7 +673,84 @@ export default function FeedScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
       
-      {/* Модальные окна и другие компоненты */}
+      {/* Модальное окно для создания события */}
+      <Modal
+        visible={isCreateEventModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setIsCreateEventModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={[styles.modalContent, { backgroundColor: themedStyles.modalBg }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: themedStyles.textPrimary }]}>
+                Создать новое событие
+              </Text>
+              <TouchableOpacity 
+                style={styles.modalCloseButton}
+                onPress={() => setIsCreateEventModalVisible(false)}
+              >
+                <X size={24} color={themedStyles.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.inputGroup}>
+              <Text style={[styles.inputLabel, { color: themedStyles.textSecondary }]}>
+                Название события
+              </Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  validationErrors.name ? styles.inputError : null,
+                  { 
+                    backgroundColor: themedStyles.inputBg,
+                    color: themedStyles.inputText,
+                    borderColor: themedStyles.borderColor
+                  }
+                ]}
+                placeholder="Например: День рождения мамы"
+                placeholderTextColor={themedStyles.textSecondary}
+                value={newEventName}
+                onChangeText={setNewEventName}
+              />
+              {validationErrors.name && (
+                <Text style={styles.errorText}>{validationErrors.name}</Text>
+              )}
+            </View>
+            
+            <View style={styles.inputGroup}>
+              <Text style={[styles.inputLabel, { color: themedStyles.textSecondary }]}>
+                Дата (например: 15 апреля)
+              </Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  validationErrors.date ? styles.inputError : null,
+                  { 
+                    backgroundColor: themedStyles.inputBg,
+                    color: themedStyles.inputText,
+                    borderColor: themedStyles.borderColor
+                  }
+                ]}
+                placeholder="Дата в формате: 15 апреля"
+                placeholderTextColor={themedStyles.textSecondary}
+                value={newEventDate}
+                onChangeText={setNewEventDate}
+              />
+              {validationErrors.date && (
+                <Text style={styles.errorText}>{validationErrors.date}</Text>
+              )}
+            </View>
+            
+            <TouchableOpacity 
+              style={styles.submitButton}
+              onPress={handleAddEvent}
+            >
+              <Text style={styles.submitButtonText}>Создать событие</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -678,5 +778,72 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.gray600,
   },
-  // Add any other styles you need here
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 16,
+  },
+  modalContent: {
+    width: '100%',
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: COLORS.gray800,
+  },
+  modalCloseButton: {
+    padding: 4,
+  },
+  inputGroup: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 16,
+    marginBottom: 8,
+    color: COLORS.gray600,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: COLORS.gray300,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: COLORS.gray50,
+  },
+  inputError: {
+    borderColor: COLORS.secondary,
+  },
+  errorText: {
+    color: COLORS.secondary,
+    fontSize: 14,
+    marginTop: 4,
+  },
+  submitButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 8,
+    padding: 14,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  submitButtonText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 });

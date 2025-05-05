@@ -215,6 +215,16 @@ const translations = {
     selectionDesc: 'Если ваш подопечный не заполнил анкету — ничего страшного, мы приготовили классную подборку идей подарков для «Тайных Сант».',
     getIdeas: 'Получить идеи подарков'
   },
+  settings: {
+    title: 'Настройки',
+    notifications: 'Уведомления',
+    darkMode: 'Темная тема',
+    language: 'Язык',
+    privacy: 'Конфиденциальность',
+    about: 'О приложении',
+    feedback: 'Отправить отзыв',
+    version: 'Версия'
+  }
 };
 
 export default translations; 

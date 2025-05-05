@@ -1,16 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, Switch } from 'react-native';
 import { useAppLocalization } from './LocalizationWrapper';
 import { Sun, Moon } from 'lucide-react-native';
+import { useTheme } from './ThemeProvider';
 
 const ThemeToggle = () => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const { theme, toggleTheme } = useTheme();
+  const isDarkMode = theme === 'dark';
   const { t } = useAppLocalization();
-
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-    // Here you would normally update a global theme context
-  };
 
   return (
     <View style={styles.container}>

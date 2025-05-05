@@ -31,6 +31,7 @@ import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
 import { useAppLocalization } from '@/components/LocalizationWrapper';
 import { useCart } from '@/hooks/useCart';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useTheme } from '@/components/ThemeProvider';
 import Animated, { 
   useAnimatedScrollHandler, 
   useAnimatedStyle, 
@@ -55,6 +56,7 @@ const formatPrice = (price: number): string => {
 
 export default function CartScreen() {
   const { t } = useAppLocalization();
+  const { theme, colors } = useTheme();
   const scrollY = useSharedValue(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const scrollViewRef = React.useRef<ScrollView>(null);
@@ -207,33 +209,53 @@ export default function CartScreen() {
     }
   }, [toggleFavorite]);
 
+  // Настройки стилей для темной темы и светлой темы
+  const getThemedStyles = useCallback(() => {
+    return {
+      backgroundColor: theme === 'dark' ? '#121212' : COLORS.white,
+      cardBackground: theme === 'dark' ? '#1E1E1E' : COLORS.white,
+      textPrimary: theme === 'dark' ? '#FFFFFF' : COLORS.gray800,
+      textSecondary: theme === 'dark' ? '#FFFFFF' : COLORS.gray600,
+      textTertiary: theme === 'dark' ? '#CCCCCC' : COLORS.gray500,
+      borderColor: theme === 'dark' ? '#333333' : COLORS.gray200,
+      quantityBg: theme === 'dark' ? '#333333' : COLORS.gray100,
+      quantityBorderColor: theme === 'dark' ? '#444444' : COLORS.gray200,
+      quantityTextColor: theme === 'dark' ? '#FFFFFF' : COLORS.gray700,
+      removeBtnBg: theme === 'dark' ? '#333333' : COLORS.gray100,
+      removeBtnIconColor: theme === 'dark' ? '#FFFFFF' : COLORS.gray600,
+      emptyStateIconColor: theme === 'dark' ? '#444444' : COLORS.gray300,
+    };
+  }, [theme]);
+
+  const themedStyles = getThemedStyles();
+
   // Рендер элемента корзины с обработкой ошибок
   const renderCartItem = useCallback(({ item }: { item: CartItem }) => {
     return (
-      <View key={item.id} style={styles.cartItem}>
+      <View key={item.id} style={[styles.cartItem, {backgroundColor: themedStyles.cardBackground}]}>
         <Image 
           source={{ uri: item.image }} 
           style={styles.itemImage} 
           defaultSource={require('@/assets/images/icon.png')}
         />
         <View style={styles.itemDetails}>
-          <Text style={styles.itemName} numberOfLines={2} ellipsizeMode="tail">{item.name}</Text>
+          <Text style={[styles.itemName, {color: themedStyles.textPrimary}]} numberOfLines={2} ellipsizeMode="tail">{item.name}</Text>
           <Text style={styles.itemPrice}>{formatPrice(item.price)}</Text>
           
           <View style={styles.itemActions}>
-            <View style={styles.quantityContainer}>
+            <View style={[styles.quantityContainer, {borderColor: themedStyles.quantityBorderColor}]}>
               <TouchableOpacity 
-                style={styles.quantityButton}
+                style={[styles.quantityButton, {backgroundColor: themedStyles.quantityBg}]}
                 onPress={() => decreaseQuantity(item.id)}
               >
-                <Text style={styles.quantityButtonText}>-</Text>
+                <Text style={[styles.quantityButtonText, {color: themedStyles.quantityTextColor}]}>-</Text>
               </TouchableOpacity>
-              <Text style={styles.quantityText}>{item.quantity}</Text>
+              <Text style={[styles.quantityText, {color: themedStyles.textPrimary}]}>{item.quantity}</Text>
               <TouchableOpacity 
-                style={styles.quantityButton}
+                style={[styles.quantityButton, {backgroundColor: themedStyles.quantityBg}]}
                 onPress={() => increaseQuantity(item.id)}
               >
-                <Text style={styles.quantityButtonText}>+</Text>
+                <Text style={[styles.quantityButtonText, {color: themedStyles.quantityTextColor}]}>+</Text>
               </TouchableOpacity>
             </View>
             
@@ -249,47 +271,51 @@ export default function CartScreen() {
                 />
               </TouchableOpacity>
               <TouchableOpacity 
-                style={styles.removeButton}
+                style={[styles.removeButton, {backgroundColor: themedStyles.removeBtnBg}]}
                 onPress={() => handleRemoveItem(item.id)}
               >
-                <Trash2 size={18} color={COLORS.gray600} />
+                <Trash2 size={18} color={themedStyles.removeBtnIconColor} />
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </View>
     );
-  }, [decreaseQuantity, increaseQuantity, handleRemoveItem, handleToggleFavorite, isFavorite]);
+  }, [decreaseQuantity, increaseQuantity, handleRemoveItem, handleToggleFavorite, isFavorite, themedStyles]);
 
   // Отображаем пустое состояние корзины, если нет товаров
   const renderEmptyCart = useCallback(() => {
     return (
-      <View style={styles.emptyCartContainer}>
-        <ShoppingBag size={80} color={COLORS.gray300} />
-        <Text style={styles.emptyCartTitle}>{t('cart.emptyCart')}</Text>
-        <Text style={styles.emptyCartDescription}>{t('cart.emptyCartDesc')}</Text>
+      <View style={[styles.emptyCartContainer, {backgroundColor: theme === 'dark' ? '#121212' : 'transparent'}]}>
+        <ShoppingBag size={80} color={themedStyles.emptyStateIconColor} />
+        <Text style={[styles.emptyCartTitle, {color: themedStyles.textPrimary}]}>
+          {t('cart.emptyCart')}
+        </Text>
+        <Text style={[styles.emptyCartDescription, {color: themedStyles.textSecondary}]}>
+          {t('cart.emptyCartDesc')}
+        </Text>
         <TouchableOpacity 
           style={styles.browseButton}
           onPress={navigateToCatalog}
         >
-          <Text style={styles.browseButtonText}>{t('favorites.browse')}</Text>
+          <Text style={styles.browseButtonText}>{t('cart.backToShopping')}</Text>
         </TouchableOpacity>
       </View>
     );
-  }, [t, navigateToCatalog]);
+  }, [t, navigateToCatalog, theme, themedStyles]);
 
   return (
-    <SafeAreaView style={styles.safeAreaContainer}>
-      <View style={styles.container}>
+    <SafeAreaView style={[styles.safeAreaContainer, {backgroundColor: theme === 'dark' ? '#121212' : COLORS.primaryBackground}]}>
+      <View style={[styles.container, {backgroundColor: theme === 'dark' ? '#121212' : COLORS.white}]}>
         {/* Фоновые элементы */}
         <LinearGradient
-          colors={[COLORS.primaryBackground, COLORS.white]}
+          colors={[theme === 'dark' ? '#121212' : COLORS.primaryBackground, theme === 'dark' ? '#121212' : COLORS.white]}
           style={styles.backgroundGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         />
         
-        <StatusBar style="light" />
+        <StatusBar style={theme === 'dark' ? 'light' : 'light'} />
         
         {/* Заголовок */}
         <LinearGradient
@@ -307,7 +333,7 @@ export default function CartScreen() {
         <AnimatedScrollView
           ref={scrollViewRef}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, {backgroundColor: theme === 'dark' ? '#121212' : 'transparent'}]}
           onScroll={scrollHandler}
           scrollEventThrottle={16}
         >
@@ -320,18 +346,18 @@ export default function CartScreen() {
 
               {/* Доставка и итоги только если есть товары */}
               <View style={styles.cartSummarySection}>
-                <View style={styles.deliverySection}>
-                  <Text style={styles.sectionTitle}>{t('cart.shippingOptionsTitle')}</Text>
+                <View style={[styles.deliverySection, {backgroundColor: themedStyles.cardBackground, borderColor: themedStyles.borderColor}]}>
+                  <Text style={[styles.sectionTitle, {color: themedStyles.textPrimary}]}>{t('cart.shippingOptionsTitle')}</Text>
                   
-                  <TouchableOpacity style={styles.deliveryOption}>
+                  <TouchableOpacity style={[styles.deliveryOption, {backgroundColor: themedStyles.cardBackground, borderColor: themedStyles.borderColor}]}>
                     <View style={[styles.deliveryIconContainer, { backgroundColor: COLORS.primaryLight }]}>
                       <Truck size={20} color={COLORS.primary} />
                     </View>
                     <View style={styles.deliveryDetails}>
-                      <Text style={styles.deliveryTitle}>{t('cart.standardDelivery')}</Text>
-                      <Text style={styles.deliveryDate}>14 - 16 февраля</Text>
+                      <Text style={[styles.deliveryTitle, {color: themedStyles.textPrimary}]}>{t('cart.standardDelivery')}</Text>
+                      <Text style={[styles.deliveryDate, {color: themedStyles.textTertiary}]}>14 - 16 февраля</Text>
                     </View>
-                    <Text style={styles.deliveryPrice}>{formatPrice(450)}</Text>
+                    <Text style={[styles.deliveryPrice, {color: themedStyles.textPrimary}]}>{formatPrice(450)}</Text>
                   </TouchableOpacity>
                   
                   <TouchableOpacity style={[styles.deliveryOption, styles.selectedDelivery]}>
@@ -339,44 +365,44 @@ export default function CartScreen() {
                       <CalendarClock size={20} color={COLORS.primary} />
                     </View>
                     <View style={styles.deliveryDetails}>
-                      <Text style={styles.deliveryTitle}>{t('cart.expressDelivery')}</Text>
-                      <Text style={styles.deliveryDate}>13 февраля</Text>
+                      <Text style={[styles.deliveryTitle, {color: themedStyles.textPrimary}]}>{t('cart.expressDelivery')}</Text>
+                      <Text style={[styles.deliveryDate, {color: themedStyles.textTertiary}]}>13 февраля</Text>
                     </View>
-                    <Text style={styles.deliveryPrice}>{formatPrice(900)}</Text>
+                    <Text style={[styles.deliveryPrice, {color: themedStyles.textPrimary}]}>{formatPrice(900)}</Text>
                   </TouchableOpacity>
                   
-                  <TouchableOpacity style={styles.deliveryOption}>
+                  <TouchableOpacity style={[styles.deliveryOption, {backgroundColor: themedStyles.cardBackground, borderColor: themedStyles.borderColor}]}>
                     <View style={[styles.deliveryIconContainer, { backgroundColor: COLORS.primaryLight }]}>
                       <Package size={20} color={COLORS.primary} />
                     </View>
                     <View style={styles.deliveryDetails}>
-                      <Text style={styles.deliveryTitle}>{t('cart.pickupDelivery')}</Text>
-                      <Text style={styles.deliveryDate}>{t('cart.today')}</Text>
+                      <Text style={[styles.deliveryTitle, {color: themedStyles.textPrimary}]}>{t('cart.pickupDelivery')}</Text>
+                      <Text style={[styles.deliveryDate, {color: themedStyles.textTertiary}]}>{t('cart.today')}</Text>
                     </View>
-                    <Text style={styles.deliveryPrice}>{t('cart.free')}</Text>
+                    <Text style={[styles.deliveryPrice, {color: themedStyles.textPrimary}]}>{t('cart.free')}</Text>
                   </TouchableOpacity>
                 </View>
 
-                <View style={styles.cartTotals}>
-                  <Text style={styles.sectionTitle}>{t('cart.orderSummaryTitle')}</Text>
+                <View style={[styles.cartTotals, {backgroundColor: themedStyles.cardBackground}]}>
+                  <Text style={[styles.sectionTitle, {color: themedStyles.textPrimary}]}>{t('cart.orderSummaryTitle')}</Text>
                   
                   <View style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>{t('cart.subtotalLabel')}</Text>
-                    <Text style={styles.summaryValue}>{formatPrice(subtotal)}</Text>
+                    <Text style={[styles.summaryLabel, {color: themedStyles.textTertiary}]}>{t('cart.subtotalLabel')}</Text>
+                    <Text style={[styles.summaryValue, {color: themedStyles.textPrimary}]}>{formatPrice(subtotal)}</Text>
                   </View>
                   
                   <View style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>{t('cart.shippingLabel')}</Text>
-                    <Text style={styles.summaryValue}>{formatPrice(shipping)}</Text>
+                    <Text style={[styles.summaryLabel, {color: themedStyles.textTertiary}]}>{t('cart.shippingLabel')}</Text>
+                    <Text style={[styles.summaryValue, {color: themedStyles.textPrimary}]}>{formatPrice(shipping)}</Text>
                   </View>
                   
                   <View style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>{t('cart.discountLabel')}</Text>
+                    <Text style={[styles.summaryLabel, {color: themedStyles.textTertiary}]}>{t('cart.discountLabel')}</Text>
                     <Text style={[styles.summaryValue, { color: COLORS.primary }]}>-{formatPrice(discount)}</Text>
                   </View>
                   
-                  <View style={[styles.summaryRow, styles.totalRow]}>
-                    <Text style={styles.totalLabel}>{t('cart.totalLabel')}</Text>
+                  <View style={[styles.summaryRow, styles.totalRow, {borderTopColor: themedStyles.borderColor}]}>
+                    <Text style={[styles.totalLabel, {color: themedStyles.textPrimary}]}>{t('cart.totalLabel')}</Text>
                     <Text style={styles.totalValue}>{formatPrice(total)}</Text>
                   </View>
                 </View>
@@ -396,9 +422,18 @@ export default function CartScreen() {
 
         {/* Кнопки внизу экрана - показываем только если есть товары */}
         {cartItems.length > 0 && (
-          <View style={styles.bottomButtonsContainer}>
+          <View style={[
+            styles.bottomButtonsContainer, 
+            {
+              backgroundColor: theme === 'dark' ? '#1E1E1E' : COLORS.white, 
+              borderTopColor: theme === 'dark' ? '#333333' : COLORS.gray200
+            }
+          ]}>
             <TouchableOpacity 
-              style={styles.backToShoppingButton}
+              style={[
+                styles.backToShoppingButton,
+                {borderColor: COLORS.primary}
+              ]}
               onPress={navigateToCatalog}
             >
               <ChevronLeft size={20} color={COLORS.primary} />
@@ -718,7 +753,7 @@ const styles = StyleSheet.create({
   },
   emptyCartDescription: {
     fontSize: FONTS.sizes.md,
-    color: COLORS.gray600,
+    color: COLORS.gray500,
     textAlign: 'center',
     marginBottom: SPACING.xl,
   },

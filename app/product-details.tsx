@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   Platform,
   ScrollView,
   Dimensions,
-  StatusBar,
+  StatusBar as RNStatusBar,
   Alert,
   Modal,
   FlatList,
@@ -23,6 +23,8 @@ import { useFavorites } from '@/hooks/useFavorites';
 import { useAppLocalization } from '@/components/LocalizationWrapper';
 import { useCart } from '@/hooks/useCart';
 import { useWishlists, WishlistItem } from '@/hooks/useWishlists';
+import { useTheme } from '@/components/ThemeProvider';
+import { StatusBar } from 'expo-status-bar';
 
 const { width, height } = Dimensions.get('window');
 
@@ -38,6 +40,7 @@ export default function ProductDetailScreen() {
   const { isFavorite, toggleFavorite } = useFavorites();
   const { localizedData } = useAppLocalization();
   const { addItem, isInCart } = useCart();
+  const { theme } = useTheme();
   const { 
     wishlists, 
     isItemInAnyWishlist, 
@@ -51,6 +54,30 @@ export default function ProductDetailScreen() {
   const [wishlistModalVisible, setWishlistModalVisible] = useState(false);
   const [createWishlistModalVisible, setCreateWishlistModalVisible] = useState(false);
   const [newWishlistName, setNewWishlistName] = useState('');
+  
+  // Получение стилей на основе темы
+  const getThemedStyles = useCallback(() => {
+    return {
+      backgroundColor: theme === 'dark' ? '#121212' : '#FFFFFF',
+      cardBackground: theme === 'dark' ? '#1E1E1E' : '#FFFFFF',
+      textPrimary: theme === 'dark' ? '#FFFFFF' : '#1E293B',
+      textSecondary: theme === 'dark' ? '#CCCCCC' : '#64748B',
+      borderColor: theme === 'dark' ? '#333333' : 'rgba(0,0,0,0.05)',
+      buttonBackground: theme === 'dark' ? '#333333' : '#FFFFFF',
+      iconBackgroundColor: theme === 'dark' ? '#333333' : '#FFFFFF',
+      iconColor: theme === 'dark' ? '#FFFFFF' : '#1E293B',
+      volumeBg: theme === 'dark' ? '#333333' : '#F1F5F9',
+      volumeText: theme === 'dark' ? '#CCCCCC' : '#64748B',
+      featureTextColor: theme === 'dark' ? '#CCCCCC' : '#64748B',
+      wishlistItemBorder: theme === 'dark' ? '#333333' : '#E2E8F0',
+      modalBg: theme === 'dark' ? '#1E1E1E' : '#FFFFFF',
+      inputBg: theme === 'dark' ? '#333333' : '#F1F5F9',
+      inputText: theme === 'dark' ? '#FFFFFF' : '#1E293B',
+      wishlistButtonBg: theme === 'dark' ? '#1A1A1A' : '#F8FAFC',
+    };
+  }, [theme]);
+
+  const themedStyles = getThemedStyles();
   
   // Найти продукт по ID из локализованных данных
   const product = localizedData.products.find(p => p.id === productId) || localizedData.products[0];
@@ -121,7 +148,8 @@ export default function ProductDetailScreen() {
       productId: product.id,
       name: product.name,
       price: price,
-      image: product.image
+      image: product.image,
+      category: product.subtitle || 'Default'
     };
     
     // Добавляем товар в вишлист
@@ -152,7 +180,8 @@ export default function ProductDetailScreen() {
         productId: product.id,
         name: product.name,
         price: price,
-        image: product.image
+        image: product.image,
+        category: product.subtitle || 'Default'
       };
       
       addItemToWishlist(newWishlist.id, wishlistItem);
@@ -184,14 +213,14 @@ export default function ProductDetailScreen() {
         onRequestClose={() => setWishlistModalVisible(false)}
       >
         <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, {backgroundColor: themedStyles.modalBg}]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Добавить в вишлист</Text>
+              <Text style={[styles.modalTitle, {color: themedStyles.textPrimary}]}>Добавить в вишлист</Text>
               <TouchableOpacity
                 onPress={() => setWishlistModalVisible(false)}
                 style={styles.closeButton}
               >
-                <Text style={{ fontSize: 24, color: '#64748B' }}>×</Text>
+                <X size={24} color={themedStyles.textSecondary} />
               </TouchableOpacity>
             </View>
             
@@ -206,7 +235,7 @@ export default function ProductDetailScreen() {
                   
                   return (
                     <TouchableOpacity
-                      style={styles.wishlistItem}
+                      style={[styles.wishlistItem, {borderBottomColor: themedStyles.wishlistItemBorder}]}
                       onPress={() => {
                         if (!isItemInThisWishlist) {
                           handleAddToWishlist(item.id);
@@ -216,8 +245,8 @@ export default function ProductDetailScreen() {
                       }}
                     >
                       <View style={styles.wishlistItemInfo}>
-                        <Text style={styles.wishlistItemName}>{item.name}</Text>
-                        <Text style={styles.wishlistItemCount}>
+                        <Text style={[styles.wishlistItemName, {color: themedStyles.textPrimary}]}>{item.name}</Text>
+                        <Text style={[styles.wishlistItemCount, {color: themedStyles.textSecondary}]}>
                           {item.items.length} {item.items.length === 1 ? 'товар' : 
                             (item.items.length >= 2 && item.items.length <= 4) ? 'товара' : 'товаров'}
                         </Text>
@@ -233,7 +262,7 @@ export default function ProductDetailScreen() {
                 }}
               />
             ) : (
-              <Text style={styles.emptyWishlistText}>
+              <Text style={[styles.emptyWishlistText, {color: themedStyles.textSecondary}]}>
                 У вас пока нет вишлистов
               </Text>
             )}
@@ -251,14 +280,14 @@ export default function ProductDetailScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+    <View style={[styles.container, {backgroundColor: themedStyles.backgroundColor}]}>
+      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
       <Stack.Screen options={{ headerShown: false }} />
       
       {/* Статичный фоновый градиент - не скроллится */}
       <View style={styles.backgroundContainer}>
         <LinearGradient
-          colors={['#FFD1DC', '#FFE6EB']}
+          colors={theme === 'dark' ? ['#121212', '#1A1A1A'] : ['#FFD1DC', '#FFE6EB']}
           style={styles.backgroundGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
@@ -268,19 +297,19 @@ export default function ProductDetailScreen() {
       {/* Фиксированная верхняя панель */}
       <View style={styles.header}>
         <TouchableOpacity 
-          style={styles.headerButton}
+          style={[styles.headerButton, {backgroundColor: themedStyles.buttonBackground}]}
           onPress={() => router.back()}
         >
-          <ChevronLeft size={24} color="#1E293B" />
+          <ChevronLeft size={24} color={themedStyles.iconColor} />
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={styles.headerButton}
+          style={[styles.headerButton, {backgroundColor: themedStyles.buttonBackground}]}
           onPress={handleToggleFavorite}
         >
           <Heart 
             size={20} 
-            color={isFavorite(product.id) ? "#FF0844" : "#64748B"} 
+            color={isFavorite(product.id) ? "#FF0844" : themedStyles.textSecondary} 
             fill={isFavorite(product.id) ? "#FF0844" : "transparent"} 
           />
         </TouchableOpacity>
@@ -304,41 +333,45 @@ export default function ProductDetailScreen() {
             resizeMode="contain"
           />
           
-          {/* Декоративные элементы */}
-          <View style={[styles.heartDecoration, { top: '10%', left: '15%' }]}>
-            <Heart size={14} color="#FFB6C1" fill="#FFB6C1" />
-          </View>
-          <View style={[styles.heartDecoration, { top: '25%', left: '80%' }]}>
-            <Heart size={16} color="#FFB6C1" fill="#FFB6C1" />
-          </View>
-          <View style={[styles.heartDecoration, { top: '70%', left: '10%' }]}>
-            <Heart size={12} color="#FFB6C1" fill="#FFB6C1" />
-          </View>
-          <View style={[styles.heartDecoration, { top: '65%', left: '90%' }]}>
-            <Heart size={10} color="#FFB6C1" fill="#FFB6C1" />
-          </View>
-          
-          {/* Лепестки роз */}
-          <View style={[styles.petalDecoration, { top: '15%', left: '5%' }]} />
-          <View style={[styles.petalDecoration, { top: '30%', left: '85%', transform: [{ rotate: '45deg' }] }]} />
-          <View style={[styles.petalDecoration, { top: '75%', left: '20%', transform: [{ rotate: '120deg' }] }]} />
-          <View style={[styles.petalDecoration, { top: '60%', left: '75%', transform: [{ rotate: '210deg' }] }]} />
+          {/* Декоративные элементы - показываем только в светлой теме */}
+          {theme !== 'dark' && (
+            <>
+              <View style={[styles.heartDecoration, { top: '10%', left: '15%' }]}>
+                <Heart size={14} color="#FFB6C1" fill="#FFB6C1" />
+              </View>
+              <View style={[styles.heartDecoration, { top: '25%', left: '80%' }]}>
+                <Heart size={16} color="#FFB6C1" fill="#FFB6C1" />
+              </View>
+              <View style={[styles.heartDecoration, { top: '70%', left: '10%' }]}>
+                <Heart size={12} color="#FFB6C1" fill="#FFB6C1" />
+              </View>
+              <View style={[styles.heartDecoration, { top: '65%', left: '90%' }]}>
+                <Heart size={10} color="#FFB6C1" fill="#FFB6C1" />
+              </View>
+              
+              {/* Лепестки роз */}
+              <View style={[styles.petalDecoration, { top: '15%', left: '5%' }]} />
+              <View style={[styles.petalDecoration, { top: '30%', left: '85%', transform: [{ rotate: '45deg' }] }]} />
+              <View style={[styles.petalDecoration, { top: '75%', left: '20%', transform: [{ rotate: '120deg' }] }]} />
+              <View style={[styles.petalDecoration, { top: '60%', left: '75%', transform: [{ rotate: '210deg' }] }]} />
+            </>
+          )}
         </View>
         
         {/* Блок с информацией о продукте */}
         <View style={styles.infoCardContainer}>
-          <View style={styles.infoCard}>
+          <View style={[styles.infoCard, {backgroundColor: themedStyles.cardBackground}]}>
             {/* Заголовок и цена */}
             <View style={styles.productHeader}>
               <View>
-                <Text style={styles.productCategory}>{product.subtitle}</Text>
-                <Text style={styles.productName}>{product.name}</Text>
+                <Text style={[styles.productCategory, {color: themedStyles.textSecondary}]}>{product.subtitle}</Text>
+                <Text style={[styles.productName, {color: themedStyles.textPrimary}]}>{product.name}</Text>
               </View>
               <Text style={styles.productPrice}>{price}</Text>
             </View>
             
             {/* Описание */}
-            <Text style={styles.productDescription}>
+            <Text style={[styles.productDescription, {color: themedStyles.textSecondary}]}>
               {product.description}
             </Text>
             
@@ -350,6 +383,7 @@ export default function ProductDetailScreen() {
                     key={option.value}
                     style={[
                       styles.volumeOption,
+                      {backgroundColor: themedStyles.volumeBg},
                       selectedVolume === option.value && styles.selectedVolumeOption,
                     ]}
                     onPress={() => handleVolumeChange(option.value)}
@@ -357,6 +391,7 @@ export default function ProductDetailScreen() {
                     <Text
                       style={[
                         styles.volumeText,
+                        {color: themedStyles.volumeText},
                         selectedVolume === option.value && styles.selectedVolumeText,
                       ]}
                     >
@@ -373,7 +408,7 @@ export default function ProductDetailScreen() {
                 {product.features.map((feature, index) => (
                   <View key={index} style={styles.featureItem}>
                     <View style={styles.featureDot} />
-                    <Text style={styles.featureText}>{feature}</Text>
+                    <Text style={[styles.featureText, {color: themedStyles.featureTextColor}]}>{feature}</Text>
                   </View>
                 ))}
               </View>
@@ -386,13 +421,16 @@ export default function ProductDetailScreen() {
       </ScrollView>
       
       {/* Фиксированные кнопки действий внизу экрана */}
-      <View style={styles.fixedActionButtonsContainer}>
+      <View style={[styles.fixedActionButtonsContainer, {
+        backgroundColor: themedStyles.cardBackground,
+        borderTopColor: themedStyles.borderColor,
+      }]}>
         <View style={styles.actionButtonsWrapper}>
           <TouchableOpacity 
-            style={styles.wishlistButton}
+            style={[styles.wishlistButton, {backgroundColor: themedStyles.wishlistButtonBg}]}
             onPress={() => setWishlistModalVisible(true)}
           >
-            <Gift size={22} color={isInWishlist ? "#6C63FF" : "#64748B"} />
+            <Gift size={22} color={isInWishlist ? "#6C63FF" : themedStyles.textSecondary} />
           </TouchableOpacity>
           
           <TouchableOpacity 
@@ -423,9 +461,9 @@ export default function ProductDetailScreen() {
         onRequestClose={() => setCreateWishlistModalVisible(false)}
       >
         <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, {backgroundColor: themedStyles.modalBg}]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Новый вишлист</Text>
+              <Text style={[styles.modalTitle, {color: themedStyles.textPrimary}]}>Новый вишлист</Text>
               <TouchableOpacity
                 onPress={() => {
                   setCreateWishlistModalVisible(false);
@@ -433,30 +471,38 @@ export default function ProductDetailScreen() {
                 }}
                 style={styles.closeButton}
               >
-                <X size={24} color="#64748B" />
+                <X size={24} color={themedStyles.textSecondary} />
               </TouchableOpacity>
             </View>
             
-            <Text style={styles.modalSubtitle}>Введите название для нового вишлиста</Text>
+            <Text style={[styles.modalSubtitle, {color: themedStyles.textSecondary}]}>
+              Введите название для нового вишлиста
+            </Text>
             
             <TextInput
-              style={styles.input}
+              style={[styles.input, {
+                backgroundColor: themedStyles.inputBg,
+                color: themedStyles.inputText,
+                borderColor: themedStyles.borderColor
+              }]}
               value={newWishlistName}
               onChangeText={setNewWishlistName}
               placeholder="Название вишлиста"
-              placeholderTextColor="#A0AEC0"
+              placeholderTextColor={themedStyles.textSecondary}
               autoFocus={true}
             />
             
             <View style={styles.modalButtonsRow}>
               <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
+                style={[styles.modalButton, styles.cancelButton, {
+                  borderColor: themedStyles.borderColor
+                }]}
                 onPress={() => {
                   setCreateWishlistModalVisible(false);
                   setNewWishlistName('');
                 }}
               >
-                <Text style={styles.cancelButtonText}>Отмена</Text>
+                <Text style={[styles.cancelButtonText, {color: themedStyles.textPrimary}]}>Отмена</Text>
               </TouchableOpacity>
               
               <TouchableOpacity

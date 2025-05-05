@@ -215,6 +215,16 @@ const translations = {
     selectionDesc: 'If your recipient hasn\'t filled out a questionnaire — don\'t worry, we\'ve prepared a great selection of gift ideas for "Secret Santas".',
     getIdeas: 'Get Gift Ideas'
   },
+  settings: {
+    title: 'Settings',
+    notifications: 'Notifications',
+    darkMode: 'Dark Mode',
+    language: 'Language',
+    privacy: 'Privacy & Security',
+    about: 'About App',
+    feedback: 'Send Feedback',
+    version: 'Version'
+  }
 };
 
 export default translations; 
