@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import * as React from 'react';
 import {
   View,
   Text,
@@ -37,6 +37,7 @@ import {
 import { router, Stack } from 'expo-router';
 import { COLORS, FONTS, SPACING, RADIUS } from '@/constants/theme';
 import { useWishlists, Wishlist, WishlistItem } from '@/hooks/useWishlists';
+import { useTheme } from '@/components/ThemeProvider';
 
 const { width, height } = Dimensions.get('window');
 
@@ -73,23 +74,26 @@ export default function WishlistScreen() {
     removeItemFromWishlist 
   } = useWishlists();
   
-  const [modalVisible, setModalVisible] = useState(false);
-  const [newWishlistName, setNewWishlistName] = useState('');
-  const [newWishlistDescription, setNewWishlistDescription] = useState('');
-  const [editingWishlist, setEditingWishlist] = useState<Wishlist | null>(null);
-  const [activeWishlist, setActiveWishlist] = useState<Wishlist | null>(null);
-  const [detailsModalVisible, setDetailsModalVisible] = useState(false);
+  const { theme, colors } = useTheme();
+  const isDark = theme === 'dark';
+  
+  const [modalVisible, setModalVisible] = React.useState(false);
+  const [newWishlistName, setNewWishlistName] = React.useState('');
+  const [newWishlistDescription, setNewWishlistDescription] = React.useState('');
+  const [editingWishlist, setEditingWishlist] = React.useState<Wishlist | null>(null);
+  const [activeWishlist, setActiveWishlist] = React.useState<Wishlist | null>(null);
+  const [detailsModalVisible, setDetailsModalVisible] = React.useState(false);
   
   // New states for category and budget filtering
-  const [selectedCategory, setSelectedCategory] = useState('Все');
-  const [selectedBudgetRange, setSelectedBudgetRange] = useState(BUDGET_RANGES[0]);
-  const [filterModalVisible, setFilterModalVisible] = useState(false);
-  const [filteredItems, setFilteredItems] = useState<WishlistItem[]>([]);
+  const [selectedCategory, setSelectedCategory] = React.useState('Все');
+  const [selectedBudgetRange, setSelectedBudgetRange] = React.useState(BUDGET_RANGES[0]);
+  const [filterModalVisible, setFilterModalVisible] = React.useState(false);
+  const [filteredItems, setFilteredItems] = React.useState<WishlistItem[]>([]);
   
   // States for tinder-like swiping
-  const [currentItemIndex, setCurrentItemIndex] = useState(0);
-  const [swipingMode, setSwipingMode] = useState(false);
-  const swipeAnim = useRef(new Animated.ValueXY()).current;
+  const [currentItemIndex, setCurrentItemIndex] = React.useState(0);
+  const [swipingMode, setSwipingMode] = React.useState(false);
+  const swipeAnim = React.useRef(new Animated.ValueXY()).current;
   
   // For rotation animation during swipe
   const rotateAnim = swipeAnim.x.interpolate({
@@ -223,19 +227,19 @@ export default function WishlistScreen() {
   };
   
   // Update filtered items when active wishlist changes
-  useEffect(() => {
+  React.useEffect(() => {
     if (activeWishlist) {
       setFilteredItems(activeWishlist.items);
     }
   }, [activeWishlist]);
   
   // Apply filters when filter options change
-  useEffect(() => {
+  React.useEffect(() => {
     applyFilters();
   }, [selectedCategory, selectedBudgetRange, activeWishlist]);
 
   // Reset animation when swipingMode changes
-  useEffect(() => {
+  React.useEffect(() => {
     // Reset animation and index when toggling swipe mode
     swipeAnim.setValue({ x: 0, y: 0 });
     
@@ -328,67 +332,118 @@ export default function WishlistScreen() {
   };
 
   const renderWishlistItem = ({ item }: { item: Wishlist }) => (
-    <TouchableOpacity 
-      style={styles.wishlistCard}
+    <TouchableOpacity
+      style={[
+        styles.wishlistCard, 
+        isDark && { 
+          backgroundColor: isDark ? '#1A1A1A' : colors.white, 
+          borderColor: 'rgba(255,255,255,0.1)'
+        }
+      ]}
       onPress={() => handleOpenWishlist(item)}
     >
       <View style={styles.wishlistHeader}>
         <View>
-          <Text style={styles.wishlistName}>{item.name}</Text>
-          <Text style={styles.itemCount}>{item.items.length} {getItemsCountText(item.items.length)}</Text>
+          <Text style={[
+            styles.wishlistName,
+            isDark && { color: '#F3F4F6' }
+          ]}>
+            {item.name}
+          </Text>
+          <Text style={[
+            styles.wishlistItems,
+            isDark && { color: '#9CA3AF' }
+          ]}>
+            {getItemsCountText(item.items.length)}
+          </Text>
         </View>
-        <View style={styles.actionButtons}>
-          <TouchableOpacity 
-            style={styles.iconButton}
+        
+        <View style={styles.wishlistActions}>
+          <TouchableOpacity
+            style={[styles.actionButton, isDark && { backgroundColor: 'rgba(255,255,255,0.05)' }]}
             onPress={() => {
               setEditingWishlist(item);
               setNewWishlistName(item.name);
-              setNewWishlistDescription(item.description);
+              setNewWishlistDescription(item.description || '');
               setModalVisible(true);
             }}
           >
-            <Edit size={18} color={COLORS.primary} />
+            <Edit size={16} color={isDark ? '#F3F4F6' : "#111"} />
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.iconButton}
+          
+          <TouchableOpacity
+            style={[styles.actionButton, isDark && { backgroundColor: 'rgba(255,255,255,0.05)' }]}
             onPress={() => handleShareWishlist(item)}
           >
-            <ShareIcon size={18} color={COLORS.primary} />
+            <ShareIcon size={16} color={isDark ? '#F3F4F6' : "#111"} />
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.iconButton}
+          
+          <TouchableOpacity
+            style={[styles.actionButton, isDark && { backgroundColor: 'rgba(255,255,255,0.05)' }]}
             onPress={() => handleDeleteWishlist(item.id)}
           >
-            <Trash2 size={18} color={COLORS.error} />
+            <Trash2 size={16} color={isDark ? "#FF4949" : "#EF4444"} />
           </TouchableOpacity>
         </View>
       </View>
       
-      {item.items.length > 0 ? (
-        <View style={styles.thumbnailContainer}>
-          {item.items.slice(0, 4).map((wishItem, index) => (
-            <Image 
-              key={index}
-              source={{ uri: wishItem.image }}
-              style={styles.thumbnail}
-            />
-          ))}
-          {item.items.length > 4 && (
-            <View style={styles.moreItems}>
-              <Text style={styles.moreItemsText}>+{item.items.length - 4}</Text>
-            </View>
-          )}
-        </View>
-      ) : (
-        <Text style={styles.emptyListText}>Нет товаров в вишлисте</Text>
+      {item.description && (
+        <Text style={[
+          styles.wishlistDescription,
+          isDark && { color: '#9CA3AF' }
+        ]}>
+          {item.description}
+        </Text>
       )}
       
-      <TouchableOpacity 
-        style={styles.seeAllButton}
+      <View style={styles.itemPreview}>
+        {item.items.slice(0, 3).map((wishlistItem, index) => (
+          <Image
+            key={wishlistItem.id}
+            source={{ uri: wishlistItem.image }}
+            style={[
+              styles.previewImage,
+              index > 0 && { marginLeft: -15 },
+              { zIndex: 3 - index }
+            ]}
+          />
+        ))}
+        
+        {item.items.length > 3 && (
+          <View style={[
+            styles.moreItemsIndicator,
+            isDark && { backgroundColor: 'rgba(255,255,255,0.1)', borderColor: '#1A1A1A' }
+          ]}>
+            <Text style={[
+              styles.moreItemsText,
+              isDark && { color: '#F3F4F6' }
+            ]}>
+              +{item.items.length - 3}
+            </Text>
+          </View>
+        )}
+        
+        {item.items.length === 0 && (
+          <View style={styles.emptyPreview}>
+            <ShoppingBag size={24} color={isDark ? '#444444' : "#E0E0E0"} />
+          </View>
+        )}
+      </View>
+      
+      <TouchableOpacity
+        style={[
+          styles.openButton,
+          isDark && { backgroundColor: 'rgba(255,255,255,0.05)' }
+        ]}
         onPress={() => handleOpenWishlist(item)}
       >
-        <Text style={styles.seeAllText}>Посмотреть всё</Text>
-        <ArrowRight size={16} color="#6C63FF" />
+        <Text style={[
+          styles.openButtonText,
+          isDark && { color: '#F3F4F6' }
+        ]}>
+          Открыть
+        </Text>
+        <ArrowRight size={16} color={isDark ? '#F3F4F6' : "#111"} />
       </TouchableOpacity>
     </TouchableOpacity>
   );
@@ -410,245 +465,347 @@ export default function WishlistScreen() {
         onRequestClose={() => setDetailsModalVisible(false)}
       >
         <View style={styles.modalContainer}>
-          <LinearGradient
-            colors={['#F5F8FF', '#FFFFFF']}
-            style={[styles.modalContent, { minHeight: '90%' }]}
-          >
+          <View style={[
+            styles.detailsModalContent,
+            isDark && { backgroundColor: isDark ? '#1A1A1A' : colors.white }
+          ]}>
+            {/* Modal Header */}
             <View style={styles.modalHeader}>
-              <View>
-                <Text style={styles.modalTitle}>{activeWishlist.name}</Text>
-                <Text style={styles.modalSubtitle}>
-                  {activeWishlist.items.length} {getItemsCountText(activeWishlist.items.length)}
-                </Text>
-              </View>
               <TouchableOpacity
+                style={[
+                  styles.backButton,
+                  isDark && { backgroundColor: 'rgba(255,255,255,0.05)' }
+                ]}
                 onPress={() => setDetailsModalVisible(false)}
-                style={styles.closeButton}
               >
-                <X size={24} color="#000" />
+                <ChevronLeft size={24} color={isDark ? '#F3F4F6' : "#000"} />
               </TouchableOpacity>
+              
+              <Text style={[
+                styles.modalTitle,
+                isDark && { color: '#F3F4F6' }
+              ]}>
+                {activeWishlist.name}
+              </Text>
+              
+              <View style={{ width: 40 }} />
             </View>
             
-            {activeWishlist.description ? (
-              <Text style={styles.wishlistDescription}>{activeWishlist.description}</Text>
-            ) : null}
+            {/* Wishlist Description and Item Count */}
+            <View style={styles.wishlistHeaderInfo}>
+              <Text style={[
+                styles.itemCount,
+                isDark && { color: '#9CA3AF' }
+              ]}>
+                {getItemsCountText(activeWishlist.items.length)}
+              </Text>
+              
+              {activeWishlist.description && (
+                <Text style={[
+                  styles.wishlistDescriptionModal,
+                  isDark && { color: '#9CA3AF' }
+                ]}>
+                  {activeWishlist.description}
+                </Text>
+              )}
+            </View>
             
-            <View style={styles.filterControlsContainer}>
+            {/* Tab selection for swipe/list mode */}
+            <View style={[
+              styles.modeSwitcher,
+              isDark && { backgroundColor: 'rgba(255,255,255,0.05)' }
+            ]}>
               <TouchableOpacity 
-                style={styles.shareButton}
-                onPress={() => handleShareWishlist(activeWishlist)}
+                style={[
+                  styles.modeTab,
+                  !swipingMode && styles.activeTab,
+                  isDark && !swipingMode && { backgroundColor: isDark ? '#1A1A1A' : colors.white }
+                ]}
+                onPress={() => {
+                  setSwipingMode(false);
+                }}
               >
-                <ShareIcon size={18} color="#FFF" />
-                <Text style={styles.shareButtonText}>Поделиться</Text>
+                <Text style={[
+                  styles.modeTabText,
+                  !swipingMode && styles.activeTabText,
+                  isDark && { color: swipingMode ? '#9CA3AF' : '#F3F4F6' }
+                ]}>
+                  Список
+                </Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
-                style={styles.filterButton}
-                onPress={() => setFilterModalVisible(true)}
+                style={[
+                  styles.modeTab,
+                  swipingMode && styles.activeTab,
+                  isDark && swipingMode && { backgroundColor: isDark ? '#1A1A1A' : colors.white }
+                ]}
+                onPress={() => {
+                  if (activeWishlist.items.length === 0) {
+                    Alert.alert("Список пуст", "Добавьте товары в вишлист, чтобы использовать режим свайпа");
+                    return;
+                  }
+                  
+                  setSwipingMode(true);
+                  setCurrentItemIndex(0);
+                  applyFilters(); // Apply any current filters to the displayed items
+                }}
               >
-                <Filter size={18} color={COLORS.primary} />
-                <Text style={styles.filterButtonText}>Фильтры</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.swipeModeButton, swipingMode && styles.swipeModeButtonActive]}
-                onPress={() => setSwipingMode(!swipingMode)}
-              >
-                <Heart size={18} color={swipingMode ? "#FFF" : COLORS.primary} />
-                <Text style={[styles.swipeModeButtonText, swipingMode && styles.swipeModeButtonTextActive]}>
-                  Свайп режим
+                <Text style={[
+                  styles.modeTabText,
+                  swipingMode && styles.activeTabText,
+                  isDark && { color: !swipingMode ? '#9CA3AF' : '#F3F4F6' }
+                ]}>
+                  Свайп
                 </Text>
               </TouchableOpacity>
             </View>
             
-            {/* Category selector */}
-            <View style={{ marginBottom: 15 }}>
-              <ScrollView 
-                horizontal={false}
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.categoryScrollContainer}
-              >
-                {CATEGORIES.map(category => (
-                  <TouchableOpacity
-                    key={category}
-                    style={[
-                      styles.categoryChip,
-                      selectedCategory === category && styles.categoryChipSelected
-                    ]}
-                    onPress={() => setSelectedCategory(category)}
-                  >
-                    <Text 
-                      style={[
-                        styles.categoryChipText,
-                        selectedCategory === category && styles.categoryChipTextSelected
-                      ]}
-                    >
-                      {category}
-                    </Text>
-                    {selectedCategory === category && (
-                      <Check size={14} color="#FFF" style={styles.categorySelectedIcon} />
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
+            {/* Filter button */}
+            <TouchableOpacity
+              style={[
+                styles.filterButton,
+                isDark && { backgroundColor: 'rgba(255,255,255,0.05)' }
+              ]}
+              onPress={() => setFilterModalVisible(true)}
+            >
+              <Filter size={16} color={isDark ? '#F3F4F6' : "#111"} />
+              <Text style={[
+                styles.filterButtonText,
+                isDark && { color: '#F3F4F6' }
+              ]}>
+                Фильтры
+              </Text>
+            </TouchableOpacity>
             
-            {/* Show either swipe cards or list based on mode */}
-            {activeWishlist.items.length > 0 ? (
-              swipingMode ? (
-                <View style={styles.swipeContainer}>
-                  {filteredItems.length > 0 ? (
-                    <>
-                      {/* Current card */}
-                      {currentItemIndex < filteredItems.length && (
-                        <Animated.View 
-                          style={[
-                            styles.swipeCard,
-                            {
-                              transform: [
-                                { translateX: swipeAnim.x },
-                                { translateY: swipeAnim.y },
-                                { rotate: rotateAnim }
-                              ]
-                            }
-                          ]}
-                          {...panResponder.panHandlers}
-                        >
-                          <Image 
-                            source={{ uri: filteredItems[currentItemIndex].image }} 
-                            style={styles.swipeCardImage} 
-                          />
-                          
-                          {/* Like overlay */}
-                          <Animated.View style={[styles.likeOverlay, { opacity: likeOpacity }]}>
-                            <Text style={styles.overlayText}>НРАВИТСЯ</Text>
-                          </Animated.View>
-                          
-                          {/* Dislike overlay */}
-                          <Animated.View style={[styles.dislikeOverlay, { opacity: dislikeOpacity }]}>
-                            <Text style={styles.overlayText}>НЕ НРАВИТСЯ</Text>
-                          </Animated.View>
-                          
-                          <View style={styles.swipeCardContent}>
-                            <Text style={styles.swipeCardTitle}>{filteredItems[currentItemIndex].name}</Text>
-                            <View style={styles.itemMetaRow}>
-                              <Text style={styles.itemPrice}>{filteredItems[currentItemIndex].price}</Text>
-                              <View style={styles.categoryTag}>
-                                <Text style={styles.categoryTagText}>{filteredItems[currentItemIndex].category}</Text>
-                              </View>
-                            </View>
-                            <TouchableOpacity 
-                              style={styles.viewProductButton}
-                              onPress={() => router.push(`/product-details?productId=${filteredItems[currentItemIndex].productId}`)}
-                            >
-                              <Text style={styles.viewProductButtonText}>Подробнее</Text>
-                            </TouchableOpacity>
-                          </View>
-                        </Animated.View>
-                      )}
-                      
-                      {/* Next card (shown partially underneath) */}
-                      {currentItemIndex < filteredItems.length - 1 && (
-                        <View style={[styles.swipeCard, styles.nextCard]}>
-                          <Image 
-                            source={{ uri: filteredItems[currentItemIndex + 1].image }} 
-                            style={styles.swipeCardImage} 
-                          />
-                        </View>
-                      )}
-                      
-                      {/* Swipe control buttons */}
-                      <View style={styles.swipeControls}>
-                        <TouchableOpacity 
-                          style={styles.swipeButton}
-                          onPress={() => triggerSwipe('left')}
-                        >
-                          <ThumbsDown size={24} color={COLORS.error} />
-                        </TouchableOpacity>
+            {/* Content area for list or swipe mode */}
+            <LinearGradient
+              colors={isDark ? 
+                ['#121212', '#1A1A1A'] : 
+                ['#F9FAFB', '#FFFFFF']}
+              style={styles.contentContainer}
+            >
+              {swipingMode ? (
+                // Swipe mode content
+                filteredItems.length > 0 ? (
+                  <View style={styles.swipeContainer}>
+                    {/* Current card */}
+                    {currentItemIndex < filteredItems.length && (
+                      <Animated.View
+                        style={[
+                          styles.swipeCard,
+                          isDark && { backgroundColor: isDark ? '#1A1A1A' : colors.white },
+                          {
+                            transform: [
+                              { translateX: swipeAnim.x },
+                              { rotate: rotateAnim }
+                            ]
+                          }
+                        ]}
+                        {...panResponder.panHandlers}
+                      >
+                        <Image 
+                          source={{ uri: filteredItems[currentItemIndex].image }} 
+                          style={styles.swipeCardImage}
+                        />
                         
-                        <TouchableOpacity 
-                          style={styles.swipeButton}
-                          onPress={() => triggerSwipe('right')}
-                        >
-                          <ThumbsUp size={24} color={COLORS.primary} />
-                        </TouchableOpacity>
-                      </View>
+                        <View style={styles.swipeCardContent}>
+                          <Text style={[
+                            styles.swipeCardTitle,
+                            isDark && { color: '#F3F4F6' }
+                          ]}>
+                            {filteredItems[currentItemIndex].name}
+                          </Text>
+                          
+                          <Text style={[
+                            styles.swipeCardPrice,
+                            isDark && { color: COLORS.primary }
+                          ]}>
+                            {filteredItems[currentItemIndex].price.toLocaleString()} ₽
+                          </Text>
+                          
+                          {filteredItems[currentItemIndex].category && (
+                            <View style={[
+                              styles.categoryTag,
+                              isDark && { backgroundColor: 'rgba(255,255,255,0.05)' }
+                            ]}>
+                              <Text style={[
+                                styles.categoryTagText,
+                                isDark && { color: '#9CA3AF' }
+                              ]}>
+                                {filteredItems[currentItemIndex].category}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                        
+                        {/* Like overlay */}
+                        <Animated.View style={[
+                          styles.swipeOverlay,
+                          styles.likeOverlay,
+                          { opacity: likeOpacity }
+                        ]}>
+                          <ThumbsUp size={64} color="#FFFFFF" />
+                        </Animated.View>
+                        
+                        {/* Dislike overlay */}
+                        <Animated.View style={[
+                          styles.swipeOverlay,
+                          styles.dislikeOverlay,
+                          { opacity: dislikeOpacity }
+                        ]}>
+                          <ThumbsDown size={64} color="#FFFFFF" />
+                        </Animated.View>
+                      </Animated.View>
+                    )}
+                    
+                    {/* Action buttons */}
+                    <View style={styles.swipeActions}>
+                      <TouchableOpacity
+                        style={[
+                          styles.swipeActionButton,
+                          styles.dislikeButton,
+                          isDark && { backgroundColor: 'rgba(239, 68, 68, 0.2)' }
+                        ]}
+                        onPress={() => triggerSwipe('left')}
+                      >
+                        <ThumbsDown size={24} color="#EF4444" />
+                      </TouchableOpacity>
                       
-                      {/* Progress indicator */}
-                      <View style={styles.progressContainer}>
-                        <Text style={styles.progressText}>
-                          {currentItemIndex + 1} из {filteredItems.length}
-                        </Text>
-                      </View>
-                    </>
-                  ) : (
-                    <View style={styles.emptyStateContainer}>
-                      <Text style={styles.emptyStateText}>
-                        Нет товаров, соответствующих фильтрам
+                      <TouchableOpacity
+                        style={[
+                          styles.swipeActionButton,
+                          styles.likeButton,
+                          isDark && { backgroundColor: 'rgba(34, 197, 94, 0.2)' }
+                        ]}
+                        onPress={() => triggerSwipe('right')}
+                      >
+                        <ThumbsUp size={24} color="#22C55E" />
+                      </TouchableOpacity>
+                    </View>
+                    
+                    {/* Progress indicator */}
+                    <View style={styles.swipeProgress}>
+                      <Text style={[
+                        styles.swipeProgressText,
+                        isDark && { color: '#9CA3AF' }
+                      ]}>
+                        {currentItemIndex + 1} / {filteredItems.length}
                       </Text>
                     </View>
-                  )}
-                </View>
+                  </View>
+                ) : (
+                  <View style={styles.emptyStateContainer}>
+                    <Heart size={64} color={isDark ? '#444444' : "#E0E0E0"} />
+                    <Text style={[
+                      styles.emptyStateText,
+                      isDark && { color: '#F3F4F6' }
+                    ]}>
+                      В этом вишлисте пока нет товаров
+                    </Text>
+                    <Text style={[
+                      styles.emptyStateSubtext,
+                      isDark && { color: '#9CA3AF' }
+                    ]}>
+                      Добавляйте товары, которые хотели бы получить в подарок
+                    </Text>
+                    <TouchableOpacity 
+                      style={styles.browseCatalogButton}
+                      onPress={() => {
+                        setDetailsModalVisible(false);
+                        router.push('/(tabs)/catalog');
+                      }}
+                    >
+                      <Text style={styles.browseCatalogText}>Перейти в каталог</Text>
+                    </TouchableOpacity>
+                  </View>
+                )
               ) : (
-                <FlatList
-                  data={filteredItems}
-                  keyExtractor={(item) => item.id}
-                  renderItem={({ item }) => (
-                    <View style={styles.wishlistItemCard}>
-                      <Image 
-                        source={{ uri: item.image }} 
-                        style={styles.itemImage}
-                      />
-                      <View style={styles.itemDetails}>
-                        <Text style={styles.itemName}>{item.name}</Text>
-                        <View style={styles.itemMetaRow}>
-                          <Text style={styles.itemPrice}>{item.price}</Text>
-                          <View style={styles.categoryTag}>
-                            <Text style={styles.categoryTagText}>{item.category}</Text>
-                          </View>
+                // List mode content
+                activeWishlist.items.length > 0 ? (
+                  <FlatList
+                    data={filteredItems}
+                    keyExtractor={(item) => item.id}
+                    contentContainerStyle={styles.wishlistItemsList}
+                    renderItem={({ item }) => (
+                      <View style={[
+                        styles.wishlistItemCard,
+                        isDark && { 
+                          backgroundColor: isDark ? '#1A1A1A' : colors.white,
+                          borderColor: 'rgba(255,255,255,0.05)' 
+                        }
+                      ]}>
+                        <Image source={{ uri: item.image }} style={styles.itemImage} />
+                        <View style={styles.itemInfo}>
+                          <Text style={[
+                            styles.itemName,
+                            isDark && { color: '#F3F4F6' }
+                          ]}>
+                            {item.name}
+                          </Text>
+                          <Text style={[
+                            styles.itemPrice,
+                            isDark && { color: COLORS.primary }
+                          ]}>
+                            {item.price.toLocaleString()} ₽
+                          </Text>
+                          {item.category && (
+                            <View style={[
+                              styles.categoryPill,
+                              isDark && { backgroundColor: 'rgba(255,255,255,0.05)' }
+                            ]}>
+                              <Text style={[
+                                styles.categoryPillText,
+                                isDark && { color: '#9CA3AF' }
+                              ]}>
+                                {item.category}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                        <View style={styles.itemActions}>
+                          <TouchableOpacity
+                            style={styles.itemActionButton}
+                            onPress={() => {
+                              if (!activeWishlist) return;
+                              handleRemoveItem(activeWishlist.id, item.id);
+                            }}
+                          >
+                            <Trash2 size={20} color={isDark ? "#FF4949" : "#EF4444"} />
+                          </TouchableOpacity>
                         </View>
                       </View>
-                      <View style={styles.itemActions}>
-                        <TouchableOpacity 
-                          style={styles.itemActionButton}
-                          onPress={() => router.push(`/product-details?productId=${item.productId}`)}
-                        >
-                          <ShoppingBag size={18} color={COLORS.primary} />
-                        </TouchableOpacity>
-                        <TouchableOpacity 
-                          style={styles.itemActionButton}
-                          onPress={() => handleRemoveItem(activeWishlist.id, item.id)}
-                        >
-                          <Trash2 size={18} color={COLORS.error} />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  )}
-                  showsVerticalScrollIndicator={false}
-                  contentContainerStyle={styles.wishlistItemsList}
-                />
-              )
-            ) : (
-              <View style={styles.emptyStateContainer}>
-                <Heart size={64} color="#E0E0E0" />
-                <Text style={styles.emptyStateText}>
-                  В этом вишлисте пока нет товаров
-                </Text>
-                <Text style={styles.emptyStateSubtext}>
-                  Добавляйте товары, которые хотели бы получить в подарок
-                </Text>
-                <TouchableOpacity 
-                  style={styles.browseCatalogButton}
-                  onPress={() => {
-                    setDetailsModalVisible(false);
-                    router.push('/(tabs)/catalog');
-                  }}
-                >
-                  <Text style={styles.browseCatalogText}>Перейти в каталог</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </LinearGradient>
+                    )}
+                  />
+                ) : (
+                  <View style={styles.emptyStateContainer}>
+                    <Heart size={64} color={isDark ? '#444444' : "#E0E0E0"} />
+                    <Text style={[
+                      styles.emptyStateText,
+                      isDark && { color: '#F3F4F6' }
+                    ]}>
+                      В этом вишлисте пока нет товаров
+                    </Text>
+                    <Text style={[
+                      styles.emptyStateSubtext,
+                      isDark && { color: '#9CA3AF' }
+                    ]}>
+                      Добавляйте товары, которые хотели бы получить в подарок
+                    </Text>
+                    <TouchableOpacity 
+                      style={styles.browseCatalogButton}
+                      onPress={() => {
+                        setDetailsModalVisible(false);
+                        router.push('/(tabs)/catalog');
+                      }}
+                    >
+                      <Text style={styles.browseCatalogText}>Перейти в каталог</Text>
+                    </TouchableOpacity>
+                  </View>
+                )
+              )}
+            </LinearGradient>
+          </View>
         </View>
       </Modal>
     );
@@ -664,94 +821,118 @@ export default function WishlistScreen() {
         onRequestClose={() => setFilterModalVisible(false)}
       >
         <View style={styles.modalContainer}>
-          <View style={styles.filterModalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Фильтры</Text>
+          <View style={[
+            styles.filterModalContent, 
+            isDark && { 
+              backgroundColor: colors.cardBackground,
+              borderTopColor: 'rgba(255,255,255,0.1)'
+            }
+          ]}>
+            <View style={{ 
+              flexDirection: 'row', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              marginBottom: 24
+            }}>
+              <Text style={[
+                styles.filterModalTitle,
+                isDark && { color: colors.textPrimary }
+              ]}>
+                Фильтры
+              </Text>
               <TouchableOpacity
                 onPress={() => setFilterModalVisible(false)}
                 style={styles.closeButton}
               >
-                <X size={24} color="#000" />
+                <X size={24} color={isDark ? colors.textPrimary : "#000"} />
               </TouchableOpacity>
             </View>
             
-            {/* Category filter */}
-            <View style={styles.filterSection}>
-              <View style={styles.filterSectionHeader}>
-                <Tag size={20} color={COLORS.primary} />
-                <Text style={styles.filterSectionTitle}>Категория</Text>
-              </View>
-              
-              <ScrollView 
-                horizontal={false}
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.categoryScrollContainer}
-              >
-                {CATEGORIES.map(category => (
-                  <TouchableOpacity
-                    key={category}
-                    style={[
-                      styles.categoryChip,
-                      selectedCategory === category && styles.categoryChipSelected
-                    ]}
-                    onPress={() => setSelectedCategory(category)}
-                  >
-                    <Text 
+            <View>
+              <View style={styles.filterSection}>
+                <View style={styles.filterSectionHeader}>
+                  <Tag size={20} color={COLORS.primary} />
+                  <Text style={[
+                    styles.filterSectionTitle,
+                    isDark && { color: colors.textPrimary }
+                  ]}>
+                    Категория
+                  </Text>
+                </View>
+                
+                <View style={styles.categoryScrollContainer}>
+                  {CATEGORIES.map((category) => (
+                    <TouchableOpacity
+                      key={category}
                       style={[
+                        styles.categoryChip,
+                        selectedCategory === category && styles.categoryChipSelected,
+                        isDark && selectedCategory !== category && { backgroundColor: 'rgba(255,255,255,0.1)' }
+                      ]}
+                      onPress={() => setSelectedCategory(category)}
+                    >
+                      <Text style={[
                         styles.categoryChipText,
-                        selectedCategory === category && styles.categoryChipTextSelected
-                      ]}
-                    >
-                      {category}
-                    </Text>
-                    {selectedCategory === category && (
-                      <Check size={14} color="#FFF" style={styles.categorySelectedIcon} />
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-            
-            {/* Budget filter */}
-            <View style={styles.filterSection}>
-              <View style={styles.filterSectionHeader}>
-                <DollarSign size={20} color={COLORS.primary} />
-                <Text style={styles.filterSectionTitle}>Бюджет</Text>
+                        selectedCategory === category && styles.categoryChipTextSelected,
+                        isDark && selectedCategory !== category && { color: colors.textSecondary }
+                      ]}>
+                        {category}
+                      </Text>
+                      {selectedCategory === category && (
+                        <Check size={14} color="#FFF" style={styles.categorySelectedIcon} />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
               
-              <View style={styles.budgetRangeContainer}>
-                {BUDGET_RANGES.map((range, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={[
-                      styles.budgetRangeOption,
-                      selectedBudgetRange.label === range.label && styles.budgetRangeOptionSelected
-                    ]}
-                    onPress={() => setSelectedBudgetRange(range)}
-                  >
-                    <Text 
+              <View style={styles.filterSection}>
+                <View style={styles.filterSectionHeader}>
+                  <DollarSign size={20} color={COLORS.primary} />
+                  <Text style={[
+                    styles.filterSectionTitle,
+                    isDark && { color: colors.textPrimary }
+                  ]}>
+                    Бюджет
+                  </Text>
+                </View>
+                
+                <View style={styles.budgetRangeContainer}>
+                  {BUDGET_RANGES.map((range, index) => (
+                    <TouchableOpacity
+                      key={index}
                       style={[
-                        styles.budgetRangeText,
-                        selectedBudgetRange.label === range.label && styles.budgetRangeTextSelected
+                        styles.budgetRangeOption,
+                        selectedBudgetRange.label === range.label && styles.budgetRangeOptionSelected,
+                        isDark && selectedBudgetRange.label !== range.label && { backgroundColor: 'rgba(255,255,255,0.1)' }
                       ]}
+                      onPress={() => setSelectedBudgetRange(range)}
                     >
-                      {range.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                      <Text 
+                        style={[
+                          styles.budgetRangeText,
+                          selectedBudgetRange.label === range.label && styles.budgetRangeTextSelected,
+                          isDark && selectedBudgetRange.label !== range.label && { color: colors.textSecondary }
+                        ]}
+                      >
+                        {range.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
+              
+              {/* Apply filter button */}
+              <TouchableOpacity
+                style={styles.applyFilterButton}
+                onPress={() => {
+                  applyFilters();
+                  setFilterModalVisible(false);
+                }}
+              >
+                <Text style={styles.applyFilterButtonText}>Применить</Text>
+              </TouchableOpacity>
             </View>
-            
-            {/* Apply filter button */}
-            <TouchableOpacity
-              style={styles.applyFilterButton}
-              onPress={() => {
-                applyFilters();
-                setFilterModalVisible(false);
-              }}
-            >
-              <Text style={styles.applyFilterButtonText}>Применить</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -760,26 +941,48 @@ export default function WishlistScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[
+        styles.loadingContainer,
+        isDark && { backgroundColor: colors.primaryBackground }
+      ]}>
         <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>Загрузка вишлистов...</Text>
+        <Text style={[
+          styles.loadingText,
+          isDark && { color: colors.textSecondary }
+        ]}>
+          Загрузка вишлистов...
+        </Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[
+      styles.container,
+      isDark && { backgroundColor: colors.primaryBackground }
+    ]}>
       <Stack.Screen options={{ headerShown: false }} />
       
       {/* Header with back button */}
-      <View style={styles.header}>
+      <View style={[
+        styles.header,
+        isDark && { backgroundColor: colors.cardBackground }
+      ]}>
         <TouchableOpacity 
-          style={styles.backButton}
+          style={[
+            styles.backButton,
+            isDark && { backgroundColor: 'rgba(255,255,255,0.05)' }
+          ]}
           onPress={() => router.back()}
         >
-          <ChevronLeft size={24} color={COLORS.gray800} />
+          <ChevronLeft size={24} color={isDark ? colors.textPrimary : COLORS.gray800} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Мои вишлисты</Text>
+        <Text style={[
+          styles.headerTitle,
+          isDark && { color: colors.textPrimary }
+        ]}>
+          Мои вишлисты
+        </Text>
         <TouchableOpacity 
           style={styles.addButton}
           onPress={() => {
@@ -802,10 +1005,21 @@ export default function WishlistScreen() {
           showsVerticalScrollIndicator={false}
         />
       ) : (
-        <View style={styles.emptyContainer}>
-          <Heart size={80} color="#E0E0E0" />
-          <Text style={styles.emptyTitle}>У вас пока нет вишлистов</Text>
-          <Text style={styles.emptySubtitle}>
+        <View style={[
+          styles.emptyContainer,
+          isDark && { backgroundColor: colors.primaryBackground }
+        ]}>
+          <Heart size={80} color={isDark ? '#444444' : "#E0E0E0"} />
+          <Text style={[
+            styles.emptyTitle,
+            isDark && { color: colors.textPrimary }
+          ]}>
+            У вас пока нет вишлистов
+          </Text>
+          <Text style={[
+            styles.emptySubtitle,
+            isDark && { color: colors.textSecondary }
+          ]}>
             Создайте вишлист, чтобы сохранять товары, которые вы хотели бы получить в подарок
           </Text>
           <TouchableOpacity 
@@ -830,31 +1044,55 @@ export default function WishlistScreen() {
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
+          <View style={[
+            styles.modalContent,
+            isDark && { 
+              backgroundColor: colors.cardBackground,
+              borderTopColor: 'rgba(255,255,255,0.1)'
+            }
+          ]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
+              <Text style={[
+                styles.modalTitle,
+                isDark && { color: colors.textPrimary }
+              ]}>
                 {editingWishlist ? 'Редактировать вишлист' : 'Создать вишлист'}
               </Text>
               <TouchableOpacity
                 onPress={() => setModalVisible(false)}
                 style={styles.closeButton}
               >
-                <X size={24} color="#000" />
+                <X size={24} color={isDark ? colors.textPrimary : "#000"} />
               </TouchableOpacity>
             </View>
             
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                isDark && {
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  color: colors.textPrimary,
+                  borderColor: 'rgba(255,255,255,0.1)'
+                }
+              ]}
               placeholder="Название вишлиста"
-              placeholderTextColor="#999"
+              placeholderTextColor={isDark ? 'rgba(255,255,255,0.5)' : "#999"}
               value={newWishlistName}
               onChangeText={setNewWishlistName}
             />
             
             <TextInput
-              style={[styles.input, styles.textArea]}
+              style={[
+                styles.input, 
+                styles.textArea,
+                isDark && {
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  color: colors.textPrimary,
+                  borderColor: 'rgba(255,255,255,0.1)'
+                }
+              ]}
               placeholder="Описание (необязательно)"
-              placeholderTextColor="#999"
+              placeholderTextColor={isDark ? 'rgba(255,255,255,0.5)' : "#999"}
               value={newWishlistDescription}
               onChangeText={setNewWishlistDescription}
               multiline
@@ -885,38 +1123,26 @@ export default function WishlistScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F8FF',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F5F8FF',
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: COLORS.gray700,
+    backgroundColor: '#F3F4F6',
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
+    backgroundColor: 'white',
     paddingTop: 60,
     paddingBottom: 20,
-    backgroundColor: '#FFF',
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F8FAFC',
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#F3F4F6',
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#1E293B',
   },
@@ -927,20 +1153,18 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
+    marginLeft: 8,
   },
   listContainer: {
     padding: 16,
   },
   wishlistCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    backgroundColor: 'white',
+    borderRadius: 16,
     padding: 16,
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   wishlistHeader: {
     flexDirection: 'row',
@@ -954,61 +1178,222 @@ const styles = StyleSheet.create({
     color: '#1E293B',
     marginBottom: 4,
   },
-  itemCount: {
+  wishlistItems: {
     fontSize: 14,
     color: '#64748B',
   },
-  actionButtons: {
+  wishlistActions: {
     flexDirection: 'row',
   },
-  iconButton: {
+  actionButton: {
     width: 36,
     height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F1F5F9',
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 6,
   },
-  thumbnailContainer: {
+  itemPreview: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     marginBottom: 12,
   },
-  thumbnail: {
+  previewImage: {
     width: (width - 104) / 4,
     height: (width - 104) / 4,
     borderRadius: 8,
-    marginRight: 8,
-    marginBottom: 8,
   },
-  moreItems: {
+  emptyPreview: {
     width: (width - 104) / 4,
     height: (width - 104) / 4,
     borderRadius: 8,
-    backgroundColor: 'rgba(108, 99, 255, 0.1)',
+    backgroundColor: 'rgba(255,255,255,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  moreItemsText: {
-    color: COLORS.primary,
-    fontWeight: 'bold',
-  },
-  seeAllButton: {
+  openButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 8,
   },
-  seeAllText: {
+  openButtonText: {
     fontSize: 14,
     color: COLORS.primary,
     fontWeight: '600',
     marginRight: 4,
   },
-  emptyListText: {
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1E293B',
+  },
+  modalSubtitle: {
     fontSize: 14,
-    color: '#94A3B8',
-    textAlign: 'center',
-    marginVertical: 16,
+    color: '#64748B',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    zIndex: 10,
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#64748B',
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#1E293B',
+    backgroundColor: '#F8FAFC',
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  createWishlistButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 8,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  saveButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  wishlistDescription: {
+    fontSize: 14,
+    color: '#64748B',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  wishlistItemsList: {
+    padding: 16,
+    paddingBottom: 80,
+  },
+  wishlistItemCard: {
+    flexDirection: 'row',
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  itemImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+  },
+  itemInfo: {
+    flex: 1,
+    paddingHorizontal: 12,
+    justifyContent: 'center',
+  },
+  itemName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1E293B',
+    marginBottom: 4,
+  },
+  itemPrice: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.primary,
+    marginBottom: 4,
+  },
+  categoryChip: {
+    backgroundColor: '#F1F5F9',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    marginRight: 8,
+    marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  categoryChipSelected: {
+    backgroundColor: COLORS.primary,
+  },
+  categoryChipText: {
+    fontSize: 14,
+    color: '#64748B',
+    marginRight: 4,
+  },
+  categoryChipTextSelected: {
+    color: 'white',
+  },
+  categorySelectedIcon: {
+    marginLeft: 4,
+  },
+  categoryPill: {
+    backgroundColor: '#F1F5F9',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  categoryPillText: {
+    fontSize: 12,
+    color: '#64748B',
+  },
+  categoryTag: {
+    backgroundColor: '#F1F5F9',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+    marginTop: 8,
+  },
+  categoryTagText: {
+    fontSize: 12,
+    color: '#64748B',
+  },
+  itemActions: {
+    justifyContent: 'center',
+  },
+  itemActionButton: {
+    padding: 8,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#64748B',
   },
   emptyContainer: {
     flex: 1,
@@ -1040,18 +1425,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalContent: {
+  detailsModalContent: {
     backgroundColor: 'white',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
-    minHeight: '80%',
-    paddingBottom: 40,
+    minHeight: '75%',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -1064,260 +1443,51 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1E293B',
   },
-  modalSubtitle: {
+  wishlistHeaderInfo: {
+    marginBottom: 20,
+  },
+  itemCount: {
     fontSize: 14,
     color: '#64748B',
   },
-  closeButton: {
-    padding: 4,
-  },
-  input: {
-    backgroundColor: '#F8FAFC',
-    padding: 16,
-    borderRadius: RADIUS.sm,
-    marginBottom: 16,
-    fontSize: 16,
-    color: '#1E293B',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  textArea: {
-    height: 100,
-    textAlignVertical: 'top',
-  },
-  createWishlistButton: {
-    backgroundColor: COLORS.primary,
-    padding: 16,
-    borderRadius: RADIUS.md,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  wishlistItemCard: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  itemImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-  },
-  itemDetails: {
-    flex: 1,
-    paddingHorizontal: 12,
-    justifyContent: 'center',
-  },
-  itemName: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#1E293B',
-    marginBottom: 4,
-  },
-  itemMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  itemPrice: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.primary,
-  },
-  itemActions: {
-    justifyContent: 'space-around',
-  },
-  itemActionButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  wishlistItemsList: {
-    paddingVertical: 12,
-  },
-  emptyStateContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  emptyStateText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1E293B',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyStateSubtext: {
-    fontSize: 16,
-    color: '#64748B',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  browseCatalogButton: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: RADIUS.md,
-  },
-  browseCatalogText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  wishlistDescription: {
+  wishlistDescriptionModal: {
     fontSize: 14,
     color: '#64748B',
     marginBottom: 16,
     lineHeight: 20,
   },
-  filterControlsContainer: {
+  modeSwitcher: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
-    flexWrap: 'wrap',
-    paddingVertical: 10,
-  },
-  shareButton: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
     borderRadius: RADIUS.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 5,
-  },
-  shareButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  filterButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: RADIUS.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.primary + '15',
-    marginBottom: 5,
-  },
-  filterButtonText: {
-    color: COLORS.primary,
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  swipeModeButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: RADIUS.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.primary + '15',
-    marginBottom: 5,
-  },
-  swipeModeButtonActive: {
-    backgroundColor: COLORS.primary,
-  },
-  swipeModeButtonText: {
-    color: COLORS.primary,
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  swipeModeButtonTextActive: {
-    color: '#FFF',
-  },
-  filterModalContent: {
-    backgroundColor: 'white',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    minHeight: '75%',
-  },
-  filterSection: {
-    marginBottom: 24,
-  },
-  filterSectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  filterSectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1E293B',
-    marginLeft: 8,
-  },
-  categoryScrollContainer: {
-    paddingBottom: 8,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  categoryChip: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    marginRight: 8,
-    marginBottom: 8,
-    backgroundColor: '#F1F5F9',
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  categoryChipSelected: {
-    backgroundColor: COLORS.primary,
-  },
-  categoryChipText: {
-    fontSize: 14,
-    color: '#64748B',
-  },
-  categoryChipTextSelected: {
-    color: '#FFF',
-  },
-  categorySelectedIcon: {
-    marginLeft: 4,
-  },
-  budgetRangeContainer: {
-    marginTop: 8,
-  },
-  budgetRangeOption: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: RADIUS.md,
-    marginBottom: 8,
+    padding: 4,
     backgroundColor: '#F1F5F9',
   },
-  budgetRangeOptionSelected: {
-    backgroundColor: COLORS.primary + '15',
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-  },
-  budgetRangeText: {
-    fontSize: 14,
-    color: '#64748B',
-  },
-  budgetRangeTextSelected: {
-    color: COLORS.primary,
-    fontWeight: '600',
-  },
-  applyFilterButton: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: 16,
+  modeTab: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     borderRadius: RADIUS.md,
+    backgroundColor: '#F1F5F9',
+    flex: 1,
     alignItems: 'center',
-    marginTop: 16,
   },
-  applyFilterButtonText: {
-    color: '#FFF',
-    fontSize: 16,
+  activeTab: {
+    backgroundColor: COLORS.primary,
+  },
+  modeTabText: {
+    color: '#64748B',
+    fontSize: 14,
     fontWeight: '600',
+  },
+  activeTabText: {
+    color: '#FFF',
+  },
+  contentContainer: {
+    flex: 1,
+    borderRadius: 16,
+    overflow: 'hidden',
   },
   swipeContainer: {
     flex: 1,
@@ -1341,12 +1511,6 @@ const styles = StyleSheet.create({
     zIndex: 2,
     overflow: 'hidden',
   },
-  nextCard: {
-    top: 10,
-    transform: [{ scale: 0.95 }],
-    opacity: 0.5,
-    zIndex: 1,
-  },
   swipeCardImage: {
     width: '100%',
     height: '50%',
@@ -1364,39 +1528,35 @@ const styles = StyleSheet.create({
     color: '#1E293B',
     marginBottom: 8,
   },
-  viewProductButton: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: RADIUS.md,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  viewProductButtonText: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  categoryTag: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 4,
-    marginLeft: 8,
-  },
-  categoryTagText: {
-    fontSize: 12,
+  swipeCardPrice: {
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#FFF',
+    color: COLORS.primary,
   },
-  swipeControls: {
+  swipeOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  likeOverlay: {
+    backgroundColor: 'rgba(16, 185, 129, 0.8)',
+  },
+  dislikeOverlay: {
+    backgroundColor: 'rgba(239, 68, 68, 0.8)',
+  },
+  swipeActions: {
     position: 'absolute',
     bottom: -70,
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: 160,
   },
-  swipeButton: {
+  swipeActionButton: {
     width: 60,
     height: 60,
     borderRadius: 30,
@@ -1409,45 +1569,146 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
   },
-  likeOverlay: {
-    position: 'absolute',
-    top: '25%',
-    right: 20,
-    padding: 10,
-    backgroundColor: 'rgba(16, 185, 129, 0.8)',
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#10B981',
-    transform: [{ rotate: '15deg' }],
-    zIndex: 10,
+  dislikeButton: {
+    backgroundColor: '#FFF',
   },
-  dislikeOverlay: {
-    position: 'absolute',
-    top: '25%',
-    left: 20,
-    padding: 10,
-    backgroundColor: 'rgba(239, 68, 68, 0.8)',
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#EF4444',
-    transform: [{ rotate: '-15deg' }],
-    zIndex: 10,
+  likeButton: {
+    backgroundColor: '#FFF',
   },
-  overlayText: {
+  swipeProgress: {
+    position: 'absolute',
+    bottom: -110,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  swipeProgressText: {
+    color: '#64748B',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  filterModalContent: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    minHeight: '75%',
+  },
+  filterModalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1E293B',
+    marginBottom: 24,
+  },
+  filterSection: {
+    marginBottom: 24,
+  },
+  filterSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  filterSectionTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#FFF',
+    fontWeight: '600',
+    color: '#1E293B',
+    marginLeft: 8,
   },
-  progressContainer: {
-    position: 'absolute',
-    bottom: -100,
+  categoryScrollContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
   },
-  progressText: {
+  budgetRangeContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  budgetRangeOption: {
+    backgroundColor: '#F1F5F9',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: RADIUS.md,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  budgetRangeOptionSelected: {
+    backgroundColor: COLORS.primary,
+  },
+  budgetRangeText: {
     fontSize: 14,
     color: '#64748B',
   },
-  categoryScrollView: {
-    marginBottom: 20,
-    maxHeight: 90,
+  budgetRangeTextSelected: {
+    color: 'white',
+  },
+  applyFilterButton: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: 12,
+    borderRadius: RADIUS.md,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  applyFilterButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: RADIUS.md,
+    marginBottom: 16,
+  },
+  filterButtonText: {
+    fontSize: 14,
+    color: '#1E293B',
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  moreItemsIndicator: {
+    width: (width - 104) / 4,
+    height: (width - 104) / 4,
+    borderRadius: 8,
+    backgroundColor: 'rgba(108, 99, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'white',
+    marginLeft: -15,
+    zIndex: 0,
+  },
+  moreItemsText: {
+    color: COLORS.primary,
+    fontWeight: 'bold',
+  },
+  emptyStateContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1E293B',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyStateSubtext: {
+    fontSize: 16,
+    color: '#9CA3AF',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  browseCatalogButton: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: RADIUS.md,
+  },
+  browseCatalogText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
 }); 

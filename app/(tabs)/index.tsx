@@ -622,56 +622,56 @@ export default function FeedScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: themedStyles.backgroundColor }]}>
-      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+    >
+      <ScrollView
+        style={[styles.container, theme === 'dark' && { backgroundColor: THEME.primary }]}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+        nestedScrollEnabled={true}
+        bounces={true}
+        overScrollMode="always"
       >
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContainer}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* Обновленный заголовок с динамическим приветствием */}
-          {showGreeting && (
-            <View style={styles.newHeader}>
-              <Text style={[styles.newHeaderTitle, { color: themedStyles.textPrimary }]}>
-                {getGreetingByTime().replace('%s', 'Алексей')}
-              </Text>
-              <Text style={[styles.newHeaderSubtitle, { color: themedStyles.textSecondary }]}>
-                {t('feed.findGifts')}
-              </Text>
-            </View>
-          )}
+        {/* Обновленный заголовок с динамическим приветствием */}
+        {showGreeting && (
+          <View style={styles.newHeader}>
+            <Text style={[styles.newHeaderTitle, { color: themedStyles.textPrimary }]}>
+              {getGreetingByTime().replace('%s', 'Алексей')}
+            </Text>
+            <Text style={[styles.newHeaderSubtitle, { color: themedStyles.textSecondary }]}>
+              {t('feed.findGifts')}
+            </Text>
+          </View>
+        )}
 
-          {/* Ближайшие мероприятия - используем новый компонент */}
-          <UpcomingEvents 
-            events={upcomingHolidays}
-            onEventPress={handleHolidayPress} 
-            onGenerateGiftPress={handleGenerateGift} 
-            onAddEventPress={() => setIsCreateEventModalVisible(true)} 
-            onDeleteEvent={handleDeleteEvent}
-          />
+        {/* Ближайшие мероприятия - используем новый компонент */}
+        <UpcomingEvents 
+          events={upcomingHolidays}
+          onEventPress={handleHolidayPress} 
+          onGenerateGiftPress={handleGenerateGift} 
+          onAddEventPress={() => setIsCreateEventModalVisible(true)} 
+          onDeleteEvent={handleDeleteEvent}
+        />
 
-          {/* Тематические коллекции */}
-          <ThematicCollections 
-            onCollectionPress={(collectionId, collectionName) => {
-              console.log(`Main screen handling collection press: ${collectionId} - ${collectionName}`);
-              router.navigate({
-                pathname: '/(tabs)/catalog',
-                params: { collection: collectionId, name: collectionName }
-              });
-            }}
-          />
+        {/* Тематические коллекции */}
+        <ThematicCollections 
+          onCollectionPress={(collectionId, collectionName) => {
+            console.log(`Main screen handling collection press: ${collectionId} - ${collectionName}`);
+            router.navigate({
+              pathname: '/(tabs)/catalog',
+              params: { collection: collectionId, name: collectionName }
+            });
+          }}
+        />
 
-          {/* Персонализированные рекомендации */}
-          <PersonalizedRecommendations />
-          
-          {/* Другие секции контента */}
-        </ScrollView>
-      </KeyboardAvoidingView>
+        {/* Персонализированные рекомендации */}
+        <PersonalizedRecommendations />
+        
+        {/* Другие секции контента */}
+      </ScrollView>
       
       {/* Модальное окно для создания события */}
       <Modal
@@ -751,7 +751,7 @@ export default function FeedScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -760,8 +760,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: THEME.background,
   },
-  scrollContainer: {
-    paddingBottom: 32,
+  contentContainer: {
+    paddingBottom: 120,
   },
   newHeader: {
     paddingHorizontal: 16,

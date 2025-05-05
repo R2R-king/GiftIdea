@@ -100,6 +100,8 @@ export const UpcomingEvents: React.FC<UpcomingEventsProps> = ({
         showsHorizontalScrollIndicator={false}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
+        nestedScrollEnabled={true}
+        bounces={true}
       >
         {events.map((event) => (
           <TouchableOpacity
@@ -206,9 +208,11 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flexGrow: 0,
+    height: 190, // Fixed height to ensure proper scrolling
   },
   scrollContent: {
     paddingHorizontal: 8,
+    paddingBottom: 8,
   },
   eventCard: {
     width: 240,

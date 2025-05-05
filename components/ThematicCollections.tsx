@@ -80,6 +80,8 @@ export const ThematicCollections = ({
         horizontal 
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        nestedScrollEnabled={true}
+        bounces={true}
       >
         {collections.map((collection) => (
           <TouchableOpacity
@@ -130,6 +132,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 8,
+    paddingBottom: 8,
   },
   card: {
     width: 260,

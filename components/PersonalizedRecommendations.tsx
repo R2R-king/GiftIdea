@@ -166,6 +166,10 @@ export const PersonalizedRecommendations = () => {
         showsHorizontalScrollIndicator={false}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
+        nestedScrollEnabled={true}
+        bounces={true}
+        overScrollMode="always"
+        removeClippedSubviews={false}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={[styles.giftCard, isDark && { backgroundColor: colors.cardBackground }]}
@@ -211,6 +215,8 @@ export const PersonalizedRecommendations = () => {
 const styles = StyleSheet.create({
   container: {
     marginVertical: 16,
+    height: 340,
+    marginBottom: 40,
   },
   loadingContainer: {
     height: 200,
