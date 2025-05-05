@@ -92,7 +92,31 @@ const translations = {
     privacyPolicy: 'Privacy Policy',
     termsOfService: 'Terms of Service',
     notifications: 'Notifications',
-    help: 'Help & Support'
+    help: 'Help & Support',
+    secretSanta: 'Secret Santa 2.0',
+    wishlists: 'Wishlists',
+    loyalty: 'Loyalty Program',
+    mapSearch: 'Map Search',
+    reminders: 'Event Reminders',
+    fullName: 'Full Name',
+    email: 'Email Address',
+    phone: 'Phone Number',
+    enterName: 'Enter your full name',
+    enterEmail: 'Enter your email address',
+    enterPhone: 'Enter your phone number',
+    saveChanges: 'Save Changes',
+    changePhoto: 'Change Photo',
+    selectPhotoSource: 'Select photo source',
+    camera: 'Camera',
+    gallery: 'Gallery',
+    profileUpdated: 'Profile Updated',
+    profileUpdatedMessage: 'Your profile has been successfully updated.',
+    home: 'Home',
+    recentOrders: 'Recent Orders',
+    seeAll: 'See All',
+    savedAddresses: 'Saved Addresses',
+    reorder: 'Reorder',
+    guestUser: 'Guest User'
   },
   catalog: {
     header: 'Gift Catalog',
@@ -174,7 +198,23 @@ const translations = {
     remove: 'Remove',
     add: 'Add',
     save: 'Save'
-  }
+  },
+  secretSanta: {
+    title: 'Secret Santa 2.0',
+    subtitle: 'What\'s new in version 2.0:',
+    questionnaire: 'Questionnaire for Santa',
+    questionnaireDesc: 'Attach your wishes and a note to your questionnaire, for example with delivery address or what gifts you prefer.',
+    wishlistPlaceholder: 'Enter your wishlist and delivery details...',
+    saveWishlist: 'Save Wishlist',
+    invitation: 'Invitation by Link',
+    invitationDesc: 'Copy the invitation link and share it in WhatsApp, Telegram or email.',
+    shareLink: 'Share Invitation Link',
+    participants: 'Up to 1000 participants',
+    participantsDesc: 'Invite up to 1000 participants. Perfect for large families or corporations.',
+    selection: 'Special Selection',
+    selectionDesc: 'If your recipient hasn\'t filled out a questionnaire — don\'t worry, we\'ve prepared a great selection of gift ideas for "Secret Santas".',
+    getIdeas: 'Get Gift Ideas'
+  },
 };
 
 export default translations; 

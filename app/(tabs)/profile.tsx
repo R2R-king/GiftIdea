@@ -29,6 +29,7 @@ import {
   Plus,
   Edit,
   Trash2,
+  Snowflake,
 } from 'lucide-react-native';
 import { useAppLocalization } from '@/components/LocalizationWrapper';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -36,6 +37,11 @@ import TabBarShadow from '@/components/TabBarShadow';
 import ThemeToggle from '@/components/ThemeToggle';
 import { router } from 'expo-router';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
+import { useSelector } from 'react-redux';
+import { store } from '@/store';
+
+// Define RootState type based on the store
+type RootState = ReturnType<typeof store.getState>;
 
 const { width } = Dimensions.get('window');
 
@@ -52,6 +58,7 @@ interface MenuOption {
 
 export default function ProfileScreen() {
   const { t, locale, setLocale } = useAppLocalization();
+  const { user } = useSelector((state: RootState) => state.auth);
 
   const toggleLanguage = () => {
     setLocale(locale === 'en' ? 'ru' : 'en');
@@ -86,6 +93,12 @@ export default function ProfileScreen() {
       case 'wishlists':
         router.push('/wishlist');
         break;
+      case 'secretSanta':
+        router.push('/secret-santa' as any);
+        break;
+      case 'settings':
+        // Add navigation to settings if needed
+        break;
       default:
         // Для остальных пунктов меню
         break;
@@ -115,6 +128,11 @@ export default function ProfileScreen() {
       id: 'wishlists',
       title: t('profile.wishlists'),
       icon: Gift,
+    },
+    {
+      id: 'secretSanta',
+      title: t('profile.secretSanta'),
+      icon: Snowflake,
     },
     {
       id: 'loyalty',
@@ -229,17 +247,24 @@ export default function ProfileScreen() {
               source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200' }}
               style={styles.profileImage}
             />
-            <TouchableOpacity style={styles.editButton} activeOpacity={0.8}>
+            <TouchableOpacity 
+              style={styles.editButton} 
+              activeOpacity={0.8}
+              onPress={() => router.push('/edit-profile')}
+            >
               <Edit size={14} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
           
-          <Text style={styles.profileName}>Sophie Anderson</Text>
-          <Text style={styles.profileEmail}>sophie.a@example.com</Text>
+          <Text style={styles.profileName}>{user?.name || t('profile.guestUser')}</Text>
+          <Text style={styles.profileEmail}>{user?.email || ''}</Text>
           
-          <TouchableOpacity style={styles.editProfileButton} activeOpacity={0.7}>
-            <Text style={styles.editProfileText}>{t('profile.editProfile')}</Text>
-          </TouchableOpacity>
+        </View>
+        
+        {/* Promotional Info Card - Update text color for better visibility */}
+        <View style={styles.promoCard}>
+          <Text style={styles.promoTitle}>{t('profile.valentineOffer')}</Text>
+          <Text style={styles.promoDescription}>{t('profile.offerDescription')}</Text>
         </View>
         
         {/* Menu Options */}
@@ -392,24 +417,17 @@ const styles = StyleSheet.create({
   profileName: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: COLORS.white,
+    color: '#000000',
     marginBottom: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.25)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   profileEmail: {
     fontSize: 16,
     color: COLORS.white,
     opacity: 0.8,
     marginBottom: 15,
-  },
-  editProfileButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    borderRadius: 20,
-  },
-  editProfileText: {
-    color: COLORS.white,
-    fontWeight: '500',
   },
   ordersSection: {
     paddingHorizontal: SPACING.lg,
@@ -654,5 +672,26 @@ const styles = StyleSheet.create({
   },
   dangerText: {
     color: COLORS.error,
+  },
+  promoCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    marginHorizontal: SPACING.md,
+    marginBottom: SPACING.md,
+    ...SHADOWS.small,
+    borderWidth: 0,
+    borderColor: 'transparent',
+  },
+  promoTitle: {
+    fontSize: FONTS.sizes.md,
+    fontWeight: '700',
+    color: '#000000',
+    marginBottom: SPACING.xs,
+  },
+  promoDescription: {
+    fontSize: FONTS.sizes.sm,
+    color: '#333333',
+    fontWeight: '500',
   },
 });

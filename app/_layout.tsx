@@ -4,6 +4,7 @@ import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { Provider } from 'react-redux';
 import { store } from '@/store';
+import { setUser } from '@/store/slices/authSlice';
 import { LocalizationWrapper } from '@/components/LocalizationWrapper';
 import * as SplashScreen from 'expo-splash-screen';
 import 'react-native-reanimated';
@@ -30,6 +31,13 @@ export default function RootLayout() {
   useEffect(() => {
     async function prepare() {
       try {
+        // Initialize a default user in the Redux store
+        store.dispatch(setUser({
+          id: 'default_user',
+          name: 'Guest User',
+          email: 'guest@example.com'
+        }));
+        
         // Здесь можно загрузить ресурсы
         await new Promise(resolve => setTimeout(resolve, 1000));
       } catch (e) {
