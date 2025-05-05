@@ -40,6 +40,11 @@ export const themes = {
     // Don't invert these colors
     error: '#FF4949', // Keep error color vibrant
     success: '#10B981', // Keep success color
+    
+    // Override gift backgrounds and valentine backgrounds
+    giftBackground: '#1A1A1A',
+    valentineBackground: '#1A1A1A',
+    valentineLightBackground: '#222222',
   }
 };
 

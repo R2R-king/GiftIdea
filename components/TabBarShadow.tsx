@@ -1,14 +1,22 @@
 import React from 'react';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme } from './ThemeProvider';
 
 const { width } = Dimensions.get('window');
 
 export default function TabBarShadow() {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+  
+  const gradientColors = isDark 
+    ? ['transparent', 'rgba(0,0,0,0.2)', 'rgba(0,0,0,0.5)'] as const
+    : ['transparent', 'rgba(0,0,0,0.05)', 'rgba(0,0,0,0.1)'] as const;
+    
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.05)', 'rgba(0,0,0,0.1)']}
+        colors={gradientColors}
         style={styles.gradient}
         pointerEvents="none"
       />

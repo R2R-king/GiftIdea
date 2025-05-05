@@ -7,9 +7,12 @@ import * as Animatable from 'react-native-animatable';
 import React from 'react';
 import { COLORS } from '@/constants/theme';
 import { FontAwesome, MaterialIcons } from "@expo/vector-icons";
+import { useTheme } from '@/components/ThemeProvider';
 
 export default function TabLayout() {
   const { t } = useAppLocalization();
+  const { theme, colors } = useTheme();
+  const isDark = theme === 'dark';
 
   // Кастомная анимированная иконка для табов
   const AnimatedTabIcon: React.FC<{
@@ -47,7 +50,7 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.gray400,
+        tabBarInactiveTintColor: isDark ? '#888888' : COLORS.gray400,
         tabBarStyle: {
           position: 'absolute',
           bottom: 20,
@@ -58,7 +61,7 @@ export default function TabLayout() {
           paddingBottom: Platform.OS === 'ios' ? 16 : 12,
           paddingTop: 12,
           paddingHorizontal: 16,
-          backgroundColor: 'white',
+          backgroundColor: isDark ? '#1A1A1A' : 'white',
           borderTopWidth: 0,
           elevation: 15,
           shadowColor: '#000',
@@ -68,15 +71,19 @@ export default function TabLayout() {
           overflow: 'hidden',
         },
         tabBarBackground: () => (
-          <View style={styles.tabBarBackground}>
+          <View style={[styles.tabBarBackground, { backgroundColor: isDark ? '#1A1A1A' : 'white' }]}>
             <LinearGradient
-              colors={['rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 1)']}
+              colors={isDark 
+                ? ['rgba(26, 26, 26, 0.9)', 'rgba(26, 26, 26, 1)']
+                : ['rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 1)']}
               style={StyleSheet.absoluteFill}
               start={{ x: 0, y: 0 }}
               end={{ x: 0, y: 1 }}
             />
             <LinearGradient
-              colors={[`${COLORS.primary}10`, `${COLORS.primary}05`]}
+              colors={isDark
+                ? [`${COLORS.primary}15`, `${COLORS.primary}10`]
+                : [`${COLORS.primary}10`, `${COLORS.primary}05`]}
               style={[StyleSheet.absoluteFill, styles.gradientOverlay]}
               start={{ x: 0.5, y: 0 }}
               end={{ x: 0.5, y: 1 }}
@@ -92,6 +99,7 @@ export default function TabLayout() {
           fontSize: 12,
           fontWeight: '600',
           marginTop: Platform.OS === 'ios' ? 0 : 2,
+          color: isDark ? '#E0E0E0' : undefined
         },
         headerShown: false,
         tabBarHideOnKeyboard: true,
@@ -168,7 +176,6 @@ const styles = StyleSheet.create({
   },
   tabBarBackground: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'white',
     overflow: 'hidden',
   },
   gradientOverlay: {

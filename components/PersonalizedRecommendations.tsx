@@ -6,13 +6,13 @@ import {
   FlatList, 
   Image, 
   TouchableOpacity, 
-  useColorScheme,
   ActivityIndicator 
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { SparklesIcon } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from './ThemeProvider';
 
 type Gift = {
   id: string;
@@ -27,8 +27,8 @@ export const PersonalizedRecommendations = () => {
   const [recommendations, setRecommendations] = useState<Gift[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { theme, colors } = useTheme();
+  const isDark = theme === 'dark';
   
   // Normally you would get these from Redux store
   const favorites = useSelector((state: any) => state.favorites?.items || []);
@@ -134,16 +134,16 @@ export const PersonalizedRecommendations = () => {
   
   if (loading) {
     return (
-      <View style={[styles.container, styles.loadingContainer]}>
-        <ActivityIndicator size="large" color="#2196f3" />
+      <View style={[styles.container, styles.loadingContainer, isDark && { backgroundColor: colors.primaryBackground }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
   
   if (recommendations.length === 0) {
     return (
-      <View style={[styles.container, styles.emptyContainer]}>
-        <Text style={[styles.emptyText, isDark && styles.darkText]}>
+      <View style={[styles.container, styles.emptyContainer, isDark && { backgroundColor: colors.primaryBackground }]}>
+        <Text style={[styles.emptyText, isDark && { color: colors.textSecondary }]}>
           У нас пока недостаточно данных для персонализированных рекомендаций.
           Добавьте товары в избранное или корзину для получения рекомендаций.
         </Text>
@@ -154,8 +154,8 @@ export const PersonalizedRecommendations = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <SparklesIcon color={isDark ? '#e0e0e0' : '#333'} size={20} />
-        <Text style={[styles.title, isDark && styles.darkText]}>
+        <SparklesIcon color={isDark ? colors.textPrimary : '#333'} size={20} />
+        <Text style={[styles.title, isDark && { color: colors.textPrimary }]}>
           Персональные рекомендации
         </Text>
       </View>
@@ -168,7 +168,7 @@ export const PersonalizedRecommendations = () => {
         contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={[styles.giftCard, isDark && styles.darkGiftCard]}
+            style={[styles.giftCard, isDark && { backgroundColor: colors.cardBackground }]}
             onPress={() => handleGiftPress(item.id)}
           >
             <View style={styles.imageContainer}>
@@ -180,24 +180,24 @@ export const PersonalizedRecommendations = () => {
             </View>
             
             <View style={styles.giftInfo}>
-              <Text style={[styles.giftName, isDark && styles.darkText]} numberOfLines={2}>
+              <Text style={[styles.giftName, isDark && { color: colors.textPrimary }]} numberOfLines={2}>
                 {item.name}
               </Text>
               
               <View style={styles.giftDetails}>
-                <Text style={[styles.giftCategory, isDark && styles.darkTextSecondary]}>
+                <Text style={[styles.giftCategory, isDark && { color: colors.textSecondary }]}>
                   {item.category}
                 </Text>
                 
                 <View style={styles.ratingContainer}>
-                  <Text style={[styles.ratingText, isDark && styles.darkTextSecondary]}>
+                  <Text style={[styles.ratingText, isDark && { color: colors.textSecondary }]}>
                     {item.rating.toFixed(1)}
                   </Text>
-                  <Text style={[styles.starIcon, isDark && styles.darkTextSecondary]}>★</Text>
+                  <Text style={[styles.starIcon, isDark && { color: colors.textSecondary }]}>★</Text>
                 </View>
               </View>
               
-              <Text style={[styles.giftPrice, isDark && styles.darkText]}>
+              <Text style={[styles.giftPrice, isDark && { color: colors.textPrimary }]}>
                 {formatPrice(item.price)}
               </Text>
             </View>
@@ -238,35 +238,26 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
   },
-  darkText: {
-    color: '#e0e0e0',
-  },
-  darkTextSecondary: {
-    color: '#aaa',
-  },
   listContent: {
     paddingHorizontal: 12,
     paddingBottom: 8,
   },
   giftCard: {
     width: 180,
-    backgroundColor: '#fff',
+    height: 280,
+    marginHorizontal: 8,
     borderRadius: 12,
-    marginHorizontal: 4,
+    backgroundColor: '#ffffff',
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  darkGiftCard: {
-    backgroundColor: '#2a2a2a',
+    shadowRadius: 8,
+    elevation: 4,
   },
   imageContainer: {
     width: '100%',
-    height: 120,
-    backgroundColor: '#f5f5f5',
+    height: 160,
   },
   giftImage: {
     width: '100%',
@@ -278,18 +269,20 @@ const styles = StyleSheet.create({
   },
   giftName: {
     fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 8,
+    fontWeight: '600',
+    marginBottom: 6,
     height: 40,
   },
   giftDetails: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 8,
   },
   giftCategory: {
     fontSize: 12,
     color: '#666',
+    fontWeight: '500',
   },
   ratingContainer: {
     flexDirection: 'row',
@@ -302,11 +295,11 @@ const styles = StyleSheet.create({
   },
   starIcon: {
     fontSize: 12,
-    color: '#FFC107',
+    color: '#FFB800',
   },
   giftPrice: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
 });
 

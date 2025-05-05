@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ViewStyle, useColorScheme } from 'react-native';
 import { COLORS, RADIUS, SHADOWS } from '@/constants/theme';
+import { useTheme } from './ThemeProvider';
 
 interface CardProps {
   children: React.ReactNode;
@@ -17,26 +18,29 @@ const Card: React.FC<CardProps> = ({
   elevation = 'small',
   variant = 'default',
 }) => {
+  const { theme, colors } = useTheme();
+  const isDark = theme === 'dark';
+
   const getCardStyle = () => {
     switch (variant) {
       case 'outlined':
         return {
           ...styles.card,
-          backgroundColor: COLORS.white,
+          backgroundColor: isDark ? colors.cardBackground : COLORS.white,
           borderWidth: 1,
-          borderColor: COLORS.gray200,
+          borderColor: isDark ? '#333333' : COLORS.gray200,
           ...SHADOWS[elevation],
         };
       case 'filled':
         return {
           ...styles.card,
-          backgroundColor: COLORS.valentineBackground,
+          backgroundColor: isDark ? colors.cardBackground : COLORS.valentineBackground,
           ...SHADOWS[elevation],
         };
       default:
         return {
           ...styles.card,
-          backgroundColor: COLORS.white,
+          backgroundColor: isDark ? colors.cardBackground : COLORS.white,
           ...SHADOWS[elevation],
         };
     }

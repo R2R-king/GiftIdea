@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, useColorScheme } from 'react-native';
+import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTheme } from './ThemeProvider';
 
 type CollectionType = {
   id: string;
@@ -49,8 +50,8 @@ export const ThematicCollections = ({
   onCollectionPress?: (collectionId: string, collectionName: string) => void
 }) => {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { theme, colors } = useTheme();
+  const isDark = theme === 'dark';
 
   const handleCollectionPress = (collectionId: string, collectionName: string) => {
     console.log(`Pressing collection: ${collectionId} - ${collectionName}`);
@@ -74,7 +75,7 @@ export const ThematicCollections = ({
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.title, isDark && styles.darkText]}>Тематические коллекции</Text>
+      <Text style={[styles.title, isDark && { color: colors.textPrimary }]}>Тематические коллекции</Text>
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false}
@@ -83,7 +84,10 @@ export const ThematicCollections = ({
         {collections.map((collection) => (
           <TouchableOpacity
             key={collection.id}
-            style={[styles.card, isDark && styles.darkCard]}
+            style={[
+              styles.card, 
+              isDark && { backgroundColor: colors.cardBackground }
+            ]}
             onPress={() => handleCollectionPress(collection.id, collection.title)}
             activeOpacity={0.7}
           >
@@ -93,17 +97,17 @@ export const ThematicCollections = ({
               defaultSource={require('../assets/images/placeholder.png')}
             />
             <View style={styles.infoContainer}>
-              <Text style={[styles.collectionTitle, isDark && styles.darkText]}>
+              <Text style={[styles.collectionTitle, isDark && { color: colors.textPrimary }]}>
                 {collection.title}
               </Text>
               <Text 
                 selectable={false}
                 numberOfLines={2}
-                style={[styles.description, isDark && styles.darkTextSecondary]}
+                style={[styles.description, isDark && { color: colors.textSecondary }]}
               >
                 {collection.description}
               </Text>
-              <Text style={[styles.itemCount, isDark && styles.darkText]}>
+              <Text style={[styles.itemCount, isDark && { color: colors.gray500 }]}>
                 {collection.itemCount} товаров
               </Text>
             </View>
@@ -140,9 +144,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  darkCard: {
-    backgroundColor: '#2a2a2a',
-  },
   image: {
     width: '100%',
     height: 120,
@@ -173,12 +174,6 @@ const styles = StyleSheet.create({
   itemCount: {
     fontSize: 12,
     color: '#888',
-  },
-  darkText: {
-    color: '#e0e0e0',
-  },
-  darkTextSecondary: {
-    color: '#a0a0a0',
   },
 });
 

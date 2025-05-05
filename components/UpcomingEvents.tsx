@@ -11,6 +11,7 @@ import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Calendar, Gift, Plus, Trash2 } from 'lucide-react-native';
 import { COLORS } from '@/constants/theme';
+import { useTheme } from './ThemeProvider';
 
 export type HolidayEvent = {
   id: string;
@@ -39,6 +40,8 @@ export const UpcomingEvents: React.FC<UpcomingEventsProps> = ({
   onDeleteEvent
 }) => {
   const router = useRouter();
+  const { theme, colors } = useTheme();
+  const isDark = theme === 'dark';
 
   const handleEventPress = (event: HolidayEvent) => {
     if (onEventPress) {
@@ -84,10 +87,10 @@ export const UpcomingEvents: React.FC<UpcomingEventsProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>Ближайшие мероприятия</Text>
+        <Text style={[styles.title, isDark && { color: colors.textPrimary }]}>Ближайшие мероприятия</Text>
         {showSeeAllButton && (
           <TouchableOpacity onPress={navigateToAllEvents}>
-            <Text style={styles.viewAllButton}>Все события</Text>
+            <Text style={[styles.viewAllButton, isDark && { color: colors.primary }]}>Все события</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -250,8 +253,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#FFFFFF',
-    marginBottom: 8,
-    textShadowColor: 'rgba(0,0,0,0.5)',
+    marginBottom: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
@@ -261,47 +264,42 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   eventDetail: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#FFFFFF',
     marginLeft: 4,
-    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
   daysLeftText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: '#FFFFFF',
-    backgroundColor: 'rgba(255,107,157,0.8)',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-    overflow: 'hidden',
-    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
     textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 1,
+    textShadowRadius: 2,
   },
   generateButton: {
-    marginTop: 8,
-    backgroundColor: COLORS.secondary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#6C63FF',
     paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    marginTop: 8,
   },
   generateButtonText: {
     color: '#FFFFFF',
+    fontSize: 12,
     fontWeight: '600',
-    fontSize: 14,
-    marginRight: 4,
+    marginRight: 6,
   },
   buttonIcon: {
-    marginLeft: 4,
+    marginTop: -1,
   },
   addEventCard: {
-    width: 240,
+    width: 180,
     height: 180,
     marginHorizontal: 8,
     borderRadius: 12,
@@ -313,32 +311,35 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   addEventCardGradient: {
-    flex: 1,
+    width: '100%',
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 12,
+    padding: 16,
   },
   addEventContent: {
     alignItems: 'center',
   },
   addEventIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
   },
   addEventText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#FFFFFF',
     marginBottom: 4,
+    textAlign: 'center',
   },
   addEventSubtext: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.8)',
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.8)',
+    textAlign: 'center',
   },
 });
 
