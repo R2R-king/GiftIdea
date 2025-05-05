@@ -35,19 +35,34 @@ import { StatusBar } from 'expo-status-bar';
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 60) / 2;
 
-// Обновляем цветовую палитру для нового дизайна
+// Define the theme colors - will be selected based on the current theme
 const THEME = {
-  primary: '#6C63FF',
-  primaryLight: '#8A84FF',
-  secondary: '#FF6B6B',
-  secondaryLight: '#FF8E8E',
-  background: '#F5F8FF',
-  cardBg: '#FFFFFF',
-  text: '#333333',
-  textLight: '#666666',
-  accent: '#00D2D3',
-  gradientStart: '#6C63FF',
-  gradientEnd: '#5A52E0',
+  light: {
+    primary: '#6C63FF',
+    primaryLight: '#8A84FF',
+    secondary: '#FF6B6B',
+    secondaryLight: '#FF8E8E',
+    background: '#F5F8FF',
+    cardBg: '#FFFFFF',
+    text: '#333333',
+    textLight: '#666666',
+    accent: '#00D2D3',
+    gradientStart: '#6C63FF',
+    gradientEnd: '#5A52E0',
+  },
+  dark: {
+    primary: '#6C63FF', // Keep the purple accent
+    primaryLight: '#8A84FF',
+    secondary: '#FF6B6B',
+    secondaryLight: '#FF8E8E',
+    background: '#121212', // Dark background instead of blue
+    cardBg: '#1A1A1A',
+    text: '#FFFFFF',
+    textLight: '#CCCCCC',
+    accent: '#00D2D3',
+    gradientStart: '#6C63FF',
+    gradientEnd: '#5A52E0',
+  }
 };
 
 // Иконки категорий из интернета
@@ -295,14 +310,14 @@ export default function FeedScreen() {
   // Получение стилей на основе темы
   const getThemedStyles = useCallback(() => {
     return {
-      backgroundColor: theme === 'dark' ? '#121212' : THEME.background,
-      cardBackground: theme === 'dark' ? '#1E1E1E' : THEME.cardBg,
-      textPrimary: theme === 'dark' ? '#FFFFFF' : THEME.text,
-      textSecondary: theme === 'dark' ? '#CCCCCC' : THEME.textLight,
+      backgroundColor: theme === 'dark' ? THEME.dark.background : THEME.light.background,
+      cardBackground: theme === 'dark' ? THEME.dark.cardBg : THEME.light.cardBg,
+      textPrimary: theme === 'dark' ? THEME.dark.text : THEME.light.text,
+      textSecondary: theme === 'dark' ? THEME.dark.textLight : THEME.light.textLight,
       buttonBackground: theme === 'dark' ? '#333333' : COLORS.white,
       modalBg: theme === 'dark' ? '#1E1E1E' : COLORS.white,
       inputBg: theme === 'dark' ? '#333333' : '#F1F5F9',
-      inputText: theme === 'dark' ? '#FFFFFF' : THEME.text,
+      inputText: theme === 'dark' ? THEME.dark.text : THEME.light.text,
       borderColor: theme === 'dark' ? '#333333' : '#E2E8F0',
     };
   }, [theme]);
@@ -622,30 +637,31 @@ export default function FeedScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
+    <KeyboardAvoidingView 
+      style={[styles.container, { backgroundColor: themedStyles.backgroundColor }]} 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
-      <ScrollView
-        style={[styles.container, theme === 'dark' && { backgroundColor: THEME.primary }]}
+      <StatusBar style={theme === 'dark' ? "light" : "dark"} />
+      <ScrollView 
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
         nestedScrollEnabled={true}
         bounces={true}
-        overScrollMode="always"
       >
-        {/* Обновленный заголовок с динамическим приветствием */}
-        {showGreeting && (
-          <View style={styles.newHeader}>
-            <Text style={[styles.newHeaderTitle, { color: themedStyles.textPrimary }]}>
-              {getGreetingByTime().replace('%s', 'Алексей')}
-            </Text>
-            <Text style={[styles.newHeaderSubtitle, { color: themedStyles.textSecondary }]}>
-              {t('feed.findGifts')}
-            </Text>
-          </View>
-        )}
+        {/* Приветствие */}
+        <View style={styles.newHeader}>
+          {showGreeting && (
+            <>
+              <Text style={[styles.newHeaderTitle, { color: themedStyles.textPrimary }]}>
+                {getGreetingByTime().replace('%s', 'Алексей')}
+              </Text>
+              <Text style={[styles.newHeaderSubtitle, { color: themedStyles.textSecondary }]}>
+                {t('feed.findGifts')}
+              </Text>
+            </>
+          )}
+        </View>
 
         {/* Ближайшие мероприятия - используем новый компонент */}
         <UpcomingEvents 
@@ -758,7 +774,6 @@ export default function FeedScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.background,
   },
   contentContainer: {
     paddingBottom: 120,

@@ -30,6 +30,7 @@ import {
   Edit,
   Trash2,
   Snowflake,
+  DollarSign,
 } from 'lucide-react-native';
 import { useAppLocalization } from '@/components/LocalizationWrapper';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -101,6 +102,9 @@ export default function ProfileScreen() {
       case 'settings':
         router.push('/settings' as any);
         break;
+      case 'giftCollection':
+        router.push('/gift-collection' as any);
+        break;
       default:
         // Для остальных пунктов меню
         break;
@@ -130,6 +134,11 @@ export default function ProfileScreen() {
       id: 'wishlists',
       title: t('profile.wishlists'),
       icon: Gift,
+    },
+    {
+      id: 'giftCollection',
+      title: t('profile.giftCollection'),
+      icon: DollarSign,
     },
     {
       id: 'secretSanta',

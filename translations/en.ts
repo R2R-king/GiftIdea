@@ -98,6 +98,7 @@ const translations = {
     loyalty: 'Loyalty Program',
     mapSearch: 'Map Search',
     reminders: 'Event Reminders',
+    giftCollection: 'Gift Collection',
     fullName: 'Full Name',
     email: 'Email Address',
     phone: 'Phone Number',
@@ -197,7 +198,8 @@ const translations = {
     cancel: 'Cancel',
     remove: 'Remove',
     add: 'Add',
-    save: 'Save'
+    save: 'Save',
+    error: 'Error'
   },
   secretSanta: {
     title: 'Secret Santa 2.0',
@@ -214,6 +216,43 @@ const translations = {
     selection: 'Special Selection',
     selectionDesc: 'If your recipient hasn\'t filled out a questionnaire — don\'t worry, we\'ve prepared a great selection of gift ideas for "Secret Santas".',
     getIdeas: 'Get Gift Ideas'
+  },
+  giftCollection: {
+    title: 'Gift Collection',
+    subtitle: 'Organize group gifts with friends',
+    activeFunds: 'Active Collections',
+    createNew: 'Create New Collection',
+    contribute: 'Contribute',
+    participants: 'participants',
+    until: 'Until',
+    of: 'of',
+    delete: {
+      title: 'Delete Collection',
+      message: 'Are you sure you want to delete this collection? This action cannot be undone.',
+      confirm: 'Delete',
+      cancel: 'Cancel'
+    },
+    form: {
+      title: 'Create New Collection',
+      titleLabel: 'Collection Title',
+      titlePlaceholder: 'Gift for...',
+      titleRequired: 'Collection title is required',
+      recipientLabel: 'Recipient',
+      recipientPlaceholder: 'Recipient name',
+      recipientRequired: 'Recipient name is required',
+      occasionLabel: 'Occasion',
+      occasionPlaceholder: 'Birthday, anniversary, etc.',
+      descriptionLabel: 'Description',
+      descriptionPlaceholder: 'Tell more about this collection...',
+      targetAmountLabel: 'Target Amount',
+      targetAmountPlaceholder: '5000',
+      validAmountRequired: 'Please enter a valid amount',
+      minAmountRequired: 'Minimum collection amount is 1000 rubles',
+      dueDateLabel: 'Due Date',
+      invalidDateFormat: 'Please enter a valid date',
+      dateInPast: 'Date cannot be in the past',
+      submit: 'Create Collection'
+    }
   },
   settings: {
     title: 'Settings',

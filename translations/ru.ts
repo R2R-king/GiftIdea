@@ -98,6 +98,7 @@ const translations = {
     loyalty: 'Программа лояльности',
     mapSearch: 'Поиск на карте',
     reminders: 'Напоминания о событиях',
+    giftCollection: 'Сбор на подарок',
     fullName: 'ФИО',
     email: 'Электронная почта',
     phone: 'Номер телефона',
@@ -197,7 +198,8 @@ const translations = {
     cancel: 'Отмена',
     remove: 'Удалить',
     add: 'Добавить',
-    save: 'Сохранить'
+    save: 'Сохранить',
+    error: 'Ошибка'
   },
   secretSanta: {
     title: 'Тайный Санта 2.0',
@@ -214,6 +216,43 @@ const translations = {
     selection: 'Специальная подборка',
     selectionDesc: 'Если ваш подопечный не заполнил анкету — ничего страшного, мы приготовили классную подборку идей подарков для «Тайных Сант».',
     getIdeas: 'Получить идеи подарков'
+  },
+  giftCollection: {
+    title: 'Сбор на подарок',
+    subtitle: 'Организуйте совместные подарки с друзьями',
+    activeFunds: 'Активные сборы',
+    createNew: 'Создать новый сбор',
+    contribute: 'Внести',
+    participants: 'участников',
+    until: 'До',
+    of: 'из',
+    delete: {
+      title: 'Удалить сбор',
+      message: 'Вы уверены, что хотите удалить этот сбор? Это действие нельзя отменить.',
+      confirm: 'Удалить',
+      cancel: 'Отмена'
+    },
+    form: {
+      title: 'Создание нового сбора',
+      titleLabel: 'Название сбора',
+      titlePlaceholder: 'Подарок для...',
+      titleRequired: 'Необходимо указать название сбора',
+      recipientLabel: 'Для кого сбор',
+      recipientPlaceholder: 'Имя получателя',
+      recipientRequired: 'Необходимо указать получателя',
+      occasionLabel: 'Повод',
+      occasionPlaceholder: 'День рождения, юбилей и т.д.',
+      descriptionLabel: 'Описание',
+      descriptionPlaceholder: 'Расскажите о сборе подробнее...',
+      targetAmountLabel: 'Сумма сбора',
+      targetAmountPlaceholder: '5000',
+      validAmountRequired: 'Необходимо указать корректную сумму',
+      minAmountRequired: 'Минимальная сумма сбора - 1000 рублей',
+      dueDateLabel: 'Дата окончания сбора',
+      invalidDateFormat: 'Пожалуйста, введите корректную дату',
+      dateInPast: 'Дата не может быть в прошлом',
+      submit: 'Создать сбор'
+    }
   },
   settings: {
     title: 'Настройки',
