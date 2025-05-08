@@ -1,13 +1,14 @@
 import { Tabs } from 'expo-router';
-import { Home, Gift, User, ShoppingCart, Heart, List } from 'lucide-react-native';
+import { Home, User, ShoppingCart, List, MessageSquare } from 'lucide-react-native';
 import { useAppLocalization } from '@/components/LocalizationWrapper';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet, Platform, TouchableOpacity, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Animatable from 'react-native-animatable';
 import React from 'react';
 import { COLORS } from '@/constants/theme';
 import { FontAwesome, MaterialIcons } from "@expo/vector-icons";
 import { useTheme } from '@/components/ThemeProvider';
+import { router } from 'expo-router';
 
 export default function TabLayout() {
   const { t } = useAppLocalization();
@@ -45,6 +46,31 @@ export default function TabLayout() {
       </Animatable.View>
     );
   };
+
+  // Кнопка чата GigaChat посередине
+  const ChatButton = () => (
+    <TouchableOpacity
+      style={[
+        styles.chatButton,
+        { borderColor: isDark ? '#1A1A1A' : 'white', backgroundColor: 'white' }
+      ]}
+      activeOpacity={0.8}
+      onPress={() => router.push('/gift-assistant')}
+    >
+      <Animatable.View
+        animation="pulse"
+        iterationCount="infinite"
+        duration={2000}
+        style={styles.iconWrapper}
+      >
+        <Image 
+          source={require('@/assets/icons/svg/gift-icon.jpg')} 
+          style={styles.giftIcon} 
+          resizeMode="contain"
+        />
+      </Animatable.View>
+    </TouchableOpacity>
+  );
 
   return (
     <Tabs
@@ -123,13 +149,12 @@ export default function TabLayout() {
           ),
         }}
       />
+      {/* GigaChat Screen */}
       <Tabs.Screen
-        name="favorites"
+        name="giga-chat"
         options={{
-          title: t('tabs.favorites'),
-          tabBarIcon: ({ color, focused }) => (
-            <AnimatedTabIcon focused={focused} Icon={Heart} color={color} />
-          ),
+          title: '',
+          tabBarButton: () => <ChatButton />,
         }}
       />
       <Tabs.Screen
@@ -181,5 +206,33 @@ const styles = StyleSheet.create({
   gradientOverlay: {
     opacity: 0.5,
     borderRadius: 40,
+  },
+  chatButton: {
+    position: 'absolute',
+    bottom: 8,
+    alignSelf: 'center',
+    width: 56,
+    height: 40,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 8,
+    borderWidth: 3,
+  },
+  iconWrapper: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  giftIcon: {
+    width: 55,
+    height: 55,
   },
 });

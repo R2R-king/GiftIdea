@@ -108,6 +108,14 @@ function ThemedLayout() {
                 animationDuration: 300,
               }} 
             />
+            <Stack.Screen 
+              name="favorites" 
+              options={{ 
+                headerShown: false, 
+                animation: 'slide_from_right',
+                animationDuration: 300,
+              }} 
+            />
           </Stack>
         </View>
       </GestureHandlerRootView>

@@ -13,7 +13,6 @@ import {
 } from 'react-native';
 import { 
   User, 
-  Heart, 
   ShoppingBag, 
   CreditCard, 
   MapPin, 
@@ -31,6 +30,7 @@ import {
   Trash2,
   Snowflake,
   DollarSign,
+  Heart,
 } from 'lucide-react-native';
 import { useAppLocalization } from '@/components/LocalizationWrapper';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -88,7 +88,7 @@ export default function ProfileScreen() {
         handleLogout();
         break;
       case 'favorites':
-        router.push('/(tabs)/favorites');
+        router.push('/favorites');
         break;
       case 'orders':
         // Пока не реализовано

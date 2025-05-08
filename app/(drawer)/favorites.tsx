@@ -4,9 +4,9 @@ import { useAppLocalization } from '@/components/LocalizationWrapper';
 import { router, Redirect } from 'expo-router';
 
 // Import the original favorites screen component
-import FavoritesScreen from '@/app/(tabs)/favorites';
+import FavoritesScreen from '@/app/favorites';
 
 export default function DrawerFavorites() {
-  // Redirect to tabs navigation
-  return <Redirect href="/(tabs)/favorites" />;
+  // Redirect to the new favorites screen
+  return <Redirect href="/favorites" />;
 } 
