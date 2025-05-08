@@ -25,6 +25,7 @@ import { useCart } from '@/hooks/useCart';
 import { useWishlists, WishlistItem } from '@/hooks/useWishlists';
 import { useTheme } from '@/components/ThemeProvider';
 import { StatusBar } from 'expo-status-bar';
+import giftService from '@/services/giftService';
 
 const { width, height } = Dimensions.get('window');
 
@@ -50,10 +51,15 @@ export default function ProductDetailScreen() {
   } = useWishlists();
   
   const [selectedVolume, setSelectedVolume] = useState('150 мл');
-  const [price, setPrice] = useState('3 800 ₽');
+  const [price, setPrice] = useState('');
   const [wishlistModalVisible, setWishlistModalVisible] = useState(false);
   const [createWishlistModalVisible, setCreateWishlistModalVisible] = useState(false);
   const [newWishlistName, setNewWishlistName] = useState('');
+  
+  // Добавляем состояния для работы с API
+  const [product, setProduct] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   // Получение стилей на основе темы
   const getThemedStyles = useCallback(() => {
@@ -79,21 +85,71 @@ export default function ProductDetailScreen() {
 
   const themedStyles = getThemedStyles();
   
-  // Найти продукт по ID из локализованных данных
-  const product = localizedData.products.find(p => p.id === productId) || localizedData.products[0];
+  // Загрузка данных о товаре из бэкенда
+  useEffect(() => {
+    loadProductData();
+  }, [productId]);
+  
+  // Функция для загрузки данных о товаре из бэкенда
+  const loadProductData = async () => {
+    if (!productId) {
+      setError('ID товара не указан');
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Преобразуем строковый ID в числовой для запроса к API
+      const numericId = parseInt(productId as string);
+      
+      if (isNaN(numericId)) {
+        throw new Error('Некорректный ID товара');
+      }
+      
+      // Получаем данные о товаре из Java-бэкенда
+      const giftData = await giftService.getGiftById(numericId);
+      
+      // Конвертируем в формат продукта для фронтенда
+      const productData = giftService.convertToProductFormat(giftData);
+      
+      setProduct(productData);
+      setPrice(productData.price);
+    } catch (error) {
+      console.error('Ошибка при загрузке данных о товаре:', error);
+      setError('Не удалось загрузить информацию о товаре');
+      
+      // В случае ошибки пытаемся найти продукт в моковых данных как запасной вариант
+      const fallbackProduct = localizedData.products.find(p => p.id === productId) || localizedData.products[0];
+      setProduct(fallbackProduct);
+      setPrice(fallbackProduct.price);
+    } finally {
+      setLoading(false);
+    }
+  };
   
   // Проверяем, находится ли товар в любом вишлисте
-  const isInWishlist = isItemInAnyWishlist(product.id);
-  
-  // Обновить цену при изменении продукта
-  useEffect(() => {
-    if (product) {
-      setPrice(product.price);
-    }
-  }, [product]);
+  const isInWishlist = product ? isItemInAnyWishlist(product.id) : false;
   
   const handleToggleFavorite = () => {
-    toggleFavorite(product);
+    if (product) {
+      // Вызываем API для изменения статуса в бэкенде
+      try {
+        const numericId = parseInt(product.id);
+        if (!isNaN(numericId)) {
+          giftService.toggleFavorite(numericId).catch(err => 
+            console.error('Ошибка при изменении статуса избранного в бэкенде:', err)
+          );
+        }
+      } catch (error) {
+        console.error('Ошибка при обработке ID товара:', error);
+      }
+      
+      // Обновляем локальное состояние
+      toggleFavorite(product);
+    }
   };
   
   const handleVolumeChange = (volume: string) => {
@@ -107,6 +163,8 @@ export default function ProductDetailScreen() {
 
   // Функция для добавления товара в корзину
   const handleAddToCart = () => {
+    if (!product) return;
+    
     try {
       // Преобразование цены из строки в число
       const numericPrice = parseFloat(price.replace(/\s+/g, '').replace('₽', '').replace(',', '.'));
@@ -142,6 +200,8 @@ export default function ProductDetailScreen() {
 
   // Функция для добавления товара в вишлист
   const handleAddToWishlist = (wishlistId: string) => {
+    if (!product) return;
+    
     // Создаем объект с данными о товаре для вишлиста
     const wishlistItem: WishlistItem = {
       id: Date.now().toString(),
@@ -279,6 +339,36 @@ export default function ProductDetailScreen() {
     );
   };
 
+  // Рендер компонента загрузки
+  const renderLoading = () => (
+    <View style={[styles.loadingContainer, { backgroundColor: themedStyles.backgroundColor }]}>
+      <ActivityIndicator size="large" color="#6C63FF" />
+      <Text style={[styles.loadingText, { color: themedStyles.textSecondary }]}>
+        Загрузка информации о товаре...
+      </Text>
+    </View>
+  );
+  
+  // Рендер компонента ошибки
+  const renderError = () => (
+    <View style={[styles.errorContainer, { backgroundColor: themedStyles.backgroundColor }]}>
+      <Text style={[styles.errorText, { color: '#FF6B6B' }]}>
+        {error}
+      </Text>
+      <TouchableOpacity 
+        style={styles.retryButton}
+        onPress={loadProductData}
+      >
+        <Text style={styles.retryButtonText}>Повторить</Text>
+      </TouchableOpacity>
+    </View>
+  );
+  
+  // Если данные загружаются или произошла ошибка
+  if (loading) return renderLoading();
+  if (error && !product) return renderError();
+  if (!product) return null;
+  
   return (
     <View style={[styles.container, {backgroundColor: themedStyles.backgroundColor}]}>
       <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
@@ -860,5 +950,35 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '600',
     fontSize: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#64748B',
+    marginTop: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#FF6B6B',
+    marginBottom: 16,
+  },
+  retryButton: {
+    padding: 16,
+    borderRadius: 8,
+    backgroundColor: '#6C63FF',
+  },
+  retryButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 }); 

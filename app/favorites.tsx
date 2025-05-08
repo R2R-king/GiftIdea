@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,6 @@ import {
   Platform,
   FlatList,
   Image,
-  ScrollView,
 } from 'react-native';
 import { useAppLocalization } from '@/components/LocalizationWrapper';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -16,62 +15,44 @@ import { router } from 'expo-router';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
 import { useTheme } from '@/components/ThemeProvider';
 import { Heart, ShoppingCart, ChevronLeft, Share2, Trash2 } from 'lucide-react-native';
+import { useFavorites } from '@/hooks/useFavorites';
+import { useCart } from '@/hooks/useCart';
 
-// Моковые данные для избранных товаров
-const FAVORITES_DATA = [
-  {
-    id: '1',
-    name: 'Букет розовых роз',
-    price: '2500₽',
-    image: 'https://images.unsplash.com/photo-1520006403909-838d6b92c22e?w=500',
-    discount: '15%',
-  },
-  {
-    id: '2',
-    name: 'Набор шоколадных конфет "Люкс"',
-    price: '1800₽',
-    image: 'https://images.unsplash.com/photo-1549007994-cb92caebd54b?w=500',
-  },
-  {
-    id: '3',
-    name: 'Подарочная коробка "Сюрприз"',
-    price: '3200₽',
-    image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=500',
-    discount: '20%',
-  },
-  {
-    id: '4',
-    name: 'Плюшевый мишка (большой)',
-    price: '1950₽',
-    image: 'https://images.unsplash.com/photo-1569587112025-0d460e81a126?w=500',
-  },
-];
+interface FavoriteItem {
+  id: string;
+  name: string;
+  price: string;
+  image: string;
+  rating: number;
+  location: string;
+}
 
 export default function FavoritesScreen() {
   const { t } = useAppLocalization();
-  const { theme, colors } = useTheme();
-  const [favorites, setFavorites] = useState(FAVORITES_DATA);
+  const { theme } = useTheme();
+  const { favoriteItems, removeFavorite } = useFavorites();
+  const { addItem } = useCart();
   
   const isDark = theme === 'dark';
   
-  const handleRemoveFromFavorites = (id) => {
-    setFavorites(favorites.filter(item => item.id !== id));
+  const handleRemoveFromFavorites = (id: string) => {
+    removeFavorite(id);
   };
   
-  const handleAddToCart = (id) => {
-    // В реальном приложении здесь будет логика добавления в корзину
-    console.log('Добавлено в корзину:', id);
+  const handleAddToCart = (item: FavoriteItem) => {
+    addItem({
+      id: item.id,
+      name: item.name,
+      price: parseFloat(item.price),
+      image: item.image,
+      quantity: 1
+    });
   };
   
-  const renderFavoriteItem = ({ item }) => (
+  const renderFavoriteItem = ({ item }: { item: FavoriteItem }) => (
     <View style={[styles.favoriteCard, { backgroundColor: isDark ? '#1E1E1E' : COLORS.white }]}>
       <View style={styles.favoriteImageContainer}>
         <Image source={{ uri: item.image }} style={styles.favoriteImage} />
-        {item.discount && (
-          <View style={styles.discountBadge}>
-            <Text style={styles.discountText}>{item.discount}</Text>
-          </View>
-        )}
       </View>
       
       <View style={styles.favoriteInfo}>
@@ -79,13 +60,13 @@ export default function FavoritesScreen() {
           {item.name}
         </Text>
         <Text style={[styles.favoritePrice, { color: isDark ? COLORS.primary : COLORS.primary }]}>
-          {item.price}
+          {item.price} ₽
         </Text>
         
         <View style={styles.favoriteActions}>
           <TouchableOpacity
             style={[styles.favoriteActionButton, { backgroundColor: isDark ? 'rgba(255, 107, 157, 0.15)' : `${COLORS.primary}15` }]}
-            onPress={() => handleAddToCart(item.id)}
+            onPress={() => handleAddToCart(item)}
           >
             <ShoppingCart size={18} color={COLORS.primary} />
           </TouchableOpacity>
@@ -112,17 +93,17 @@ export default function FavoritesScreen() {
     <View style={styles.emptyContainer}>
       <Heart size={60} color={COLORS.primary} style={{ opacity: 0.5 }} />
       <Text style={[styles.emptyTitle, { color: isDark ? '#FFFFFF' : COLORS.gray800 }]}>
-        {t('favorites.emptyTitle')}
+        {t('favorites.empty')}
       </Text>
       <Text style={[styles.emptySubtitle, { color: isDark ? '#CCCCCC' : COLORS.gray600 }]}>
-        {t('favorites.emptyDescription')}
+        {t('favorites.emptyDesc')}
       </Text>
       <TouchableOpacity
         style={styles.exploreCatalogButton}
         onPress={() => router.push('/(tabs)/catalog')}
       >
         <Text style={styles.exploreCatalogButtonText}>
-          {t('favorites.exploreCatalog')}
+          {t('favorites.browse')}
         </Text>
       </TouchableOpacity>
     </View>
@@ -132,7 +113,6 @@ export default function FavoritesScreen() {
     <View style={[styles.container, { backgroundColor: isDark ? '#121212' : COLORS.white }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       
-      {/* Фоновые элементы */}
       <LinearGradient
         colors={[isDark ? '#121212' : COLORS.primaryBackground, isDark ? '#121212' : COLORS.white]}
         style={styles.backgroundGradient}
@@ -140,7 +120,6 @@ export default function FavoritesScreen() {
         end={{ x: 1, y: 1 }}
       />
       
-      {/* Заголовок */}
       <LinearGradient
         colors={[COLORS.primary, COLORS.primaryLight]}
         style={styles.header}
@@ -160,18 +139,17 @@ export default function FavoritesScreen() {
               {t('favorites.title')}
             </Text>
             <Text style={styles.headerSubtitle}>
-              {favorites.length > 0 
-                ? t('favorites.itemsCount', { count: favorites.length }) 
-                : t('favorites.noItems')}
+              {favoriteItems.length > 0 
+                ? t('favorites.subtitle', { count: favoriteItems.length }) 
+                : t('favorites.empty')}
             </Text>
           </View>
         </View>
       </LinearGradient>
 
-      {/* Список избранных товаров */}
-      {favorites.length > 0 ? (
+      {favoriteItems.length > 0 ? (
         <FlatList
-          data={favorites}
+          data={favoriteItems}
           renderItem={renderFavoriteItem}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.favoritesList}

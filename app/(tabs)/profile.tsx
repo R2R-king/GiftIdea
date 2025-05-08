@@ -41,6 +41,7 @@ import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
 import { useSelector } from 'react-redux';
 import { store } from '@/store';
 import { useTheme } from '@/components/ThemeProvider';
+import { useFavorites } from '@/hooks/useFavorites';
 
 // Define RootState type based on the store
 type RootState = ReturnType<typeof store.getState>;
@@ -62,6 +63,7 @@ export default function ProfileScreen() {
   const { t, locale, setLocale } = useAppLocalization();
   const { user } = useSelector((state: RootState) => state.auth);
   const { colors, theme } = useTheme();
+  const { favoriteItems } = useFavorites();
 
   const toggleLanguage = () => {
     setLocale(locale === 'en' ? 'ru' : 'en');
@@ -128,7 +130,7 @@ export default function ProfileScreen() {
       id: 'favorites',
       title: t('profile.favorites'),
       icon: Heart,
-      count: 12,
+      count: favoriteItems.length,
     },
     {
       id: 'wishlists',

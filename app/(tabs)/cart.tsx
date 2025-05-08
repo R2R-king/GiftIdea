@@ -250,7 +250,9 @@ export default function CartScreen() {
               >
                 <Text style={[styles.quantityButtonText, {color: themedStyles.quantityTextColor}]}>-</Text>
               </TouchableOpacity>
+              
               <Text style={[styles.quantityText, {color: themedStyles.textPrimary}]}>{item.quantity}</Text>
+              
               <TouchableOpacity 
                 style={[styles.quantityButton, {backgroundColor: themedStyles.quantityBg}]}
                 onPress={() => increaseQuantity(item.id)}
@@ -261,15 +263,20 @@ export default function CartScreen() {
             
             <View style={styles.actionButtons}>
               <TouchableOpacity 
-                style={styles.saveButton}
+                style={[styles.favoriteButton, { 
+                  backgroundColor: isFavorite(item.id) ? 
+                    (theme === 'dark' ? 'rgba(255, 107, 157, 0.3)' : `${COLORS.primary}30`) : 
+                    (theme === 'dark' ? '#333333' : COLORS.gray100)
+                }]}
                 onPress={() => handleToggleFavorite(item)}
               >
                 <Heart 
                   size={18} 
-                  color={COLORS.primary} 
+                  color={COLORS.primary}
                   fill={isFavorite(item.id) ? COLORS.primary : 'transparent'}
                 />
               </TouchableOpacity>
+              
               <TouchableOpacity 
                 style={[styles.removeButton, {backgroundColor: themedStyles.removeBtnBg}]}
                 onPress={() => handleRemoveItem(item.id)}
@@ -281,7 +288,7 @@ export default function CartScreen() {
         </View>
       </View>
     );
-  }, [decreaseQuantity, increaseQuantity, handleRemoveItem, handleToggleFavorite, isFavorite, themedStyles]);
+  }, [decreaseQuantity, increaseQuantity, handleRemoveItem, handleToggleFavorite, isFavorite, themedStyles, theme]);
 
   // Отображаем пустое состояние корзины, если нет товаров
   const renderEmptyCart = useCallback(() => {
@@ -564,13 +571,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: SPACING.sm,
   },
-  saveButton: {
-    width: 36,
-    height: 36,
-    borderRadius: RADIUS.full,
-    backgroundColor: COLORS.primaryLight,
+  favoriteButton: {
+    width: 40,
+    height: 40,
+    borderRadius: RADIUS.md,
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: SPACING.sm,
   },
   removeButton: {
     width: 36,

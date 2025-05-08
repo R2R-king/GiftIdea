@@ -1,4 +1,3 @@
 @echo off
-echo Starting GiftIdea Backend Server...
-node src/index.js
-pause 
+echo Starting GiftIdea backend...
+mvnw.cmd spring-boot:run 

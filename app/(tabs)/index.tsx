@@ -685,8 +685,6 @@ export default function FeedScreen() {
 
         {/* Персонализированные рекомендации */}
         <PersonalizedRecommendations />
-        
-        {/* Другие секции контента */}
       </ScrollView>
       
       {/* Модальное окно для создания события */}
