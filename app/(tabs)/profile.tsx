@@ -35,7 +35,7 @@ import {
 import { useAppLocalization } from '@/components/LocalizationWrapper';
 import { LinearGradient } from 'expo-linear-gradient';
 import TabBarShadow from '@/components/TabBarShadow';
-import ThemeToggle from '@/components/ThemeToggle';
+
 import { router } from 'expo-router';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
 import { useSelector } from 'react-redux';
@@ -161,23 +161,11 @@ export default function ProfileScreen() {
       icon: CalendarClock,
     },
     {
-      id: 'notifications',
-      title: t('profile.notifications'),
-      icon: Bell,
-      hasToggle: true,
-      isEnabled: true,
-    },
-    {
       id: 'help',
       title: t('profile.help'),
       icon: HelpCircle,
     },
-    {
-      id: 'logout',
-      title: t('profile.logout'),
-      icon: LogOut,
-      isDanger: true,
-    },
+    
   ];
 
   const renderMenuItem = (option: MenuOption) => (
