@@ -779,7 +779,7 @@ const styles = StyleSheet.create({
   newHeader: {
     paddingHorizontal: 16,
     paddingVertical: 16,
-    marginTop: 8,
+    marginTop: 40,
   },
   newHeaderTitle: {
     fontSize: 24,
