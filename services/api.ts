@@ -1,4 +1,8 @@
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Ключ для хранения токена
+const TOKEN_KEY = 'auth_token';
 
 // Базовый URL бэкенда в зависимости от платформы
 // Android - используем 10.0.2.2, т.к. localhost в эмуляторе Android указывает на сам эмулятор
@@ -17,12 +21,26 @@ class ApiClient {
     this.baseUrl = getBaseUrl();
   }
 
+  // Получение токена авторизации из AsyncStorage
+  private async getAuthToken(): Promise<string | null> {
+    try {
+      return await AsyncStorage.getItem(TOKEN_KEY);
+    } catch (error) {
+      console.error('Ошибка при получении токена:', error);
+      return null;
+    }
+  }
+
   // Общий метод для выполнения запросов
   async request(endpoint: string, options: RequestInit = {}) {
     const url = `${this.baseUrl}${endpoint}`;
     
+    // Получаем токен для авторизированных запросов
+    const token = await this.getAuthToken();
+    
     const headers = {
       'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       ...options.headers,
     };
 

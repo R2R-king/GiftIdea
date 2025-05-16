@@ -10,6 +10,7 @@ import {
   StatusBar,
   Dimensions,
   Switch,
+  Alert,
 } from 'react-native';
 import { 
   User, 
@@ -38,10 +39,12 @@ import TabBarShadow from '@/components/TabBarShadow';
 
 import { router } from 'expo-router';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { store } from '@/store';
 import { useTheme } from '@/components/ThemeProvider';
 import { useFavorites } from '@/hooks/useFavorites';
+import { logout } from '../../store/slices/authSlice';
+import authService from '../../services/authService';
 
 // Define RootState type based on the store
 type RootState = ReturnType<typeof store.getState>;
@@ -61,17 +64,29 @@ interface MenuOption {
 
 export default function ProfileScreen() {
   const { t, locale, setLocale } = useAppLocalization();
-  const { user } = useSelector((state: RootState) => state.auth);
+  const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
   const { colors, theme } = useTheme();
   const { favoriteItems } = useFavorites();
+  const dispatch = useDispatch();
 
   const toggleLanguage = () => {
     setLocale(locale === 'en' ? 'ru' : 'en');
   };
 
-  const handleLogout = () => {
-    // TODO: Implement actual logout logic
-    router.replace('/login');
+  const handleLogout = async () => {
+    try {
+      // Очищаем данные пользователя в сервисе авторизации
+      await authService.logout();
+      
+      // Очищаем состояние Redux
+      dispatch(logout());
+      
+      // Перенаправляем на экран входа
+      router.replace('/login');
+    } catch (error) {
+      console.error('Ошибка при выходе:', error);
+      Alert.alert('Ошибка', 'Не удалось выйти из аккаунта');
+    }
   };
 
   const handleMenuOptionPress = (id: string) => {
@@ -167,7 +182,12 @@ export default function ProfileScreen() {
       title: t('profile.help'),
       icon: HelpCircle,
     },
-    
+    {
+      id: 'logout',
+      title: t('profile.logout') || 'Выйти',
+      icon: LogOut,
+      isDanger: true,
+    },
   ];
 
   const renderMenuItem = (option: MenuOption) => (

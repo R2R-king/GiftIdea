@@ -8,10 +8,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export default function GiftPromoScreen() {
   const insets = useSafeAreaInsets();
   
-  // Функция для перехода к основному приложению после окончания promo
+  // Функция для перехода к экрану авторизации после окончания promo
   const handleFinishPromo = () => {
-    console.log("Переход к основному приложению!");
-    router.replace('/(tabs)');
+    console.log("Переход к экрану авторизации!");
+    router.replace('/login');
   };
 
   return (

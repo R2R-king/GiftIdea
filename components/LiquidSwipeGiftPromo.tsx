@@ -73,10 +73,10 @@ const LiquidSwipeGiftPromo = ({ onFinish }: LiquidSwipeGiftPromoProps) => {
       onFinish();
     } else {
       try {
-        router.replace('/(tabs)');
+        router.replace('/login');
       } catch (error) {
         // Fallback for when testing - instead of navigation, just show an alert
-        Alert.alert("Готово!", "Переход к основному приложению");
+        Alert.alert("Готово!", "Переход к экрану авторизации");
       }
     }
   };
