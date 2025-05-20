@@ -31,6 +31,8 @@ import PersonalizedRecommendations from '@/components/PersonalizedRecommendation
 import UpcomingEvents from '@/components/UpcomingEvents';
 import { useTheme } from '@/components/ThemeProvider';
 import { StatusBar } from 'expo-status-bar';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 60) / 2;
@@ -284,9 +286,10 @@ const updateDaysLeft = (event: HolidayEvent): HolidayEvent => {
 };
 
 export default function FeedScreen() {
-  const { t, localizedData } = useAppLocalization();
+  const { user } = useSelector((state: RootState) => state.auth);
+  const { t, locale, localizedData } = useAppLocalization();
+  const { colors, theme } = useTheme();
   const { events } = localizedData;
-  const { theme } = useTheme();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [favorites, setFavorites] = useState<{[key: string]: boolean}>({
     '2': true, // Teddy Bear предустановлен как избранный
@@ -654,7 +657,7 @@ export default function FeedScreen() {
           {showGreeting && (
             <>
               <Text style={[styles.newHeaderTitle, { color: themedStyles.textPrimary }]}>
-                {getGreetingByTime().replace('%s', 'Алексей')}
+                {getGreetingByTime().replace('%s', user?.name || t('profile.guestUser'))}
               </Text>
               <Text style={[styles.newHeaderSubtitle, { color: themedStyles.textSecondary }]}>
                 {t('feed.findGifts')}

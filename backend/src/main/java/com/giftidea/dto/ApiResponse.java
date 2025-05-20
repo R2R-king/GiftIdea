@@ -8,9 +8,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ApiResponse<T> {
-    private String result;    // SUCCESS or ERROR
-    private String message;   // success or error message
-    private T data;           // return object from service class, if successful
+    private String result;    // SUCCESS или ERROR
+    private String message;   // сообщение об успехе или ошибке
+    private T data;           // возвращаемый объект от сервиса, если успешно
     
     public static <T> ApiResponse<T> success(String message, T data) {
         return new ApiResponse<>("SUCCESS", message, data);
