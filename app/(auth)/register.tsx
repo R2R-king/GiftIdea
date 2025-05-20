@@ -6,7 +6,7 @@ import { useDispatch } from 'react-redux';
 import { setUser } from '../../store/slices/authSlice';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, FONTS, RADIUS, SHADOWS, SPACING } from '../../constants/theme';
-import { User, Mail, Lock } from 'lucide-react-native';
+import { User, Mail, Lock, Eye, EyeOff } from 'lucide-react-native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -15,6 +15,7 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const dispatch = useDispatch();
   
   // Animated values
@@ -310,8 +311,15 @@ export default function RegisterScreen() {
                 placeholderTextColor={COLORS.gray400}
                 value={password}
                 onChangeText={setPassword}
-                secureTextEntry
+                secureTextEntry={!showPassword}
               />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+                {showPassword ? (
+                  <EyeOff size={20} color={COLORS.gray500} />
+                ) : (
+                  <Eye size={20} color={COLORS.gray500} />
+                )}
+              </TouchableOpacity>
             </Animated.View>
 
             <Text style={styles.passwordRequirement}>
@@ -477,5 +485,11 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontSize: FONTS.sizes.lg,
     fontWeight: FONTS.weights.semibold,
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: SPACING.md,
+    top: '50%',
+    transform: [{ translateY: -10 }],
   },
 });
