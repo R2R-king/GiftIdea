@@ -15,9 +15,10 @@ import {
   TextInput,
   ActivityIndicator,
   Share,
+  Linking,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ChevronLeft, Heart, ShoppingBag, Gift, Plus, Check, X } from 'lucide-react-native';
+import { ChevronLeft, Heart, ShoppingBag, Gift, Plus, Check, X, ExternalLink } from 'lucide-react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useAppLocalization } from '@/components/LocalizationWrapper';
@@ -508,6 +509,22 @@ export default function ProductDetailScreen() {
             <View style={styles.bottomPadding} />
           </View>
         </View>
+        
+        {product && product.storeLinks && product.storeLinks.length > 0 && (
+          <View style={styles.storeLinksContainer}>
+            <Text style={styles.storeLinksTitle}>Где купить:</Text>
+            {product.storeLinks.map((link, index) => (
+              <TouchableOpacity 
+                key={`store-${index}`}
+                style={styles.storeLinkButton}
+                onPress={() => Linking.openURL(link.url)}
+              >
+                <ExternalLink size={18} color={themedStyles.textSecondary} />
+                <Text style={styles.storeLinkText}>{link.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </ScrollView>
       
       {/* Фиксированные кнопки действий внизу экрана */}
@@ -980,5 +997,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+  storeLinksContainer: {
+    marginTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#EFEFEF',
+    paddingTop: 20,
+  },
+  storeLinksTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 10,
+  },
+  storeLinkButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    marginBottom: 10,
+  },
+  storeLinkText: {
+    fontSize: 16,
+    color: '#64748B',
+    marginLeft: 10,
+    fontWeight: '500',
   },
 }); 

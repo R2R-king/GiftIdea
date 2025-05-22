@@ -14,15 +14,18 @@ import {
   Keyboard,
   Dimensions,
   TouchableWithoutFeedback,
+  Image,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ArrowLeft, Send, Gift, RefreshCw } from 'lucide-react-native';
+import { ArrowLeft, Send, Gift, RefreshCw, ShoppingCart } from 'lucide-react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
 import gigaChatService, { GigaChatMessage } from '@/lib/gigachat-service';
 import { v4 as uuidv4 } from 'uuid';
 import textFormatter, { formatTextForDisplay } from '@/lib/text-formatter';
+import { productService } from '@/lib/product-service';
+import { Product } from '@/types/product';
 
 const { STYLE_MARKER } = textFormatter;
 
@@ -31,6 +34,7 @@ type MessageType = {
   text: string;
   isUser: boolean;
   timestamp: Date;
+  products?: Product[];
 };
 
 export default function GiftAssistantScreen() {
@@ -49,6 +53,8 @@ export default function GiftAssistantScreen() {
   const flatListRef = useRef<FlatList>(null);
   const lastMessageRef = useRef<GigaChatMessage[]>([]);
   const initialPromptRef = useRef<boolean>(true);
+  const [suggestedProducts, setSuggestedProducts] = useState<Product[]>([]);
+  const [isSearchingProducts, setIsSearchingProducts] = useState(false);
 
   // Initialize chat with welcome message
   useEffect(() => {
@@ -143,7 +149,24 @@ export default function GiftAssistantScreen() {
     // Add system message to guide the AI
     const systemMessage: GigaChatMessage = {
       role: 'system',
-      content: 'Ты — помощник по выбору подарков. Твоя задача — помочь пользователю подобрать идеальный подарок. Проанализируй первое сообщение пользователя и извлеки из него информацию о поле, возрасте, увлечениях и поводе для подарка. Не спрашивай информацию, которую пользователь уже предоставил. Задавай только уточняющие вопросы об информации, которая еще не была предоставлена: возраст, пол, увлечения, повод для подарка, бюджет. На основе полученной информации предлагай конкретные идеи подарков. Отвечай кратко и информативно. Используй дружелюбный тон. Предлагай несколько вариантов подарков с разными ценовыми категориями.'
+      content: `Ты — помощник по выбору подарков. Твоя задача — помочь пользователю подобрать идеальный подарок. 
+      Проанализируй запрос пользователя и извлеки информацию о поле, возрасте, увлечениях и поводе для подарка. 
+      
+      ОЧЕНЬ ВАЖНО! Когда ты предлагаешь подарок, ОБЯЗАТЕЛЬНО используй специальный формат КАЖДЫЙ раз:
+      [PRODUCT]точное название подарка с моделью[/PRODUCT]
+      [PRICE]точная цена в рублях, только число[/PRICE]
+      [DESCRIPTION]подробное описание, 2-3 предложения[/DESCRIPTION]
+      [CATEGORY]точная категория товара[/CATEGORY]
+      
+      Пример правильного форматирования:
+      [PRODUCT]Sony WH-1000XM4[/PRODUCT]
+      [PRICE]18990[/PRICE]
+      [DESCRIPTION]Беспроводные наушники премиум-класса с активным шумоподавлением. Обеспечивают великолепное звучание и до 30 часов работы от аккумулятора.[/DESCRIPTION]
+      [CATEGORY]Наушники[/CATEGORY]
+      
+      Предлагай 2-4 подарка, каждый с ТАКИМ форматированием, это ОБЯЗАТЕЛЬНО!
+      Не пиши "например," перед [PRODUCT].
+      Используй подробные конкретные названия товаров, которые есть в продаже.`
     };
 
     // Convert app messages to GigaChat format
@@ -195,9 +218,178 @@ export default function GiftAssistantScreen() {
     }, 1000);
   };
 
-  // Функция для безопасного добавления сообщения
+  // Функция для извлечения всех товаров из текста - улучшенная версия
+  const extractAllProductsInfo = (text: string) => {
+    console.log("Анализирую текст на наличие товаров...");
+    
+    try {
+      // Улучшенное регулярное выражение для более надежного извлечения
+      const regex = /\[PRODUCT\]([\s\S]*?)\[\/PRODUCT\][\s\S]*?\[PRICE\]([\s\S]*?)\[\/PRICE\][\s\S]*?\[DESCRIPTION\]([\s\S]*?)\[\/DESCRIPTION\][\s\S]*?\[CATEGORY\]([\s\S]*?)\[\/CATEGORY\]/g;
+      
+      const products = [];
+      let match;
+      
+      // Находим все блоки товаров в тексте
+      while ((match = regex.exec(text)) !== null) {
+        const name = match[1]?.trim();
+        const priceText = match[2]?.trim();
+        const description = match[3]?.trim();
+        const category = match[4]?.trim();
+        
+        // Извлекаем число из строки с ценой
+        let price = 0;
+        const priceMatch = priceText?.match(/\d+/);
+        if (priceMatch) {
+          price = parseFloat(priceMatch[0]);
+        }
+
+        console.log(`Найден товар: ${name}, цена: ${price}`);
+        
+        if (name && price && description && category) {
+          // Генерируем ссылки на магазины
+          const storeLinks = generateStoreLinks(name);
+          
+          products.push({
+            name,
+            price,
+            description,
+            category,
+            storeLinks,
+            // Генерируем URL изображения на основе названия товара
+            imageUrl: generateImageUrl(name, category)
+          });
+        }
+      }
+      
+      console.log(`Всего найдено товаров: ${products.length}`);
+      return products;
+    } catch (error) {
+      console.error("Ошибка при извлечении товаров:", error);
+      return [];
+    }
+  };
+
+  // Функция для генерации ссылок на магазины
+  const generateStoreLinks = (productName: string) => {
+    const encodedName = encodeURIComponent(productName);
+    return [
+      { name: 'Яндекс Маркет', url: `https://market.yandex.ru/search?text=${encodedName}` },
+      { name: 'Ozon', url: `https://www.ozon.ru/search/?text=${encodedName}` },
+      { name: 'Wildberries', url: `https://www.wildberries.ru/catalog/0/search.aspx?search=${encodedName}` }
+    ];
+  };
+
+  // Функция для генерации URL изображения на основе названия товара
+  const generateImageUrl = (name: string, category: string) => {
+    // Очищаем название от моделей и брендов для лучшего поиска изображений
+    const cleanName = name.replace(/\(.*?\)/g, '').trim();
+    // В реальном приложении здесь можно использовать API для поиска изображений
+    // или хранить пути к изображениям на вашем сервере
+    return `https://source.unsplash.com/400x400/?${encodeURIComponent(cleanName)}`;
+  };
+
+  // Функция для поиска/создания товаров из текста сообщения
+  const processProductsInMessage = async (messageText: string, messageId: string) => {
+    try {
+      console.log("Обработка продуктов в сообщении начата");
+      // Извлекаем информацию о товарах из текста
+      const productsInfo = extractAllProductsInfo(messageText);
+      if (productsInfo.length === 0) {
+        console.log("Продукты не найдены в сообщении");
+        return;
+      }
+      
+      console.log(`Найдено ${productsInfo.length} продуктов для обработки`);
+      
+      // Для каждого товара ищем в базе или создаем новый
+      const foundProducts: Product[] = [];
+      
+      for (const productInfo of productsInfo) {
+        try {
+          console.log(`Обработка товара: ${productInfo.name}`);
+          // Сначала ищем товар по названию
+          const existingProducts = await productService.searchProducts(productInfo.name);
+          
+          if (existingProducts && existingProducts.length > 0) {
+            console.log(`Товар найден в базе: ${productInfo.name}`);
+            // Если нашли - используем первый найденный
+            foundProducts.push(existingProducts[0]);
+          } else {
+            console.log(`Товар не найден, создаю новый: ${productInfo.name}`);
+            // Иначе создаем новый товар
+            const newProduct = await productService.createProduct({
+              name: productInfo.name,
+              description: productInfo.description,
+              price: productInfo.price,
+              category: productInfo.category,
+              stockQuantity: 100,
+              imageUrl: productInfo.imageUrl,
+              storeLinks: productInfo.storeLinks
+            });
+            
+            if (newProduct) {
+              console.log(`Новый товар создан с ID: ${newProduct.id}`);
+              foundProducts.push(newProduct);
+            } else {
+              console.error(`Не удалось создать товар: ${productInfo.name}`);
+            }
+          }
+        } catch (error) {
+          console.error(`Ошибка при обработке товара ${productInfo.name}:`, error);
+        }
+      }
+      
+      // Обновляем сообщение, добавляя найденные товары
+      if (foundProducts.length > 0) {
+        console.log(`Добавляю ${foundProducts.length} товаров к сообщению ${messageId}`);
+        setMessages(prevMessages => 
+          prevMessages.map(msg => 
+            msg.id === messageId 
+              ? { ...msg, products: foundProducts } 
+              : msg
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Ошибка при обработке товаров в сообщении:", error);
+    }
+  };
+
+  // Функция для добавления сообщения
   const addMessage = (message: MessageType) => {
     setMessages(prev => [...prev, message]);
+    
+    // Если это сообщение от ассистента, обрабатываем в нем товары
+    if (!message.isUser) {
+      // Небольшая задержка для обеспечения лучшего пользовательского опыта
+      setTimeout(() => {
+        processProductsInMessage(message.text, message.id);
+      }, 500);
+    }
+  };
+
+  // Функция для поиска/создания всех товаров
+  const searchAndCreateProducts = async (text: string) => {
+    const productsInfo = extractAllProductsInfo(text);
+    if (!productsInfo.length) return;
+    setIsSearchingProducts(true);
+    const foundProducts: Product[] = [];
+    for (const info of productsInfo) {
+      if (!info) continue;
+      try {
+        const existing = await productService.searchProducts(info.name);
+        if (existing.length > 0) {
+          foundProducts.push(existing[0]);
+        } else {
+          const created = await productService.createProduct({ ...info, stockQuantity: 1 });
+          if (created) foundProducts.push(created);
+        }
+      } catch (e) {
+        console.error('Ошибка поиска/создания товара:', e);
+      }
+    }
+    setSuggestedProducts(foundProducts);
+    setIsSearchingProducts(false);
   };
 
   // Stream messages from GigaChat API
@@ -220,13 +412,13 @@ export default function GiftAssistantScreen() {
       
       let accumulatedText = '';
       
-      // Use the streaming method from our service
       await gigaChatService.streamMessage(
         apiMessages,
-        // On chunk handler
         (chunk) => {
           accumulatedText += chunk;
           setStreamingMessage(accumulatedText);
+          
+          // Убираем проверку здесь, так как будем обрабатывать товары после завершения
           
           // Force scroll after each chunk update
           setTimeout(() => {
@@ -235,9 +427,7 @@ export default function GiftAssistantScreen() {
             }
           }, 10);
         },
-        // On complete handler
         () => {
-          // Add the complete message to our list
           const newMessage: MessageType = {
             id: Date.now().toString(),
             text: accumulatedText,
@@ -250,7 +440,6 @@ export default function GiftAssistantScreen() {
           setIsTyping(false);
           setIsRetrying(false);
         },
-        // On error handler
         (error) => {
           console.error('Error with streaming message:', error);
           setIsTyping(false);
@@ -418,7 +607,80 @@ export default function GiftAssistantScreen() {
     });
   };
 
-  // Enhance the message rendering for form-like content
+  // Упрощенная версия функции форматирования текста с товарами
+  const formatMessageTextWithProducts = (text: string, products?: Product[]) => {
+    if (!text) return null;
+    
+    // Сначала очистим текст от разметки товаров
+    const cleanedText = cleanProductTags(text);
+    
+    // Если нет товаров, просто вернем очищенный текст
+    if (!products || products.length === 0) {
+      return <Text style={styles.assistantMessageText}>{cleanedText}</Text>;
+    }
+    
+    // Разделим текст на абзацы для лучшего форматирования
+    const paragraphs = cleanedText.split('\n\n').filter(p => p.trim() !== '');
+    
+    return (
+      <>
+        {paragraphs.map((paragraph, index) => {
+          // Проверяем, есть ли упоминание товара в этом абзаце
+          const mentionedProduct = products.find(p => 
+            paragraph.includes(p.name) || paragraph.toLowerCase().includes(p.name.toLowerCase())
+          );
+          
+          return (
+            <View key={`paragraph-${index}`} style={styles.paragraphContainer}>
+              <Text style={styles.assistantMessageText}>{paragraph}</Text>
+              
+              {/* Если в абзаце упомянут товар, покажем его карточку */}
+              {mentionedProduct && (
+                <View style={styles.inlineProductCard}>
+                  <View style={styles.productCardContent}>
+                    {mentionedProduct.imageUrl ? (
+                      <Image
+                        source={{ uri: mentionedProduct.imageUrl }}
+                        style={styles.inlineProductImage}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View style={[styles.inlineProductImage, styles.productImagePlaceholder]}>
+                        <Gift size={20} color={COLORS.valentinePink} />
+                      </View>
+                    )}
+                    <View style={styles.inlineProductInfo}>
+                      <Text style={styles.inlineProductName}>{mentionedProduct.name}</Text>
+                      <Text style={styles.inlineProductPrice}>{mentionedProduct.price} ₽</Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.inlineProductButton}
+                      onPress={() => router.push(`/product-details?productId=${mentionedProduct.id}`)}
+                    >
+                      <Text style={styles.inlineProductButtonText}>В магазин</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+            </View>
+          );
+        })}
+      </>
+    );
+  };
+
+  // Функция для очистки текста от тегов товаров
+  const cleanProductTags = (text: string) => {
+    if (!text) return '';
+    
+    return text
+      .replace(/\[PRODUCT\]([\s\S]*?)\[\/PRODUCT\]/g, '$1')
+      .replace(/\[PRICE\]([\s\S]*?)\[\/PRICE\]/g, '')  // Удаляем цену, она будет в карточке
+      .replace(/\[DESCRIPTION\]([\s\S]*?)\[\/DESCRIPTION\]/g, '$1')
+      .replace(/\[CATEGORY\]([\s\S]*?)\[\/CATEGORY\]/g, '');  // Удаляем категорию
+  };
+
+  // Обновляем renderMessage для использования новой функции форматирования
   const renderMessage = ({ item }: { item: MessageType }) => {
     // Special handling for assistant messages that might contain forms
     const isFormContent = !item.isUser && (
@@ -456,12 +718,13 @@ export default function GiftAssistantScreen() {
             <View style={styles.divider} />
           )}
           
-          {renderFormattedText(
-            formatTextForDisplay(formattedText),
-            [
-              item.isUser ? styles.userMessageText : styles.assistantMessageText,
-              isFormContent && styles.formText
-            ]
+          {item.isUser ? (
+            <Text style={styles.userMessageText}>{item.text}</Text>
+          ) : (
+            // Используем новую функцию для форматирования сообщений ассистента
+            <View style={styles.formattedMessageContainer}>
+              {formatMessageTextWithProducts(item.text, item.products)}
+            </View>
           )}
           
           {renderDividers && (
@@ -471,6 +734,14 @@ export default function GiftAssistantScreen() {
           {item.id.startsWith('streaming-') && (
             <View style={styles.streamingIndicator}>
               <ActivityIndicator size="small" color={item.isUser ? "#FFFFFF" : COLORS.valentinePink} />
+            </View>
+          )}
+          
+          {/* Показываем индикатор поиска товаров */}
+          {isSearchingProducts && !item.isUser && item.id === messages[messages.length - 1].id && (
+            <View style={styles.searchingProducts}>
+              <ActivityIndicator size="small" color={COLORS.valentinePink} />
+              <Text style={styles.searchingProductsText}>Ищем товары в каталоге...</Text>
             </View>
           )}
         </View>
@@ -813,5 +1084,164 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#222',
     fontSize: FONTS.sizes.md,
+  },
+  productSuggestions: {
+    marginTop: SPACING.md,
+    width: '100%',
+  },
+  productCard: {
+    flexDirection: 'row',
+    alignItems: 'center', 
+    backgroundColor: '#FFFFFF',
+    borderRadius: RADIUS.md,
+    padding: SPACING.sm,
+    marginBottom: SPACING.sm,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  productImage: {
+    width: 60,
+    height: 60,
+    borderRadius: RADIUS.sm,
+    backgroundColor: '#F0F0F0',
+  },
+  productImagePlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F5F5F5',
+  },
+  productInfo: {
+    flex: 1,
+    marginLeft: SPACING.sm,
+  },
+  productName: {
+    fontSize: FONTS.sizes.md,
+    fontWeight: '600',
+    color: '#333333',
+    marginBottom: 2,
+  },
+  productPrice: {
+    fontSize: FONTS.sizes.sm,
+    color: COLORS.valentinePink,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  productDescription: {
+    fontSize: FONTS.sizes.sm - 1,
+    color: '#666666',
+  },
+  productButton: {
+    backgroundColor: COLORS.valentinePink,
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
+    borderRadius: RADIUS.sm,
+    marginLeft: SPACING.sm,
+    alignSelf: 'center',
+  },
+  productButtonText: {
+    color: '#FFFFFF',
+    fontSize: FONTS.sizes.sm,
+    fontWeight: '600',
+  },
+  searchingProducts: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: SPACING.xs,
+    marginTop: SPACING.sm,
+  },
+  searchingProductsText: {
+    fontSize: FONTS.sizes.sm,
+    color: '#666',
+    marginLeft: SPACING.xs,
+  },
+  productSuggestionsTitle: {
+    fontSize: FONTS.sizes.md,
+    fontWeight: '600',
+    color: '#333333',
+    marginBottom: SPACING.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+    paddingBottom: SPACING.xs,
+  },
+  formattedMessageContainer: {
+    width: '100%',
+  },
+  inlineProductCard: {
+    marginVertical: SPACING.sm,
+    width: '100%',
+  },
+  productCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: RADIUS.md,
+    padding: SPACING.sm,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  inlineProductImage: {
+    width: 50,
+    height: 50,
+    borderRadius: RADIUS.sm,
+    backgroundColor: '#F0F0F0',
+  },
+  inlineProductInfo: {
+    flex: 1,
+    marginLeft: SPACING.sm,
+  },
+  inlineProductName: {
+    fontSize: FONTS.sizes.sm,
+    fontWeight: '600',
+    color: '#333333',
+    marginBottom: 2,
+  },
+  inlineProductPrice: {
+    fontSize: FONTS.sizes.sm - 1,
+    color: COLORS.valentinePink,
+    fontWeight: '600',
+  },
+  inlineProductButton: {
+    backgroundColor: COLORS.valentinePink,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: RADIUS.sm,
+    alignSelf: 'center',
+  },
+  inlineProductButtonText: {
+    color: '#FFFFFF',
+    fontSize: FONTS.sizes.sm - 1,
+    fontWeight: '600',
+  },
+  inlineTextProduct: {
+    backgroundColor: '#F8F9FB',
+    borderRadius: RADIUS.sm,
+    padding: SPACING.sm,
+    marginVertical: SPACING.xs,
+  },
+  inlineProductNameText: {
+    fontSize: FONTS.sizes.sm,
+    fontWeight: '600',
+    color: '#333333',
+    marginBottom: 2,
+  },
+  inlineProductPriceText: {
+    fontSize: FONTS.sizes.sm - 1,
+    color: COLORS.valentinePink,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  inlineProductDescriptionText: {
+    fontSize: FONTS.sizes.sm - 1,
+    color: '#666666',
+  },
+  paragraphContainer: {
+    marginBottom: SPACING.sm,
+    width: '100%',
   },
 }); 
