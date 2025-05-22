@@ -1,11 +1,15 @@
 package com.giftidea.config;
 
 import com.giftidea.model.Gift;
+import com.giftidea.model.User;
 import com.giftidea.repository.GiftRepository;
+import com.giftidea.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
@@ -14,11 +18,45 @@ public class DataInitializer implements CommandLineRunner {
 
     @Autowired
     private GiftRepository giftRepository;
+    
+    @Autowired
+    private UserRepository userRepository;
+    
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Override
     public void run(String... args) {
         if (giftRepository.count() == 0) {
             initGifts();
+        }
+        
+        // Create default test users
+        initUsers();
+    }
+
+    private void initUsers() {
+        // Create test users if they don't exist
+        if (!userRepository.existsByUsername("nur")) {
+            User user = new User();
+            user.setUsername("nur");
+            user.setEmail("nur@example.com");
+            user.setPassword(passwordEncoder.encode("password123"));
+            user.setCreatedAt(LocalDateTime.now());
+            user.setUpdatedAt(LocalDateTime.now());
+            userRepository.save(user);
+            System.out.println("Created test user: nur");
+        }
+        
+        if (!userRepository.existsByUsername("test")) {
+            User user = new User();
+            user.setUsername("test");
+            user.setEmail("test@example.com");
+            user.setPassword(passwordEncoder.encode("password123"));
+            user.setCreatedAt(LocalDateTime.now());
+            user.setUpdatedAt(LocalDateTime.now());
+            userRepository.save(user);
+            System.out.println("Created test user: test");
         }
     }
 
