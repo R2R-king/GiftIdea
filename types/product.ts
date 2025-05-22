@@ -4,12 +4,22 @@ export interface StoreLink {
 }
 
 export interface Product {
-  id: number;
+  id: number | string;
   name: string;
   description: string;
-  price: number;
+  price: number | string;
   imageUrl?: string;
+  image?: string;
   stockQuantity?: number;
   category: string;
+  subtitle?: string;
+  features?: string[];
+  formattedPrice?: string;
   storeLinks?: StoreLink[];
+  isFavorite?: boolean;
+  occasion?: string;
+  budget?: string;
+  type?: string;
+  location?: string;
+  rating?: number;
 } 

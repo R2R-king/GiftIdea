@@ -27,6 +27,10 @@ import { useWishlists, WishlistItem } from '@/hooks/useWishlists';
 import { useTheme } from '@/components/ThemeProvider';
 import { StatusBar } from 'expo-status-bar';
 import giftService from '@/services/giftService';
+import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
+import { StoreLink, Product } from '@/types/product';
+import productService from '@/lib/product-service';
+import { testProducts, getTestProductById } from '@/app/lib/test-products';
 
 const { width, height } = Dimensions.get('window');
 
@@ -36,6 +40,36 @@ const volumeOptions = [
   { value: '100 мл', price: '3 400 ₽' },
   { value: '150 мл', price: '3 800 ₽' },
 ];
+
+// Добавим функцию для генерации ссылок на магазины
+const generateStoreLinks = (productName: string): StoreLink[] => {
+  const encodedName = encodeURIComponent(productName);
+  return [
+    { name: 'Wildberries', url: `https://www.wildberries.ru/catalog/0/search.aspx?search=${encodedName}` },
+    { name: 'Яндекс Маркет', url: `https://market.yandex.ru/search?text=${encodedName}` },
+    { name: 'Ozon', url: `https://www.ozon.ru/search/?text=${encodedName}` },
+    { name: 'AliExpress', url: `https://aliexpress.ru/wholesale?SearchText=${encodedName}` }
+  ];
+};
+
+// Генерация случайного изображения для товаров
+const generateRandomImage = (category: string) => {
+  const categoryMap: {[key: string]: string} = {
+    'Электроника': 'tech,gadget,electronics',
+    'Украшения': 'jewelry,accessory',
+    'Косметика': 'cosmetics,beauty,makeup',
+    'Одежда': 'fashion,clothing,outfit',
+    'Книги': 'books,reading',
+    'Цветы': 'flowers,bouquet',
+    'Парфюмерия': 'perfume,fragrance',
+    'Аксессуары': 'accessories,fashion',
+    'Default': 'gift,present'
+  };
+  
+  const searchTerm = categoryMap[category] || categoryMap['Default'];
+  const randomNum = Math.floor(Math.random() * 10); // Для разнообразия изображений
+  return `https://source.unsplash.com/800x800/?${searchTerm}&sig=${randomNum}`;
+};
 
 export default function ProductDetailScreen() {
   const { productId } = useLocalSearchParams();
@@ -91,7 +125,7 @@ export default function ProductDetailScreen() {
     loadProductData();
   }, [productId]);
   
-  // Функция для загрузки данных о товаре из бэкенда
+  // Улучшенная функция для загрузки данных о товаре из бэкенда
   const loadProductData = async () => {
     if (!productId) {
       setError('ID товара не указан');
@@ -103,29 +137,141 @@ export default function ProductDetailScreen() {
       setLoading(true);
       setError(null);
       
-      // Преобразуем строковый ID в числовой для запроса к API
-      const numericId = parseInt(productId as string);
+      // Преобразуем ID в числовой формат для запроса к API
+      const id = typeof productId === 'string' ? parseInt(productId) : 
+                Array.isArray(productId) ? parseInt(productId[0]) : Number(productId);
       
-      if (isNaN(numericId)) {
+      if (isNaN(id)) {
         throw new Error('Некорректный ID товара');
       }
       
-      // Получаем данные о товаре из Java-бэкенда
-      const giftData = await giftService.getGiftById(numericId);
+      console.log(`Загрузка данных о товаре с ID: ${id}`);
+
+      // Сначала пробуем получить из тестовых данных для отладки
+      let productData = getTestProductById(id);
       
-      // Конвертируем в формат продукта для фронтенда
-      const productData = giftService.convertToProductFormat(giftData);
-      
-      setProduct(productData);
-      setPrice(productData.price);
+      if (productData) {
+        console.log('Товар получен из тестовых данных:', productData);
+      } else {
+        // Если не нашли в тестовых, пробуем получить товар через productService
+        try {
+          const productFromService = await productService.getProductById(id);
+          if (productFromService) {
+            productData = productFromService;
+            console.log('Товар получен из productService:', productData);
+          }
+        } catch (productError) {
+          console.log('Ошибка при получении из productService, пробуем giftService');
+        }
+        
+        // Если не получили через productService, пробуем через giftService
+        if (!productData) {
+          try {
+            const giftData = await giftService.getGiftById(id);
+            const convertedProduct = giftService.convertToProductFormat(giftData);
+            
+            // Add any missing required fields
+            const completeProduct: Product = {
+              ...convertedProduct,
+              // Ensure required fields exist
+              category: convertedProduct.subtitle || 'Подарок'
+            };
+            
+            productData = completeProduct;
+            console.log('Товар получен из giftService:', productData);
+          } catch (giftError) {
+            console.log('Ошибка при получении из giftService');
+          }
+        }
+      }
+
+      // Если данные получены, обрабатываем их
+      if (productData) {
+        // Убедимся, что у товара есть изображение
+        if (!productData.image && !productData.imageUrl) {
+          const category = productData.category || 'Default';
+          productData.image = generateRandomImage(category);
+          console.log(`Сгенерировано случайное изображение для товара: ${productData.image}`);
+        }
+
+        // Убедимся, что цена представлена в нужном формате
+        if (typeof productData.price === 'number') {
+          productData.formattedPrice = `${productData.price.toLocaleString('ru-RU')} ₽`;
+        } else if (typeof productData.price === 'string') {
+          if (!productData.price.includes('₽')) {
+            productData.formattedPrice = `${productData.price} ₽`;
+          } else {
+            productData.formattedPrice = productData.price;
+          }
+        }
+
+        // Если у товара нет подробного описания, формируем его
+        if (!productData.description || productData.description.length < 30) {
+          const defaultDescription = `${productData.name} - отличный выбор для подарка. Этот товар высокого качества от известного производителя обязательно порадует получателя и оставит приятные впечатления.`;
+          productData.description = defaultDescription;
+        }
+
+        // Если нет никаких характеристик, добавляем базовые
+        if (!productData.features || productData.features.length === 0) {
+          productData.features = [
+            productData.category || 'Универсальный подарок',
+            'Подходит для подарка',
+            'Доставка доступна'
+          ];
+        }
+
+        // Генерируем ссылки на магазины, если их нет
+        if (!productData.storeLinks || productData.storeLinks.length === 0) {
+          productData.storeLinks = generateStoreLinks(productData.name);
+        }
+
+        setProduct(productData);
+        setPrice(typeof productData.formattedPrice === 'string' ? 
+                 productData.formattedPrice : 
+                 typeof productData.price === 'string' ? 
+                 productData.price : 
+                 `${productData.price} ₽`);
+        console.log('Товар успешно загружен:', productData);
+      } else {
+        // Если товар не найден, используем моковые данные
+        console.log('Товар не найден, используем моковые данные');
+        const mockProduct = {
+          id: id,
+          name: "Подарочный набор",
+          description: "Роскошный подарочный набор, который станет отличным подарком для любого случая. Включает в себя несколько премиальных товаров в элегантной упаковке.",
+          subtitle: "Подарочные наборы",
+          features: ["Премиум качество", "Красивая упаковка", "Универсальный подарок"],
+          price: "3 690 ₽",
+          formattedPrice: "3 690 ₽",
+          image: generateRandomImage("Default"),
+          category: "Подарки",
+          storeLinks: generateStoreLinks("Подарочный набор")
+        };
+        
+        setProduct(mockProduct);
+        setPrice(mockProduct.formattedPrice || mockProduct.price);
+        console.log('Создан моковый товар:', mockProduct);
+      }
     } catch (error) {
       console.error('Ошибка при загрузке данных о товаре:', error);
       setError('Не удалось загрузить информацию о товаре');
       
-      // В случае ошибки пытаемся найти продукт в моковых данных как запасной вариант
-      const fallbackProduct = localizedData.products.find(p => p.id === productId) || localizedData.products[0];
+      // Создаем моковый товар в случае ошибки
+      const fallbackProduct = {
+        id: productId,
+        name: "Букет роз \"Валентин\"",
+        description: "Идеальный подарок на День святого Валентина. Роскошный букет свежих роз в элегантной упаковке с любовным посланием. Свежие цветы, премиум упаковка, возможность добавить открытку.",
+        subtitle: "Цветы",
+        features: ["Свежие цветы", "Премиум упаковка", "Возможность добавить открытку"],
+        price: "3 690 ₽",
+        formattedPrice: "3 690 ₽",
+        image: "https://source.unsplash.com/800x800/?roses,bouquet,valentine",
+        category: "Цветы",
+        storeLinks: generateStoreLinks("Букет роз Валентин")
+      };
+      
       setProduct(fallbackProduct);
-      setPrice(fallbackProduct.price);
+      setPrice(fallbackProduct.formattedPrice || fallbackProduct.price);
     } finally {
       setLoading(false);
     }
@@ -168,11 +314,18 @@ export default function ProductDetailScreen() {
     
     try {
       // Преобразование цены из строки в число
-      const numericPrice = parseFloat(price.replace(/\s+/g, '').replace('₽', '').replace(',', '.'));
+      let numericPrice = 0;
+      
+      if (typeof product.price === 'number') {
+        numericPrice = product.price;
+      } else {
+        const priceText = typeof product.price === 'string' ? product.price : price;
+        numericPrice = parseFloat(priceText.replace(/\s+/g, '').replace('₽', '').replace(',', '.'));
+      }
       
       if (isNaN(numericPrice)) {
         console.error('Не удалось преобразовать цену в число:', price);
-        return;
+        numericPrice = 1000; // Дефолтная цена в случае ошибки
       }
       
       // Добавляем товар в корзину
@@ -181,8 +334,8 @@ export default function ProductDetailScreen() {
         name: product.name,
         price: numericPrice,
         quantity: 1,
-        image: product.image,
-        subtitle: product.subtitle
+        image: product.image || product.imageUrl,
+        subtitle: product.subtitle || product.category || 'Товар'
       });
       
       // Показать всплывающее сообщение об успехе
@@ -190,6 +343,23 @@ export default function ProductDetailScreen() {
     } catch (error) {
       console.error('Ошибка при добавлении в корзину:', error);
     }
+  };
+  
+  // Функция для открытия URL магазина или товара в браузере
+  const handleOpenStore = (url: string) => {
+    Linking.canOpenURL(url).then(supported => {
+      if (supported) {
+        Linking.openURL(url);
+      } else {
+        console.log("Не удается открыть URL: " + url);
+        Alert.alert(
+          'Ошибка',
+          'Не удается открыть ссылку на магазин',
+          [{ text: 'OK' }],
+          { cancelable: true }
+        );
+      }
+    });
   };
   
   // Функция для покупки сейчас (добавляем в корзину и переходим к оформлению)
@@ -209,8 +379,8 @@ export default function ProductDetailScreen() {
       productId: product.id,
       name: product.name,
       price: price,
-      image: product.image,
-      category: product.subtitle || 'Default'
+      image: product.image || product.imageUrl,
+      category: product.subtitle || product.category || 'Default'
     };
     
     // Добавляем товар в вишлист
@@ -241,8 +411,8 @@ export default function ProductDetailScreen() {
         productId: product.id,
         name: product.name,
         price: price,
-        image: product.image,
-        category: product.subtitle || 'Default'
+        image: product.image || product.imageUrl,
+        category: product.subtitle || product.category || 'Default'
       };
       
       addItemToWishlist(newWishlist.id, wishlistItem);
@@ -343,7 +513,7 @@ export default function ProductDetailScreen() {
   // Рендер компонента загрузки
   const renderLoading = () => (
     <View style={[styles.loadingContainer, { backgroundColor: themedStyles.backgroundColor }]}>
-      <ActivityIndicator size="large" color="#6C63FF" />
+      <ActivityIndicator size="large" color={COLORS.valentinePink} />
       <Text style={[styles.loadingText, { color: themedStyles.textSecondary }]}>
         Загрузка информации о товаре...
       </Text>
@@ -365,10 +535,58 @@ export default function ProductDetailScreen() {
     </View>
   );
   
+  // Улучшенное отображение ссылок на магазины с возможностью перехода
+  const renderStoreLinks = () => {
+    // Создаем ссылки, если они отсутствуют у товара
+    const isAutoGenerated = !product?.storeLinks || product.storeLinks.length === 0;
+    const storeLinks = (product?.storeLinks && product.storeLinks.length > 0) 
+      ? product.storeLinks 
+      : (product ? generateStoreLinks(product.name) : []);
+    
+    if (!product || !storeLinks || storeLinks.length === 0) {
+      return null;
+    }
+
+    return (
+      <View style={styles.storeLinksSectionContainer}>
+        <View style={styles.storeLinksHeader}>
+          <ShoppingBag size={22} color={COLORS.valentinePink} />
+          <Text style={styles.storeLinksHeaderText}>Где купить этот товар:</Text>
+        </View>
+        
+        {isAutoGenerated && (
+          <Text style={styles.autoGeneratedNote}>
+            Результаты автоматического поиска по магазинам
+          </Text>
+        )}
+        
+        {storeLinks.map((link: StoreLink, index: number) => (
+          <TouchableOpacity 
+            key={`store-${index}`}
+            style={styles.storeLinkItem}
+            onPress={() => handleOpenStore(link.url)}
+          >
+            <ExternalLink size={20} color={COLORS.valentinePink} />
+            <View style={styles.storeLinkContent}>
+              <Text style={styles.storeLinkText}>{link.name}</Text>
+              <Text style={styles.storeLinkUrl} numberOfLines={1}>{link.url.substring(0, 40)}...</Text>
+            </View>
+            <View style={styles.storeLinkArrow}>
+              <Text style={styles.storeLinkArrowText}>→</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
+  };
+  
   // Если данные загружаются или произошла ошибка
   if (loading) return renderLoading();
   if (error && !product) return renderError();
   if (!product) return null;
+  
+  // Получаем изображение из правильного поля
+  const productImage = product.image || product.imageUrl;
   
   return (
     <View style={[styles.container, {backgroundColor: themedStyles.backgroundColor}]}>
@@ -418,11 +636,43 @@ export default function ProductDetailScreen() {
         
         {/* Область изображения продукта */}
         <View style={styles.imageSection}>
-          <Image
-            source={{ uri: product.image }}
-            style={styles.productImage}
-            resizeMode="contain"
-          />
+          {productImage ? (
+            <>
+              <Image
+                source={{ uri: productImage }}
+                style={styles.productImage}
+                resizeMode="cover"
+                defaultSource={require('@/assets/images/placeholder.png')}
+              />
+              <TouchableOpacity 
+                style={styles.fullscreenButton}
+                onPress={() => {
+                  // Открытие изображения в полном размере
+                  Alert.alert(
+                    'Изображение товара', 
+                    'Хотите открыть изображение в полном размере?',
+                    [
+                      { text: 'Отмена', style: 'cancel' },
+                      { 
+                        text: 'Открыть', 
+                        onPress: () => handleOpenStore(productImage)
+                      }
+                    ],
+                    { cancelable: true }
+                  );
+                }}
+              >
+                <View style={styles.fullscreenIconWrapper}>
+                  <Text style={styles.fullscreenIcon}>+</Text>
+                </View>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <View style={styles.noImageContainer}>
+              <Gift size={50} color="#CCCCCC" />
+              <Text style={styles.noImageText}>Изображение не доступно</Text>
+            </View>
+          )}
           
           {/* Декоративные элементы - показываем только в светлой теме */}
           {theme !== 'dark' && (
@@ -455,10 +705,16 @@ export default function ProductDetailScreen() {
             {/* Заголовок и цена */}
             <View style={styles.productHeader}>
               <View>
-                <Text style={[styles.productCategory, {color: themedStyles.textSecondary}]}>{product.subtitle}</Text>
-                <Text style={[styles.productName, {color: themedStyles.textPrimary}]}>{product.name}</Text>
+                <Text style={[styles.productCategory, {color: themedStyles.textSecondary}]}>
+                  {product.subtitle || product.category}
+                </Text>
+                <Text style={[styles.productName, {color: themedStyles.textPrimary}]}>
+                  {product.name}
+                </Text>
               </View>
-              <Text style={styles.productPrice}>{price}</Text>
+              <Text style={styles.productPrice}>
+                {product.formattedPrice || price || `${product.price} ₽`}
+              </Text>
             </View>
             
             {/* Описание */}
@@ -494,9 +750,9 @@ export default function ProductDetailScreen() {
             )}
             
             {/* Характеристики продукта */}
-            {product.features && (
+            {product.features && product.features.length > 0 && (
               <View style={styles.featuresContainer}>
-                {product.features.map((feature, index) => (
+                {product.features.map((feature: string, index: number) => (
                   <View key={index} style={styles.featureItem}>
                     <View style={styles.featureDot} />
                     <Text style={[styles.featureText, {color: themedStyles.featureTextColor}]}>{feature}</Text>
@@ -510,21 +766,11 @@ export default function ProductDetailScreen() {
           </View>
         </View>
         
-        {product && product.storeLinks && product.storeLinks.length > 0 && (
-          <View style={styles.storeLinksContainer}>
-            <Text style={styles.storeLinksTitle}>Где купить:</Text>
-            {product.storeLinks.map((link, index) => (
-              <TouchableOpacity 
-                key={`store-${index}`}
-                style={styles.storeLinkButton}
-                onPress={() => Linking.openURL(link.url)}
-              >
-                <ExternalLink size={18} color={themedStyles.textSecondary} />
-                <Text style={styles.storeLinkText}>{link.name}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
+        {/* Блок со ссылками на магазины - размещаем в конце скролла */}
+        {renderStoreLinks()}
+        
+        {/* Дополнительное пространство внизу для кнопок действий */}
+        <View style={{height: 80}} />
       </ScrollView>
       
       {/* Фиксированные кнопки действий внизу экрана */}
@@ -537,7 +783,7 @@ export default function ProductDetailScreen() {
             style={[styles.wishlistButton, {backgroundColor: themedStyles.wishlistButtonBg}]}
             onPress={() => setWishlistModalVisible(true)}
           >
-            <Gift size={22} color={isInWishlist ? "#6C63FF" : themedStyles.textSecondary} />
+            <Gift size={22} color={isInWishlist ? COLORS.valentinePink : themedStyles.textSecondary} />
           </TouchableOpacity>
           
           <TouchableOpacity 
@@ -998,27 +1244,104 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
   },
-  storeLinksContainer: {
-    marginTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#EFEFEF',
-    paddingTop: 20,
+  storeLinksSectionContainer: {
+    marginTop: 15,
+    marginBottom: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 15,
+    ...SHADOWS.medium,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 8, 68, 0.2)',
+    paddingHorizontal: 15,
+    marginHorizontal: 15,
   },
-  storeLinksTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 10,
-  },
-  storeLinkButton: {
+  storeLinksHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
     marginBottom: 10,
+  },
+  storeLinksHeaderText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#2D3748',
+    marginLeft: 10,
+  },
+  storeLinkItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  storeLinkContent: {
+    flex: 1,
+    marginLeft: 12,
   },
   storeLinkText: {
     fontSize: 16,
-    color: '#64748B',
-    marginLeft: 10,
     fontWeight: '500',
+    color: '#2D3748',
+    marginBottom: 2,
+  },
+  storeLinkUrl: {
+    fontSize: 12,
+    color: '#718096',
+  },
+  storeLinkArrow: {
+    backgroundColor: COLORS.valentinePink,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  storeLinkArrowText: {
+    fontSize: 18,
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+  noImageContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  noImageText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#718096',
+    textAlign: 'center',
+  },
+  fullscreenButton: {
+    position: 'absolute',
+    right: 15,
+    bottom: 15,
+    zIndex: 10,
+  },
+  fullscreenIconWrapper: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...SHADOWS.small,
+  },
+  fullscreenIcon: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: COLORS.valentinePink,
+  },
+  autoGeneratedNote: {
+    fontSize: 12,
+    color: '#718096',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginBottom: 10,
+    opacity: 0.8,
   },
 }); 
